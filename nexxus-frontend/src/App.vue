@@ -1,11 +1,9 @@
 <template>
   <v-app>
-    <HomePage />
+    <RouterView />
   </v-app>
 </template>
 
 <script setup>
-import HomePage from './components/HomePage.vue';
 
-  //
 </script>
