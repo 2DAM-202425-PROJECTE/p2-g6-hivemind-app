@@ -94,12 +94,19 @@ h1 {
 
 .post-card {
   background: #f0f0f0;
+  border: 1px solid #d3d3d3; /* Add a slightly gray border */
   border-radius: 10px;
   padding: 15px;
   width: 300px;
   margin: 0 auto;
 }
-
+.home-container {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background-color: white; /* Set background to white */
+  min-height: 100vh;
+  color: black; /* Change text color to black for better contrast */
+}
 .post-header {
   display: flex;
   gap: 10px;

@@ -1,10 +1,11 @@
 <template>
   <v-app-bar app flat>
     <div class="left-section">
+      <img src="/logo.png" alt="Logo" class="logo" />
       <v-btn text :to="'/'" class="title-btn">Hivemind</v-btn>
     </div>
 
-    <!-- Centered and Wider Search Input Field -->
+    <!-- Centered and Responsive Search Input Field -->
     <v-text-field
       class="search-field"
       placeholder="Search"
@@ -122,6 +123,43 @@
 
 .search-field {
   max-width: 500px; /* Make search bar wider */
-  margin: 0 auto;    /* Center the search bar */
+  margin: 0 auto;   /* Center the search bar */
+  border-radius: 25px; /* Add rounded edges */
+  overflow: hidden; /* Ensure the rounded corners are visible */
+  height: 50px;
+}
+
+.logo {
+  width: 40px; /* Adjust the size as needed */
+  height: 40px; /* Adjust the size as needed */
+  margin-right: 10px; /* Space between logo and title */
+}
+
+@media (max-width: 1200px) {
+  .search-field {
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 992px) {
+  .search-field {
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .search-field {
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 576px) {
+  .search-field {
+    max-width: 150px;
+  }
+
+  .nav-btn {
+    margin-right: 8px; /* Reduce margin between icons */
+  }
 }
 </style>
