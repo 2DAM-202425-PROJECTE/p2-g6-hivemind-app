@@ -1,6 +1,7 @@
 <template>
   <v-app-bar app flat>
     <div class="left-section">
+      <img src="/logo.png" alt="Logo" class="logo" />
       <v-btn text :to="'/'" class="title-btn">Hivemind</v-btn>
     </div>
 
@@ -122,7 +123,16 @@
 
 .search-field {
   max-width: 500px; /* Make search bar wider */
-  margin: 0 auto;    /* Center the search bar */
+  margin: 0 auto;   /* Center the search bar */
+  border-radius: 25px; /* Add rounded edges */
+  overflow: hidden; /* Ensure the rounded corners are visible */
+  height: 50px;
+}
+
+.logo {
+  width: 40px; /* Adjust the size as needed */
+  height: 40px; /* Adjust the size as needed */
+  margin-right: 10px; /* Space between logo and title */
 }
 
 @media (max-width: 1200px) {
