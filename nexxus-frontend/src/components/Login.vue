@@ -2,7 +2,7 @@
     <div class="login-container">
       <div class="login-box">
         <img class="logo" src="./../../public/atencionalclientequeescomomejorar.webp" alt="Hivemind Logo" />
-        <h1>Create new Hivemind Account</h1>
+        <h1>Log in to Hivemind Account</h1>
         <form @submit.prevent="register">
           <label for="username">Username:</label>
           <input
@@ -25,8 +25,8 @@
           <button type="submit">Register</button>
         </form>
         <p>
-          Do you have an account?
-          <a href="#" @click.prevent="navigateToLogin">Log in</a>
+          You don't have an account?
+          <a href="#" @click.prevent="navigateToLogin">Register</a>
         </p>
       </div>
       <div class="icons">
@@ -68,6 +68,7 @@
     border: 5px solid #ccc;
     border-radius: 10px;
     position: relative;
+    color: black;
   }
   
   .login-box {
@@ -90,6 +91,7 @@
     font-size: 1.5rem;
     font-weight: bold;
     margin-bottom: 1.5rem;
+    color: black;
   }
   
   form {
