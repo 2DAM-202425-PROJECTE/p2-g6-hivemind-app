@@ -114,11 +114,12 @@
 }
 
 .title-btn {
-  margin-left: 0;
-  padding-left: 0;
   max-width: 200px;
   display: flex;
   align-items: center;
+  justify-content: center; /* Center horizontally */
+  text-align: center; /* Center text */
+  background-color: black; /* Make background transparent */
 }
 
 .search-field {
