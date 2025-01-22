@@ -7,7 +7,8 @@
 // Composables
 import { createRouter, createWebHistory } from 'vue-router';
 import HomePage from '../components/HomePage.vue';
-import Login from '../components/Login.vue';
+import Login from '../pages/Login.vue';
+import Register from '../pages/Register.vue';
 
 const routes = [
   {
@@ -19,6 +20,11 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Login,
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: Register,
   },
 ];
 
