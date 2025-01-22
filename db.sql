@@ -2,15 +2,15 @@ CREATE DATABASE social_network;
 
 USE social_network;
 
-CREATE TABLE User (
-    id_user INT PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    bio_text TEXT,
-    profile_picture VARCHAR(255),
-    register_date DATE NOT NULL,
-    is_admin BOOLEAN DEFAULT FALSE
-);
+--CREATE TABLE User (
+--    id_user INT PRIMARY KEY AUTO_INCREMENT,
+--    username VARCHAR(50) UNIQUE NOT NULL,
+--    password VARCHAR(255) NOT NULL,
+--    bio_text TEXT,
+--    profile_picture VARCHAR(255),
+--    register_date DATE NOT NULL,
+--    is_admin BOOLEAN DEFAULT FALSE
+--);
 
 CREATE TABLE Server (
     id_server INT PRIMARY KEY AUTO_INCREMENT,
