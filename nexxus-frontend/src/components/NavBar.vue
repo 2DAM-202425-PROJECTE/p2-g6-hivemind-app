@@ -16,56 +16,52 @@
     ></v-text-field>
 
     <div class="right-section">
-      <!-- Menu Items with Tooltips -->
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn icon :to="'/contact'" class="nav-btn" v-bind="attrs" v-on="on">
-            <v-icon>mdi-phone</v-icon>
-          </v-btn>
-        </template>
-        <span>Contact</span>
-      </v-tooltip>
-
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn icon :to="'/talk'" class="nav-btn" v-bind="attrs" v-on="on">
-            <v-icon>mdi-chat</v-icon>
-          </v-btn>
-        </template>
-        <span>Talk</span>
-      </v-tooltip>
-
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn icon :to="'/live'" class="nav-btn" v-bind="attrs" v-on="on">
-            <v-icon>mdi-video</v-icon>
-          </v-btn>
-        </template>
-        <span>Live Now</span>
-      </v-tooltip>
-
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn icon :to="'/videos'" class="nav-btn" v-bind="attrs" v-on="on">
-            <v-icon>mdi-video-outline</v-icon>
-          </v-btn>
-        </template>
-        <span>Videos</span>
-      </v-tooltip>
-
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn icon :to="'/profile'" class="nav-btn" v-bind="attrs" v-on="on">
-            <v-icon>mdi-account</v-icon>
-          </v-btn>
-        </template>
-        <span>My Profile</span>
-      </v-tooltip>
+      <v-app-bar-nav-icon v-if="isMobile" @click="menu = !menu"></v-app-bar-nav-icon>
+      <v-menu v-if="isMobile" v-model="menu" offset-y>
+        <v-list>
+          <v-list-item v-for="item in menuItems" :key="item.text" :to="item.to">
+            <v-list-item-icon>
+              <v-icon>{{ item.icon }}</v-icon>
+            </v-list-item-icon>
+            <v-list-item-content>
+              <v-list-item-title>{{ item.text }}</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+      <template v-else>
+        <v-tooltip bottom v-for="item in menuItems" :key="item.text">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn icon :to="item.to" class="nav-btn" v-bind="attrs" v-on="on">
+              <v-icon>{{ item.icon }}</v-icon>
+            </v-btn>
+          </template>
+          <span>{{ item.text }}</span>
+        </v-tooltip>
+      </template>
     </div>
   </v-app-bar>
 </template>
 
 <script setup>
+import { ref } from 'vue'
+
+const isMobile = ref(window.innerWidth <= 768)
+const menu = ref(false)
+
+window.addEventListener('resize', () => {
+  isMobile.value = window.innerWidth <= 768
+})
+
+const menuItems = [
+  { text: 'Contact', to: '/contact', icon: 'mdi-phone' },
+  { text: 'Talk', to: '/talk', icon: 'mdi-chat' },
+  { text: 'Live Now', to: '/live', icon: 'mdi-video' },
+  { text: 'Videos', to: '/videos', icon: 'mdi-video-outline' },
+  { text: 'My Profile', to: '/profile', icon: 'mdi-account' },
+  { text: 'Login', to: '/login', icon: 'mdi-login' },
+  { text: 'Register', to: '/register', icon: 'mdi-account-plus' },
+]
 </script>
 
 <style scoped>
@@ -74,7 +70,7 @@
   box-shadow: none;
   display: flex;
   justify-content: space-between;
-  padding: 0 50px;
+  padding: 0 20px;
   position: relative;
 }
 
@@ -85,12 +81,12 @@
 
 .left-section {
   position: absolute;
-  left: 50px;
+  left: 20px;
 }
 
 .right-section {
   position: absolute;
-  right: 50px;
+  right: 20px;
 }
 
 .v-toolbar-title {
@@ -110,57 +106,71 @@
 }
 
 .nav-btn {
-  margin-right: 16px;
+  margin-right: 8px;
 }
 
 .title-btn {
+  margin-left: 0;
+  padding-left: 0;
   max-width: 200px;
   display: flex;
   align-items: center;
-  justify-content: center; /* Center horizontally */
-  text-align: center; /* Center text */
-  background-color: black; /* Make background transparent */
 }
 
 .search-field {
-  max-width: 500px; /* Make search bar wider */
+  max-width: 600px; /* Adjusted width for full window */
+  width: 100%;
   margin: 0 auto;   /* Center the search bar */
-  border-radius: 25px; /* Add rounded edges */
-  overflow: hidden; /* Ensure the rounded corners are visible */
+  border-radius: 25px;
+  overflow: hidden;
   height: 50px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .logo {
-  width: 40px; /* Adjust the size as needed */
-  height: 40px; /* Adjust the size as needed */
-  margin-right: 10px; /* Space between logo and title */
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1024px) {
   .search-field {
-    max-width: 400px;
+    max-width: 250px; /* Smaller width for half window */
+    position: static;
+    transform: none;
+    margin-left: 200px; /* Move more to the right */
   }
-}
 
-@media (max-width: 992px) {
-  .search-field {
-    max-width: 300px;
+  .right-section {
+    margin-left: auto;
   }
 }
 
 @media (max-width: 768px) {
   .search-field {
     max-width: 200px;
-  }
-}
-
-@media (max-width: 576px) {
-  .search-field {
-    max-width: 150px;
+    position: static;
+    transform: none;
+    margin-left: 200px; /* Move more to the right */
   }
 
   .nav-btn {
-    margin-right: 8px; /* Reduce margin between icons */
+    display: none;
+  }
+
+  .right-section {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 512px) {
+  .search-field {
+    max-width: 150px;
+    position: static;
+    transform: none;
+    margin-left: 200px; /* Move more to the right */
   }
 }
 </style>

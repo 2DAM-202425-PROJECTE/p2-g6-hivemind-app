@@ -1,13 +1,7 @@
-/**
- * router/index.ts
- *
- * Automatic routes for `./src/pages/*.vue`
- */
-
-// Composables
 import { createRouter, createWebHistory } from 'vue-router';
 import HomePage from '../components/HomePage.vue';
 import Login from '../components/Login.vue';
+import ProfilePage from '../components/ProfilePage.vue';
 
 const routes = [
   {
@@ -19,6 +13,11 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Login,
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: ProfilePage,
   },
 ];
 
