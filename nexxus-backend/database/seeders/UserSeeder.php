@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
             'name' => 'adminuser',
             'email' => 'admin@example.com',
             'password' => Hash::make('adminpass'), // Usa un hash seguro para las contraseñas
-            'roles' => '["admin", "user"]',
+            'roles' => ['ROLE_ADMIN', 'ROLE_USER'],
         ]);
 
         $user2 =User::create([
