@@ -1,12 +1,6 @@
-/**
- * router/index.ts
- *
- * Automatic routes for `./src/pages/*.vue`
- */
-
-// Composables
 import { createRouter, createWebHistory } from 'vue-router';
 import HomePage from '../components/HomePage.vue';
+
 import Login from '../pages/Login.vue';
 import Register from '../pages/Register.vue';
 
