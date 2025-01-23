@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import HomePage from '../components/HomePage.vue';
-import Login from '../components/Login.vue';
-import ProfilePage from '../components/ProfilePage.vue';
-import EditProfilePage from '../components/EditProfilePage.vue'; // Import EditProfilePage
+import HomePage from '../pages/HomePage.vue';
+import Login from '../pages/Login.vue';
+import ProfilePage from '../pages/ProfilePage.vue';
+import EditProfilePage from '../pages/EditProfilePage.vue';
+import Register from '../pages/Register.vue'; // Import Register component
 
 const routes = [
   {
@@ -21,9 +22,14 @@ const routes = [
     component: ProfilePage,
   },
   {
-    path: '/edit-profile', // Add new route for EditProfilePage
+    path: '/edit-profile',
     name: 'EditProfile',
     component: EditProfilePage,
+  },
+  {
+    path: '/Register', // Add new route for Register page
+    name: 'Register',
+    component: Register,
   },
 ];
 
