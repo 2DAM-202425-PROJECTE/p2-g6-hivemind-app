@@ -16,6 +16,18 @@
           <h3>Radostin Ivanov</h3>
           <p>IES EBRE</p>
         </div>
+        <div class="post-menu">
+          <button @click="toggleMenu">
+            <i class="mdi mdi-dots-vertical"></i>
+          </button>
+          <div v-if="menuVisible" class="dropdown-menu">
+            <ul>
+              <li @click="reportPost">Report</li>
+              <li @click="editPost">Edit</li>
+              <li @click="deletePost">Delete</li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       <img
@@ -58,6 +70,7 @@ const stories = [
 const likes = ref(0);
 const comments = ref(0);
 const shares = ref(0);
+const menuVisible = ref(false);
 
 const likePost = () => {
   likes.value++;
@@ -69,6 +82,22 @@ const commentOnPost = () => {
 
 const sharePost = () => {
   shares.value++;
+};
+
+const toggleMenu = () => {
+  menuVisible.value = !menuVisible.value;
+};
+
+const reportPost = () => {
+  alert('Post reported');
+};
+
+const editPost = () => {
+  alert('Edit post');
+};
+
+const deletePost = () => {
+  alert('Post deleted');
 };
 </script>
 
@@ -123,6 +152,7 @@ h1 {
   gap: 10px;
   align-items: center;
   margin-bottom: 15px;
+  position: relative;
 }
 
 .profile-pic {
@@ -139,6 +169,43 @@ h1 {
 .post-info p {
   font-size: 12px;
   margin: 0;
+}
+
+.post-menu {
+  margin-left: auto;
+  position: relative;
+}
+
+.post-menu button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #d3d3d3;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.dropdown-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dropdown-menu li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.dropdown-menu li:hover {
+  background: #f0f0f0;
 }
 
 .post-image {
