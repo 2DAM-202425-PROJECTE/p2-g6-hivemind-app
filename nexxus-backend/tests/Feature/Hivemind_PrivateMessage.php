@@ -23,8 +23,8 @@ class Hivemind_PrivateMessage extends TestCase
 
          // Arrange: Prepare private message data
          $privateMessageData = [
-             'id_sender' => 1,
-             'id_receiver' => 2,
+             'id_sender' => $sender->id,
+             'id_receiver' => $receiver->id,
              'content' => 'Hello, this is a test. BTW, how are you?',
              'send_date' => now(),
              'read_status' => false,
