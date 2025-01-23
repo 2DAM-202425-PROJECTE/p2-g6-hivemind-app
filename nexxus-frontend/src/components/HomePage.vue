@@ -1,5 +1,6 @@
 <template>
   <div class="home-container">
+    <Navbar />
     <h1>Home</h1>
     <div class="stories">
       <div class="story" v-for="(story, index) in stories" :key="index">
@@ -17,41 +18,57 @@
         </div>
       </div>
 
-      <img class="post-image" src="https://plus.unsplash.com/premium_photo-1672115680958-54438df0ab82?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8bW91bnRhaW5zfGVufDB8fDB8fHww" alt="Post" />
+      <img
+        class="post-image"
+        src="https://plus.unsplash.com/premium_photo-1672115680958-54438df0ab82?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8bW91bnRhaW5zfGVufDB8fDB8fHww"
+        alt="Post"
+      />
 
       <div class="post-actions">
-        <div class="likes">
-          <span>3K</span> <i class="fa fa-thumbs-up"></i>
+        <div class="action-item" @click="likePost">
+          <i class="mdi mdi-thumb-up-outline"></i>
+          <span>{{ likes }} Likes</span>
         </div>
-        <div class="comments">
-          <span>256</span> <i class="fa fa-comment"></i>
+        <div class="action-item" @click="commentOnPost">
+          <i class="mdi mdi-comment-outline"></i>
+          <span>{{ comments }} Comments</span>
         </div>
-        <div class="share">
-          <i class="fa fa-share"></i>
+        <div class="action-item" @click="sharePost">
+          <i class="mdi mdi-share-outline"></i>
+          <span>{{ shares }} Shares</span>
         </div>
-      </div>
-
-      <div class="footer-icons">
-        <i class="fa fa-plus"></i>
-        <i class="fa fa-search"></i>
-        <i class="fa fa-ellipsis-h"></i>
       </div>
     </div>
+    <Footer />
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      stories: [
-        { name: "My Story", image: "" },
-        { name: "mendez", image: "https://via.placeholder.com/50" },
-        { name: "harrywhite", image: "https://via.placeholder.com/50" },
-        { name: "garadm", image: "https://via.placeholder.com/50" },
-      ],
-    };
-  },
+<script setup>
+import Navbar from '@/components/NavBar.vue';
+import Footer from '@/components/AppFooter.vue';
+import { ref } from 'vue';
+
+const stories = [
+  { name: 'My Story', image: '' },
+  { name: 'mendez', image: 'https://via.placeholder.com/50' },
+  {name: 'harrywhite', image: 'https://via.placeholder.com/50'},
+  {name: 'garadm', image: 'https://via.placeholder.com/50'},
+];
+
+const likes = ref(0);
+const comments = ref(0);
+const shares = ref(0);
+
+const likePost = () => {
+  likes.value++;
+};
+
+const commentOnPost = () => {
+  comments.value++;
+};
+
+const sharePost = () => {
+  shares.value++;
 };
 </script>
 
@@ -59,11 +76,10 @@ export default {
 .home-container {
   font-family: Arial, sans-serif;
   padding: 20px;
-  background-image: url('../../public/atencionalclientequeescomomejorar.webp');
-  background-size: cover;
-  background-position: center;
+  padding-top: 60px;
+  background-color: white;
   min-height: 100vh;
-  color: white;
+  color: black;
 }
 
 h1 {
@@ -83,30 +99,25 @@ h1 {
 .story img {
   width: 80px;
   height: 80px;
-  border-radius: 50%;
+  border-radius: 10px;
   border: 2px solid #42b883;
 }
 
 .story p {
   margin-top: 5px;
-  color: white;
+  font-size: 12px;
 }
 
 .post-card {
   background: #f0f0f0;
-  border: 1px solid #d3d3d3; /* Add a slightly gray border */
+  border: 1px solid #d3d3d3;
   border-radius: 10px;
-  padding: 15px;
-  width: 300px;
-  margin: 0 auto;
-}
-.home-container {
-  font-family: Arial, sans-serif;
   padding: 20px;
-  background-color: white; /* Set background to white */
-  min-height: 100vh;
-  color: black; /* Change text color to black for better contrast */
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
 }
+
 .post-header {
   display: flex;
   gap: 10px;
@@ -140,19 +151,21 @@ h1 {
   display: flex;
   justify-content: space-between;
   font-size: 14px;
-  margin-bottom: 15px;
 }
 
-.post-actions i {
-  margin-left: 5px;
-}
-
-.footer-icons {
+.action-item {
   display: flex;
-  justify-content: space-around;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
 }
 
-.footer-icons i {
+.action-item i {
   font-size: 18px;
+  color: #333;
+}
+
+.action-item span {
+  font-size: 14px;
 }
 </style>
