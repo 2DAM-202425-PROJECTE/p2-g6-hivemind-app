@@ -154,7 +154,7 @@ button {
 }
 
 .save-btn {
-  background-color: #4267B2;
+  background-color: #7f7f7f;
   color: white;
   border: none;
   padding: 10px 15px;

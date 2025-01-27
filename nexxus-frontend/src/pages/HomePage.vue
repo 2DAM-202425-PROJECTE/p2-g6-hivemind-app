@@ -105,7 +105,7 @@ const deletePost = () => {
 .home-container {
   font-family: Arial, sans-serif;
   padding: 20px;
-  padding-top: 60px;
+  padding-top: 90px;
   background-color: white;
   min-height: 100vh;
   color: black;
@@ -113,6 +113,7 @@ const deletePost = () => {
 
 h1 {
   font-size: 24px;
+  padding-bottom: 20px;
 }
 
 .stories {

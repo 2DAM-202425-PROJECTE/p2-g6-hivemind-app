@@ -57,6 +57,7 @@
         </div>
       </div>
     </div>
+    <ShareModal v-if="isModalVisible" :shareUrl="shareUrl" @close="isModalVisible = false" />
     <Footer />
   </div>
 </template>
@@ -66,6 +67,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import Navbar from '@/components/NavBar.vue'
 import Footer from '@/components/AppFooter.vue'
+import ShareModal from '@/components/ShareModal.vue'
 
 const router = useRouter()
 
@@ -96,6 +98,9 @@ const userPosts = ref([
   { image: '', title: 'Post 4' },
   { image: '', title: 'Post 5' },
   { image: '', title: 'Post 6' },
+  { image: '', title: 'Post 7' },
+  { image: '', title: 'Post 8' },
+  { image: '', title: 'Post 9' },
 ])
 
 const currentIndex = ref(0)
@@ -119,8 +124,11 @@ const editProfile = () => {
   router.push('/edit-profile')
 }
 
+const isModalVisible = ref(false)
+const shareUrl = ref(window.location.href)
+
 const shareProfile = () => {
-  alert('Share options: WhatsApp, Gmail, Instagram, Twitter, etc.')
+  isModalVisible.value = true
 }
 </script>
 
@@ -131,6 +139,7 @@ const shareProfile = () => {
   background-color: #f0f2f5;
   min-height: 100vh;
   color: #1c1e21;
+  padding-bottom: 90px;
 }
 
 h1 {
@@ -184,7 +193,7 @@ h1 {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  border: 3px solid #4267B2;
+  border: 3px solid #706e6e;
 }
 
 .profile-info {
@@ -238,29 +247,6 @@ h1 {
   align-items: center;
   justify-content: center;
 }
-
-.recent-activity {
-  margin-bottom: 20px;
-}
-
-.recent-activity h4 {
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-
-.recent-activity ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-.recent-activity li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-
 .stories-section {
   display: flex;
   align-items: center;
@@ -281,7 +267,7 @@ h1 {
   width: 80px;
   height: 80px;
   border-radius: 10px; /* Change from 50% to 10px for square corners */
-  border: 2px solid #42b883;
+  border: 2px solid #706e6e;
 }
 
 .story p {
