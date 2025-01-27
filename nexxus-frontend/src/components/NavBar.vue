@@ -8,6 +8,8 @@
     <!-- Centered and Responsive Search Input Field -->
     <v-text-field
       class="search-field"
+      v-model="searchQuery"
+      @input="highlightText"
       placeholder="Search"
       hide-details
       solo
@@ -48,6 +50,7 @@ import { ref } from 'vue'
 
 const isMobile = ref(window.innerWidth <= 768)
 const menu = ref(false)
+const searchQuery = ref('')
 
 window.addEventListener('resize', () => {
   isMobile.value = window.innerWidth <= 768
@@ -62,6 +65,15 @@ const menuItems = [
   { text: 'Login', to: '/login', icon: 'mdi-login' },
   { text: 'Register', to: '/register', icon: 'mdi-account-plus' },
 ]
+
+const highlightText = () => {
+  const query = searchQuery.value
+  const content = document.querySelector('.content') // Adjust the selector to target your content
+  if (content) {
+    const regex = new RegExp(`(${query})`, 'gi')
+    content.innerHTML = content.textContent.replace(regex, '<span class="highlight">$1</span>')
+  }
+}
 </script>
 
 <style scoped>
@@ -172,5 +184,9 @@ const menuItems = [
     transform: none;
     margin-left: 200px; /* Move more to the right */
   }
+}
+
+.highlight {
+  background-color: yellow;
 }
 </style>

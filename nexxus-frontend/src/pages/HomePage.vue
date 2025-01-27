@@ -51,6 +51,9 @@
         </div>
       </div>
     </div>
+
+    <UserRecommendation />
+
     <Footer />
   </div>
 </template>
@@ -58,11 +61,12 @@
 <script setup>
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
-import { ref } from 'vue';
+import UserRecommendation from '@/components/UserRecommendation.vue';
+import {ref} from 'vue';
 
 const stories = [
-  { name: 'My Story', image: '' },
-  { name: 'mendez', image: 'https://via.placeholder.com/50' },
+  {name: 'My Story', image: ''},
+  {name: 'mendez', image: 'https://via.placeholder.com/50'},
   {name: 'harrywhite', image: 'https://via.placeholder.com/50'},
   {name: 'garadm', image: 'https://via.placeholder.com/50'},
 ];
