@@ -209,7 +209,7 @@ h1 {
 .profile-info p {
   font-size: 14px;
   margin: 5px 0 0;
-  color: #65676B;
+  color: #7f7f7f;
 }
 
 .profile-stats {
@@ -267,7 +267,7 @@ h1 {
   width: 80px;
   height: 80px;
   border-radius: 10px; /* Change from 50% to 10px for square corners */
-  border: 2px solid #706e6e;
+  border: 2px solid #7f7f7f;
 }
 
 .story p {
@@ -298,7 +298,7 @@ h1 {
 }
 
 .profile-btn {
-  background-color: grey;
+  background-color: #7f7f7f;
   color: white;
   border: none;
   padding: 5px 10px;
@@ -308,7 +308,7 @@ h1 {
 }
 
 .profile-btn:hover {
-  background-color: #555;
+  background-color: #7f7f7f;
 }
 
 @media (max-width: 768px) {

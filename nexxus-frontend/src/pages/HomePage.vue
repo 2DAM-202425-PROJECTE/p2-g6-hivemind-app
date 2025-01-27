@@ -130,7 +130,7 @@ h1 {
   width: 80px;
   height: 80px;
   border-radius: 10px;
-  border: 2px solid #42b883;
+  border: 2px solid #7f7f7f;
 }
 
 .story p {

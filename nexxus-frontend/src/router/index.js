@@ -3,7 +3,11 @@ import HomePage from '../pages/HomePage.vue';
 import Login from '../pages/Login.vue';
 import ProfilePage from '../pages/ProfilePage.vue';
 import EditProfilePage from '../pages/EditProfilePage.vue';
-import Register from '../pages/Register.vue'; // Import Register component
+import Register from '../pages/Register.vue';
+import About from '../pages/About.vue';
+import PrivacyPolicy from '../pages/PrivacyPolicyPage.vue';
+import TermsOfService from '../pages/TermsOfServicePage.vue';
+
 
 const routes = [
   {
@@ -27,9 +31,24 @@ const routes = [
     component: EditProfilePage,
   },
   {
-    path: '/Register', // Add new route for Register page
+    path: '/Register',
     name: 'Register',
     component: Register,
+  },
+  {
+    path: '/About',
+    name: 'About',
+    component: About,
+  },
+  {
+    path:'/PrivacyPolicy',
+    name:'PrivacyPolicy',
+    component: PrivacyPolicy,
+  },
+  {
+    path:'/TermsOfService',
+    name: 'TermsOfService',
+    component: TermsOfService,
   },
 ];
 
