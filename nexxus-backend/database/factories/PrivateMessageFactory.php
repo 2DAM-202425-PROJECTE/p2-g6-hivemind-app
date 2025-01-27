@@ -2,9 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Models\PrivateMessage;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
+use App\Models\PrivateMessage;
+use App\Models\User;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\PrivateMessage>
@@ -18,9 +19,12 @@ class PrivateMessageFactory extends Factory
      */
     public function definition(): array
     {
+        $sender = User::factory()->create();
+        $receiver = User::factory()->create();
+
         return [
-            'id_sender' => $this->faker->numberBetween(1, 100),
-            'id_receiver' => $this->faker->numberBetween(1, 100),
+            'id_sender' => $sender->id,
+            'id_receiver' => $receiver->id,
             'content' => $this->faker->sentence,
             'send_date' => Carbon::now(),
             'read_status' => $this->faker->boolean,

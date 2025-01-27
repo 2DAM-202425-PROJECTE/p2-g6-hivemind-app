@@ -14,6 +14,16 @@ class PrivateMessageController extends Controller
      * @return \Illuminate\Http\Response
      */
 
+    public function index()
+    {
+        return PrivateMessage::all();
+    }
+
+    public function create()
+    {
+        return view('private_messages.create');
+    }
+
     public function store(Request $request)
     {
         $validatedData = $request->validate([
