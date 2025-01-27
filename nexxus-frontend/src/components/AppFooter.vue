@@ -3,13 +3,12 @@
     <div class="footer-content">
       <div class="footer-center">
         <span>Nexxus by Hivemind</span>
-        <span>&copy; 2025-{{ new Date().getFullYear() }}
-        </span>
+        <span>&copy; 2025-{{ new Date().getFullYear() }}</span>
         <div class="footer-links">
-          <a href="/about">About</a>
-          <a href="/contact">Contact</a>
-          <a href="/privacy">Privacy Policy</a>
-          <a href="/terms">Terms of Service</a>
+          <router-link to="/about">About</router-link>
+          <router-link to="/contact">Contact</router-link>
+          <router-link to="/privacypolicy">Privacy Policy</router-link>
+          <router-link to="/termsofservice">Terms of Service</router-link>
         </div>
       </div>
     </div>

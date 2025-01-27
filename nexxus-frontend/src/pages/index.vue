@@ -4,5 +4,5 @@
 
 <script setup>
   //
-import HomePage from "@/components/HomePage.vue";
+import HomePage from "@/pages/HomePage.vue";
 </script>

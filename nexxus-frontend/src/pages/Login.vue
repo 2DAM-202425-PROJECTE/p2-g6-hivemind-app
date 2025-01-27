@@ -22,11 +22,11 @@
             required
           />
   
-          <button type="submit">Login</button>
+          <button type="submit">Register</button>
         </form>
         <p>
           You don't have an account?
-          <a href="" @click.prevent="navigateToRegister">Register</a>
+          <a href="#" @click.prevent="navigateToLogin">Register</a>
         </p>
       </div>
       <div class="icons">
@@ -52,10 +52,6 @@
       navigateToLogin() {
         // Redirect to login page
         console.log("Navigating to login page");
-      },
-      navigateToRegister() {
-        // Redirect to register page
-        this.$router.push("/register");
       },
     },
   };
@@ -107,7 +103,6 @@
     font-weight: bold;
     margin-top: 1rem;
     margin-bottom: 0.5rem;
-    color: black;
   }
   
   input {
