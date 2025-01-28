@@ -1,46 +1,38 @@
 <template>
-  <div class="privacy-container">
+  <div class="terms-container">
     <Navbar />
-    <h1>Privacy Policy</h1>
-    <div class="privacy-content">
-      <h2>Introduction</h2>
-      <p>
-        At Nexxus by Hivemind, we are committed to protecting your privacy. This Privacy Policy outlines how we collect, use, and safeguard your personal information.
-      </p>
-      <h2>Information We Collect</h2>
-      <p>
-        We collect various types of information in connection with the services we provide, including:
-      </p>
-      <ul>
-        <li>Personal identification information (Name, email address, phone number, etc.)</li>
-        <li>Usage data (Pages visited, time spent on the site, etc.)</li>
-        <li>Cookies and tracking technologies</li>
-      </ul>
-      <h2>How We Use Your Information</h2>
-      <p>
-        We use the information we collect for various purposes, including:
-      </p>
-      <ul>
-        <li>To provide and maintain our service</li>
-        <li>To notify you about changes to our service</li>
-        <li>To allow you to participate in interactive features of our service</li>
-        <li>To provide customer support</li>
-        <li>To gather analysis or valuable information so that we can improve our service</li>
-        <li>To monitor the usage of our service</li>
-        <li>To detect, prevent, and address technical issues</li>
-      </ul>
-      <h2>Security of Your Information</h2>
-      <p>
-        We take the security of your personal information seriously and use various measures to protect it. However, no method of transmission over the Internet or method of electronic storage is 100% secure.
-      </p>
-      <h2>Changes to This Privacy Policy</h2>
-      <p>
-        We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.
-      </p>
-      <h2>Contact Us</h2>
-      <p>
-        If you have any questions about this Privacy Policy, please contact us at support@nexxus.com.
-      </p>
+    <div class="content">
+      <h1>Terms of Service</h1>
+      <div class="terms-content">
+        <h2>Introduction</h2>
+        <p>
+          Welcome to Nexxus by Hivemind. These terms of service outline the rules and regulations for the use of our website and services.
+        </p>
+        <h2>Acceptance of Terms</h2>
+        <p>
+          By accessing and using our services, you accept and agree to be bound by these terms. If you do not agree to these terms, please do not use our services.
+        </p>
+        <h2>Use of Services</h2>
+        <p>
+          You agree to use our services only for lawful purposes and in a way that does not infringe the rights of, restrict, or inhibit anyone else's use and enjoyment of the services.
+        </p>
+        <h2>Account Registration</h2>
+        <p>
+          To access certain features of our services, you may be required to register an account. You agree to provide accurate and complete information during the registration process and to keep your account information up to date.
+        </p>
+        <h2>Termination</h2>
+        <p>
+          We may terminate or suspend your access to our services at any time, without prior notice or liability, for any reason, including if you breach these terms.
+        </p>
+        <h2>Changes to Terms</h2>
+        <p>
+          We reserve the right to modify these terms at any time. We will notify you of any changes by posting the new terms on this page. Your continued use of the services after any such changes constitutes your acceptance of the new terms.
+        </p>
+        <h2>Contact Us</h2>
+        <p>
+          If you have any questions about these terms, please contact us at support@nexxus.com.
+        </p>
+      </div>
     </div>
     <Footer />
   </div>
@@ -52,7 +44,7 @@ import Footer from '@/components/AppFooter.vue';
 </script>
 
 <style scoped>
-.privacy-container {
+.terms-container {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
@@ -67,7 +59,7 @@ h1 {
   padding-bottom: 20px;
 }
 
-.privacy-content {
+.terms-content {
   max-width: 800px;
   margin: 0 auto;
   background: #f0f0f0;
