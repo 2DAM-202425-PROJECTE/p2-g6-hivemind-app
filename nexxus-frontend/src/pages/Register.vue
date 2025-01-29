@@ -1,7 +1,7 @@
 <template>
   <div class="register-container">
     <div class="register-box">
-      <img class="logo" src="./../../public/atencionalclientequeescomomejorar.webp" alt="Hivemind Logo" />
+      <img class="logo" src="./../../public/logo.png" alt="Hivemind Logo" />
       <h1>Create a Hivemind Account</h1>
       <form @submit.prevent="register">
         <label for="username">Username:</label>
