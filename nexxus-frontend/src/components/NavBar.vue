@@ -8,6 +8,8 @@
     <!-- Centered and Responsive Search Input Field -->
     <v-text-field
       class="search-field"
+      v-model="searchQuery"
+      @input="highlightText"
       placeholder="Search"
       hide-details
       solo
@@ -39,15 +41,24 @@
           <span>{{ item.text }}</span>
         </v-tooltip>
       </template>
+      <template v-if="user">
+        <span class="user-greeting">Hello, {{ user.name }}</span>
+        <v-btn text @click="logout">Logout</v-btn>
+      </template>
     </div>
   </v-app-bar>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import axios from '../axios'
+import apiClient from "../axios.js"
+import { clearAuthToken } from '../auth'
 
 const isMobile = ref(window.innerWidth <= 768)
 const menu = ref(false)
+const searchQuery = ref('')
+const user = ref(null)
 
 window.addEventListener('resize', () => {
   isMobile.value = window.innerWidth <= 768
@@ -62,6 +73,40 @@ const menuItems = [
   { text: 'Login', to: '/login', icon: 'mdi-login' },
   { text: 'Register', to: '/register', icon: 'mdi-account-plus' },
 ]
+
+const highlightText = () => {
+  const query = searchQuery.value
+  const content = document.querySelector('.content') // Adjust the selector to target your content
+  if (content) {
+    const regex = new RegExp(`(${query})`, 'gi')
+    content.innerHTML = content.textContent.replace(regex, '<span class="highlight">$1</span>')
+  }
+}
+
+const fetchUser = async () => {
+  try {
+    const response = await axios.get('/user')
+    user.value = response.data
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+const logout = async () => {
+  try {
+    await apiClient.post('/api/logout')
+    localStorage.removeItem("token")
+    clearAuthToken()
+    user.value = null
+    window.location.href = "/"
+  } catch (err) {
+    alert('Logout failed.')
+  }
+}
+
+onMounted(() => {
+  fetchUser()
+})
 </script>
 
 <style scoped>
@@ -135,6 +180,11 @@ const menuItems = [
   margin-right: 10px;
 }
 
+.user-greeting {
+  margin-right: 10px;
+  color: #fff;
+}
+
 @media (max-width: 1024px) {
   .search-field {
     max-width: 250px; /* Smaller width for half window */
@@ -172,5 +222,9 @@ const menuItems = [
     transform: none;
     margin-left: 200px; /* Move more to the right */
   }
+}
+
+.highlight {
+  background-color: yellow;
 }
 </style>

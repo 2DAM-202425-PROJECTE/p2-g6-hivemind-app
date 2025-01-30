@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@mdi/font": "7.4.47",
+    "axios": "^1.7.9",
     "lucide-vue-next": "^0.473.0",
     "roboto-fontface": "*",
     "vue": "^3.4.31",
@@ -35,6 +36,6 @@
     "vite": "^5.4.0",
     "vite-plugin-vue-layouts": "^0.11.0",
     "vite-plugin-vuetify": "^2.0.3",
-    "vue-router": "^4.4.0"
+    "vue-router": "^4.5.0"
   }
 }
