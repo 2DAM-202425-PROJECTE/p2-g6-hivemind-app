@@ -7,14 +7,14 @@
 // Plugins
 import { registerPlugins } from '@/plugins'
 
-
 // Components
 import App from './App.vue'
-
 
 // Composables
 import { createApp } from 'vue'
 
 import router from './router'
 
-createApp(App).use(router).use(registerPlugins).mount('#app')
+import axios from 'axios'
+
+createApp(App).use(axios).use(router).use(registerPlugins).mount('#app')

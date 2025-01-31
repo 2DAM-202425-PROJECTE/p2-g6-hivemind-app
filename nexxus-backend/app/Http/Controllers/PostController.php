@@ -7,6 +7,17 @@ use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
+
+    public function index()
+    {
+        $posts = Post::all();
+
+        return response()->json([
+            'message' => 'Posts retrieved successfully',
+            'data' => $posts,
+        ], 200);
+    }
+
     public function store(Request $request)
     {
         $validatedData = $request->validate([

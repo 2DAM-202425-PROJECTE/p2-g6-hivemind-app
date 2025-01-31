@@ -49,7 +49,7 @@ export default {
         localStorage.setItem('token', response.data.token);
         this.error = null;
         alert('Login successfully!');
-        this.$router.push('/dashboard');
+        this.$router.push('/home');
       } catch (err) {
         this.error = 'Login failed. Please check your credentials.'
       }

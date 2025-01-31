@@ -13,8 +13,9 @@
       <div class="post-header">
         <img class="profile-pic" src="https://" alt="Profile" />
         <div class="post-info">
-          <h3>Radostin Ivanov</h3>
-          <p>IES EBRE</p>
+          <h3>{{ posts }}</h3>
+          <p>{{ posts.content }}</p>
+           <!--<p>{{ post.location }}</p>-->
         </div>
         <div class="post-menu">
           <button @click="toggleMenu">
@@ -63,46 +64,60 @@ import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import UserRecommendation from '@/components/UserRecommendation.vue';
 import {ref} from 'vue';
+import { onMounted } from 'vue';
+import axios from 'axios';
 
-const stories = [
-  {name: 'My Story', image: ''},
-  {name: 'mendez', image: 'https://via.placeholder.com/50'},
-  {name: 'harrywhite', image: 'https://via.placeholder.com/50'},
-  {name: 'garadm', image: 'https://via.placeholder.com/50'},
-];
+const posts = ref([]);
 
-const likes = ref(0);
-const comments = ref(0);
-const shares = ref(0);
-const menuVisible = ref(false);
+onMounted(async () => {
+  try {
+    const result = await axios.get('http://localhost:3000/api/posts')
+    posts.value = result.data
+    console.log(posts.value)
+  } catch {
+    console.log('error')
+  }
+})
 
-const likePost = () => {
-  likes.value++;
-};
+// const stories = [
+//   {name: 'My Story', image: ''},
+//   {name: 'mendez', image: 'https://via.placeholder.com/50'},
+//   {name: 'harrywhite', image: 'https://via.placeholder.com/50'},
+//   {name: 'garadm', image: 'https://via.placeholder.com/50'},
+// ];
 
-const commentOnPost = () => {
-  comments.value++;
-};
+// const likes = ref(0);
+// const comments = ref(0);
+// const shares = ref(0);
+// const menuVisible = ref(false);
 
-const sharePost = () => {
-  shares.value++;
-};
+// const likePost = () => {
+//   likes.value++;
+// };
 
-const toggleMenu = () => {
-  menuVisible.value = !menuVisible.value;
-};
+// const commentOnPost = () => {
+//   comments.value++;
+// };
 
-const reportPost = () => {
-  alert('Post reported');
-};
+// const sharePost = () => {
+//   shares.value++;
+// };
 
-const editPost = () => {
-  alert('Edit post');
-};
+// const toggleMenu = () => {
+//   menuVisible.value = !menuVisible.value;
+// };
 
-const deletePost = () => {
-  alert('Post deleted');
-};
+// const reportPost = () => {
+//   alert('Post reported');
+// };
+
+// const editPost = () => {
+//   alert('Edit post');
+// };
+
+// const deletePost = () => {
+//   alert('Post deleted');
+// };
 </script>
 
 <style scoped>
