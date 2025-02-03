@@ -65,7 +65,6 @@ window.addEventListener('resize', () => {
 })
 
 const menuItems = [
-  { text: 'Contact', to: '/contact', icon: 'mdi-phone' },
   { text: 'Talk', to: '/talk', icon: 'mdi-chat' },
   { text: 'Live Now', to: '/live', icon: 'mdi-video' },
   { text: 'Videos', to: '/videos', icon: 'mdi-video-outline' },
