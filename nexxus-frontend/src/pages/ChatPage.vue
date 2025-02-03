@@ -4,6 +4,7 @@
     <h1>Messages</h1>
     <div class="chat-content">
       <div class="chat-list">
+        <button @click="showPopup = true" class="new-chat-button">Add New Chat</button>
         <div class="chat-item" v-for="(chat, index) in chats" :key="index" @click="selectChat(chat)">
           <img :src="chat.avatar" alt="Avatar" class="chat-avatar" />
           <div class="chat-info">
@@ -49,6 +50,15 @@
         <li @click="reportMessage(selectedMessageIndex)">Report</li>
       </ul>
     </div>
+    <div v-if="showPopup" class="popup-overlay" @click.self="showPopup = false">
+      <div class="popup">
+        <h2>Recommended Users</h2>
+        <ul>
+          <li v-for="user in recommendedUsers" :key="user.id" @click="startChat(user)">{{ user.name }}</li>
+        </ul>
+        <button @click="showPopup = false">Close</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -63,6 +73,12 @@ const chats = ref([
   // Add more chat data as needed
 ])
 
+const recommendedUsers = ref([
+  { id: 1, name: 'User 3' },
+  { id: 2, name: 'User 4' },
+  // Add more recommended users as needed
+])
+
 const selectedChat = ref(null)
 const newMessage = ref('')
 const chatMenuVisible = ref(null)
@@ -70,6 +86,7 @@ const messageMenuVisible = ref(false)
 const menuPosition = ref({ x: 0, y: 0 })
 const selectedMessageIndex = ref(null)
 const isMine = ref(false)
+const showPopup = ref(false)
 
 const selectChat = (chat) => {
   selectedChat.value = chat
@@ -118,6 +135,11 @@ const deleteMessage = (index) => {
 const reportMessage = (index) => {
   alert(`Reporting message at index ${index}`)
   messageMenuVisible.value = false
+}
+
+const startChat = (user) => {
+  chats.value.push({ name: user.name, avatar: 'https://via.placeholder.com/50', lastMessage: '', messages: [] })
+  showPopup.value = false
 }
 
 const handleClickOutside = (event) => {
@@ -169,6 +191,20 @@ h1 {
   width: 100%;
   overflow-y: auto;
   flex: 1;
+}
+
+.new-chat-button {
+  background-color: #7f7f7f;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.new-chat-button:hover {
+  background-color: #0056b3;
 }
 
 .chat-item {
@@ -317,5 +353,59 @@ h1 {
 
 .context-menu li:hover {
   background: #f0f0f0;
+}
+
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.popup {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 100%;
+}
+
+.popup h2 {
+  margin-top: 0;
+}
+
+.popup ul {
+  list-style: none;
+  padding: 0;
+}
+
+.popup li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.popup li:hover {
+  background: #f0f0f0;
+}
+
+.popup button {
+  background-color: #7f7f7f;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.popup button:hover {
+  background-color: #0056b3;
 }
 </style>
