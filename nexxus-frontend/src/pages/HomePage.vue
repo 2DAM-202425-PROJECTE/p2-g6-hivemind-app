@@ -9,13 +9,20 @@
       </div>
     </div>
 
-    <div class="post-card">
+    <div class="post-card" v-for="post in posts.data" :key="post.id">
       <div class="post-header">
         <img class="profile-pic" src="https://" alt="Profile" />
         <div class="post-info">
-          <h3>{{ posts }}</h3>
-          <p>{{ posts.content }}</p>
-           <!--<p>{{ post.location }}</p>-->
+          <ul>
+            <li>
+              <!-- <strong>ID:</strong> {{ post.id }} <br> -->
+              <!-- <strong>Contenido:</strong> {{ post.content }} <br> -->
+              <!-- <strong>Fecha:</strong> {{ post.publish_date }} <br> -->
+              <!-- <strong>Usuario:</strong> {{ getUserNameById(post.id_user) }} <br> -->
+              <strong>{{ getUserNameById(post.id_user) }}</strong>
+            </li>
+          </ul>
+          <!--<p>{{ post.location }}</p>-->
         </div>
         <div class="post-menu">
           <button @click="toggleMenu">
@@ -31,11 +38,9 @@
         </div>
       </div>
 
-      <img
-        class="post-image"
+      <img class="post-image"
         src="https://plus.unsplash.com/premium_photo-1672115680958-54438df0ab82?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8bW91bnRhaW5zfGVufDB8fDB8fHww"
-        alt="Post"
-      />
+        alt="Post" />
 
       <div class="post-actions">
         <div class="action-item" @click="likePost">
@@ -63,21 +68,60 @@
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import UserRecommendation from '@/components/UserRecommendation.vue';
-import {ref} from 'vue';
+import { ref } from 'vue';
 import { onMounted } from 'vue';
 import axios from 'axios';
-
-const posts = ref([]);
+const posts = ref([])
+const users = ref({}) // Guardará un diccionario { id_user: nombre }
 
 onMounted(async () => {
   try {
-    const result = await axios.get('http://localhost:3000/api/posts')
+    const token = localStorage.getItem('token')
+
+    if (!token) {
+      console.error('No hay token disponible')
+      return
+    }
+
+    // Obtener los posts
+    const result = await axios.get('http://localhost:8000/api/posts', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json'
+      }
+    })
     posts.value = result.data
-    console.log(posts.value)
-  } catch {
-    console.log('error')
+
+    // Obtener los usuarios
+    const usersResult = await axios.get('http://localhost:8000/api/users', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json'
+      }
+    })
+
+    // Verifica que usersResult.data tenga la estructura esperada
+    if (!usersResult.data || !usersResult.data.data) {
+      console.error('Estructura inesperada en la respuesta de usuarios:', usersResult.data)
+      return
+    }
+
+    // Convertimos la lista de usuarios en un diccionario { id: nombre }
+    users.value = usersResult.data.data.reduce((acc, user) => {
+      acc[user.id] = user.name
+      return acc
+    }, {})
+
+    console.log('Usuarios:', users.value)
+  } catch (error) {
+    console.error('Error al obtener datos', error)
   }
 })
+
+// Función para obtener el nombre del usuario por ID
+const getUserNameById = (id) => {
+  return users.value[id] || 'Usuario desconocido'
+}
 
 // const stories = [
 //   {name: 'My Story', image: ''},

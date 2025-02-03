@@ -12,5 +12,10 @@ Route::middleware('auth:sanctum')->group(function ()
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    // return all users
+    Route::get('/users', [App\Http\Controllers\UserController::class, 'index']);
+    // retun posts of a user
+    Route::get('/users/{id}/posts', [App\Http\Controllers\UserController::class, 'posts']);
+
     Route::get('/posts', [App\Http\Controllers\PostController::class, 'index']);
 });
