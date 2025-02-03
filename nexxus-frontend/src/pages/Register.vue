@@ -4,6 +4,9 @@
       <img class="logo" src="../assets/nexxus.jpeg" alt="Hivemind Logo" />
       <h1>Create your Hivemind Account</h1>
       <form @submit.prevent="register">
+        <label for="name">Name:</label>
+        <input id="name" type="text" v-model="name" placeholder="Enter your name" required />
+
         <label for="email">Email:</label>
         <input id="email" type="text" v-model="email" placeholder="Enter your email" required />
 
@@ -26,22 +29,31 @@
 </template>
 
 <script>
+import apiClient from '../axios.js';
+
 export default {
-  name: 'Register',
+
   data() {
     return {
-      username: '',
+      name: '',
       email: '',
       password: '',
-      confirmPassword: '',
+      error: null,
     };
   },
   methods: {
-    register() {
-      // Tu lógica de registro aquí
-    },
-    navigateToLogin() {
-      this.$router.push('/login');
+    async register() {
+      try {
+        const response = await apiClient.post('/api/register', {
+          name: this.name,
+          email: this.email,
+          password: this.password,
+        });
+        alert('Registration successful!');
+        this.$router.push('/login');
+      } catch (err) {
+        this.error = 'Registration failed. Please check your details.';
+      }
     },
   },
 };
@@ -63,7 +75,7 @@ export default {
 
 .login-box {
   text-align: center;
-  background: #f0f0f0;
+  background: #7f7f7f;
   padding: 2rem;
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
