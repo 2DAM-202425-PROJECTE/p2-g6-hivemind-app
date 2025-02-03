@@ -2,7 +2,7 @@
   <v-app-bar app flat>
     <div class="left-section">
       <img src="/logo.png" alt="Logo" class="logo" />
-      <v-btn text :to="'/'" class="title-btn">Hivemind</v-btn>
+      <v-btn text :to="'/home'" class="title-btn">Hivemind</v-btn>
     </div>
 
     <!-- Centered and Responsive Search Input Field -->
