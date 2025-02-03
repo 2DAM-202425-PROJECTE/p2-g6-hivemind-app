@@ -44,12 +44,12 @@ export default {
         const response = await apiClient.post('/api/login', {
           email: this.email,
           password: this.password,
-          deviceName: this.deviceName,
+          device_name: this.deviceName,
         });
         localStorage.setItem('token', response.data.token);
         this.error = null;
         alert('Login successfully!');
-        this.$router.push('/dashboard');
+        this.$router.push('/home');
       } catch (err) {
         this.error = 'Login failed. Please check your credentials.'
       }

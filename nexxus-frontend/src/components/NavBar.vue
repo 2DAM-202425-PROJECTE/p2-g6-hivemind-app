@@ -85,7 +85,7 @@ const highlightText = () => {
 
 const fetchUser = async () => {
   try {
-    const response = await axios.get('/user')
+    const response = await axios.get('/api/user')
     user.value = response.data
   } catch (error) {
     console.log(error)
