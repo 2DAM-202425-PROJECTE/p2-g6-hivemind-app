@@ -65,7 +65,7 @@ window.addEventListener('resize', () => {
 })
 
 const menuItems = [
-  { text: 'Talk', to: '/talk', icon: 'mdi-chat' },
+  { text: 'Chat', to: '/chat', icon: 'mdi-chat' },
   { text: 'Live Now', to: '/live', icon: 'mdi-video' },
   { text: 'Videos', to: '/videos', icon: 'mdi-video-outline' },
   { text: 'My Profile', to: '/profile', icon: 'mdi-account' },
