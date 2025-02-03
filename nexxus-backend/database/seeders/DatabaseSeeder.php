@@ -36,6 +36,18 @@ class DatabaseSeeder extends Seeder
             'content' => 'This is another test post',
             'publish_date' => now(),
             'id_user' => 2,
+
+        User::factory()->withPersonalTeam()->create([
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
+            'password' => bcrypt('admin'),
+        ]);
+
+        User::factory()->withPersonalTeam()->create([
+            'name' => 'User',
+            'email' => 'user@example.com',
+            'password' => bcrypt('user'),
+
         ]);
     }
 }
