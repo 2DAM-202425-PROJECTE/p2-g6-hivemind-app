@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\API\UserController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\PostController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
+
 
 Route::middleware('auth:sanctum')->group(function ()
 {
@@ -14,3 +16,4 @@ Route::middleware('auth:sanctum')->group(function ()
     });
     Route::post('/posts', [PostController::class, 'store']);
 });
+
