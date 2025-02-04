@@ -11,7 +11,7 @@
 
     <div class="post-card" v-for="post in posts.data" :key="post.id">
       <div class="post-header">
-        <img class="profile-pic" src="https://" alt="Profile" />
+        <img :src="post.profile_photo" class="profile-pic" alt="Profile" />
         <div class="post-info">
           <ul>
             <li>
@@ -20,6 +20,8 @@
               <!-- <strong>Fecha:</strong> {{ post.publish_date }} <br> -->
               <!-- <strong>Usuario:</strong> {{ getUserNameById(post.id_user) }} <br> -->
               <strong>{{ getUserNameById(post.id_user) }}</strong>
+              <h5>{{ post.description }}</h5>
+              <img :src="post.content" alt="Post Image" class="post-content" />
             </li>
           </ul>
           <!--<p>{{ post.location }}</p>-->
@@ -38,9 +40,9 @@
         </div>
       </div>
 
-      <img class="post-image"
+      <!-- <img class="post-image" 
         src="https://plus.unsplash.com/premium_photo-1672115680958-54438df0ab82?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8bW91bnRhaW5zfGVufDB8fDB8fHww"
-        alt="Post" />
+        alt="Post" /> -->
 
       <div class="post-actions">
         <div class="action-item" @click="likePost">
@@ -204,10 +206,11 @@ h1 {
 .post-card {
   background: #f0f0f0;
   border: 1px solid #d3d3d3;
-  border-radius: 10px;
+  border-radius: 24px;
   padding: 20px;
   max-width: 800px;
   margin: 0 auto;
+  margin-bottom: 20px;
   width: 100%;
 }
 
@@ -274,7 +277,7 @@ h1 {
 
 .post-image {
   width: 100%;
-  border-radius: 10px;
+  border-radius: 20px;
   margin-bottom: 15px;
 }
 
@@ -298,5 +301,11 @@ h1 {
 
 .action-item span {
   font-size: 14px;
+}
+
+.post-content {
+  width: 100%;
+  border-radius: 20px;
+  margin-bottom: 15px;
 }
 </style>
