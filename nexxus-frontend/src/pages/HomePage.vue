@@ -11,7 +11,7 @@
 
     <div class="post-card" v-for="post in posts.data" :key="post.id">
       <div class="post-header">
-        <img :src="post.profile_photo" class="profile-pic" alt="Profile" />
+        <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
         <div class="post-info">
           <ul>
             <li>
@@ -108,9 +108,12 @@ onMounted(async () => {
       return
     }
 
-    // Convertimos la lista de usuarios en un diccionario { id: nombre }
+    // Convertimos la lista de usuarios en un diccionario { id: nombre  i foto}
     users.value = usersResult.data.data.reduce((acc, user) => {
-      acc[user.id] = user.name
+      acc[user.id] = { 
+        name: user.name, 
+        profile_photo_path: user.profile_photo_path 
+      }
       return acc
     }, {})
 
@@ -120,9 +123,15 @@ onMounted(async () => {
   }
 })
 
+const getProfilePhotoById = (id) => {
+  const user = users.value[id]
+  return user && user.profile_photo_path ? user.profile_photo_path : 'https://via.placeholder.com/50'
+}
+
 // Función para obtener el nombre del usuario por ID
 const getUserNameById = (id) => {
-  return users.value[id] || 'Usuario desconocido'
+  const user = users.value[id]
+  return user && user.name ? user.name : 'usuario desconocido'
 }
 
 // const stories = [

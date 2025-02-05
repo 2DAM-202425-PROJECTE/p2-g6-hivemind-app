@@ -17,9 +17,7 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->date('publish_date');
             $table->foreignId('id_user');
-            $table->string('profile_photo')->nullable();
             $table->foreign('id_user')->references('id')->on('users');
-            $table->foreign('profile_photo')->references('profile_photo_path')->on('users');
             $table->timestamps();
         });
     }
