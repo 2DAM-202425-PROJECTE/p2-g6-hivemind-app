@@ -7,8 +7,8 @@
         <div class="footer-links">
           <router-link to="/about">About</router-link>
           <router-link to="/contact">Contact</router-link>
-          <router-link to="/privacypolicy">Privacy Policy</router-link>
-          <router-link to="/termsofservice">Terms of Service</router-link>
+          <router-link to="/privacy-policy">Privacy Policy</router-link>
+          <router-link to="/terms-of-service">Terms of Service</router-link>
         </div>
       </div>
     </div>

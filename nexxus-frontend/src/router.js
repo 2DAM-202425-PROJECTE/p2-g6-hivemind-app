@@ -1,38 +1,46 @@
-import {createRouter, createWebHistory} from "vue-router";
+import { createRouter, createWebHistory } from "vue-router";
 import Login from "./pages/Login.vue";
 import HomePage from "./pages/HomePage.vue";
-import {setAuthToken} from "./auth.js";
+import { setAuthToken } from "./auth.js";
 import Register from "./pages/Register.vue";
-
+import ProfilePage from "./pages/ProfilePage.vue";
+import EditProfilePage from "./pages/EditProfilePage.vue";
+import About from "./pages/About.vue";
+import PrivacyPolicy from "./pages/PrivacyPolicyPage.vue";
+import TermsOfService from "./pages/TermsOfServicePage.vue";
+import ContactPage from "@/pages/ContactPage.vue";
+import ChatPage from "@/pages/ChatPage.vue";
 
 const routes = [
-    { path: '/', component: Login },
-    {
-        path: '/home',
-        component: HomePage,
-        beforeEnter: (to, from, next) => {
-            const token = localStorage.getItem("token");
-            if(token) {
-                setAuthToken(token);
-                next();
-            } else {
-                next('/');
-            }
-        },
+  { path: '/', component: Login },
+  {
+    path: '/home',
+    component: HomePage,
+    beforeEnter: (to, from, next) => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        setAuthToken(token);
+        next();
+      } else {
+        next('/');
+      }
     },
-    {
-        path: '/register',
-        component: Register
-    },
-    {
-        path: '/login',
-        component: Login
-    }
+  },
+  { path: '/register', component: Register },
+  { path: '/login', component: Login },
+  { path: '/contact', component: ContactPage },
+  { path: '/chat', component: ChatPage },
+  { path: '/profile', component: ProfilePage },
+  { path: '/edit-profile', component: EditProfilePage },
+  { path: '/about', component: About },
+  { path: '/privacy-policy', component: PrivacyPolicy },
+  { path: '/terms-of-service', component: TermsOfService },
+
 ];
 
 const router = createRouter({
-    history: createWebHistory(),
-    routes,
+  history: createWebHistory(),
+  routes,
 });
 
 export default router;

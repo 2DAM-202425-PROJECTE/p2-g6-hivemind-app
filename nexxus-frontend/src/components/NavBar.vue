@@ -2,7 +2,7 @@
   <v-app-bar app flat>
     <div class="left-section">
       <img src="/logo.png" alt="Logo" class="logo" />
-      <v-btn text :to="'/'" class="title-btn">Hivemind</v-btn>
+      <v-btn text :to="'/home'" class="title-btn">Hivemind</v-btn>
     </div>
 
     <!-- Centered and Responsive Search Input Field -->
@@ -65,8 +65,7 @@ window.addEventListener('resize', () => {
 })
 
 const menuItems = [
-  { text: 'Contact', to: '/contact', icon: 'mdi-phone' },
-  { text: 'Talk', to: '/talk', icon: 'mdi-chat' },
+  { text: 'Chat', to: '/chat', icon: 'mdi-chat' },
   { text: 'Live Now', to: '/live', icon: 'mdi-video' },
   { text: 'Videos', to: '/videos', icon: 'mdi-video-outline' },
   { text: 'My Profile', to: '/profile', icon: 'mdi-account' },
