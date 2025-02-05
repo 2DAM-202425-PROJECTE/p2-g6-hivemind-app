@@ -11,7 +11,7 @@
 
     <div class="post-card" v-for="post in posts.data" :key="post.id">
       <div class="post-header">
-        <img class="profile-pic" src="https://" alt="Profile" />
+        <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
         <div class="post-info">
           <ul>
             <li>
@@ -20,6 +20,8 @@
               <!-- <strong>Fecha:</strong> {{ post.publish_date }} <br> -->
               <!-- <strong>Usuario:</strong> {{ getUserNameById(post.id_user) }} <br> -->
               <strong>{{ getUserNameById(post.id_user) }}</strong>
+              <h5>{{ post.description }}</h5>
+              <img :src="post.content" alt="Post Image" class="post-content" />
             </li>
           </ul>
           <!--<p>{{ post.location }}</p>-->
@@ -38,9 +40,9 @@
         </div>
       </div>
 
-      <img class="post-image"
+      <!-- <img class="post-image" 
         src="https://plus.unsplash.com/premium_photo-1672115680958-54438df0ab82?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8bW91bnRhaW5zfGVufDB8fDB8fHww"
-        alt="Post" />
+        alt="Post" /> -->
 
       <div class="post-actions">
         <div class="action-item" @click="likePost">
@@ -106,9 +108,12 @@ onMounted(async () => {
       return
     }
 
-    // Convertimos la lista de usuarios en un diccionario { id: nombre }
+    // Convertimos la lista de usuarios en un diccionario { id: nombre  i foto}
     users.value = usersResult.data.data.reduce((acc, user) => {
-      acc[user.id] = user.name
+      acc[user.id] = { 
+        name: user.name, 
+        profile_photo_path: user.profile_photo_path 
+      }
       return acc
     }, {})
 
@@ -118,9 +123,15 @@ onMounted(async () => {
   }
 })
 
+const getProfilePhotoById = (id) => {
+  const user = users.value[id]
+  return user && user.profile_photo_path ? user.profile_photo_path : 'https://via.placeholder.com/50'
+}
+
 // Función para obtener el nombre del usuario por ID
 const getUserNameById = (id) => {
-  return users.value[id] || 'Usuario desconocido'
+  const user = users.value[id]
+  return user && user.name ? user.name : 'usuario desconocido'
 }
 
 // const stories = [
@@ -204,10 +215,11 @@ h1 {
 .post-card {
   background: #f0f0f0;
   border: 1px solid #d3d3d3;
-  border-radius: 10px;
+  border-radius: 24px;
   padding: 20px;
   max-width: 800px;
   margin: 0 auto;
+  margin-bottom: 20px;
   width: 100%;
 }
 
@@ -274,7 +286,7 @@ h1 {
 
 .post-image {
   width: 100%;
-  border-radius: 10px;
+  border-radius: 20px;
   margin-bottom: 15px;
 }
 
@@ -298,5 +310,11 @@ h1 {
 
 .action-item span {
   font-size: 14px;
+}
+
+.post-content {
+  width: 100%;
+  border-radius: 20px;
+  margin-bottom: 15px;
 }
 </style>
