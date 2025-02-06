@@ -1,4 +1,4 @@
-### HiveMind Social Network
+# HiveMind Social Network
 
 ## Scripts de desarrollo
 
