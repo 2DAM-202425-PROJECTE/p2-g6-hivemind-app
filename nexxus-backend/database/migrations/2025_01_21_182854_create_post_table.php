@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('post', function (Blueprint $table) {
             $table->id();
             $table->string('content');
+            $table->string('description')->nullable();
             $table->date('publish_date');
             $table->foreignId('id_user');
             $table->foreign('id_user')->references('id')->on('users');
