@@ -113,7 +113,9 @@ input {
   border-radius: 5px;
   font-size: 1rem;
 }
-
+input::placeholder {
+  color: white; /* Set placeholder text color to white */
+}
 button {
   margin-top: 1rem;
   padding: 0.7rem;
