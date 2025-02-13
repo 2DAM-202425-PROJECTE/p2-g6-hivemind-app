@@ -1,7 +1,10 @@
 <?php
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\LikeController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
@@ -9,14 +12,16 @@ Route::post('/register', [App\Http\Controllers\Api\AuthController::class, 'regis
 
 Route::middleware('auth:sanctum')->group(function ()
 {
-    Route::post('/logout', [App\Http\Controllers\Api\AuthController::class, 'logout']);
+    Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
     // return all users
-    Route::get('/users', [App\Http\Controllers\UserController::class, 'index']);
+    Route::get('/users', [UserController::class, 'index']);
     // retun posts of a user
-    Route::get('/users/{id}/posts', [App\Http\Controllers\UserController::class, 'posts']);
+    Route::get('/users/{id}/posts', [UserController::class, 'posts']);
 
     Route::get('/posts', [App\Http\Controllers\PostController::class, 'index']);
+    Route::post('/posts/{id}/like', [LikeController::class, 'store']);
+    Route::delete('/posts/{id}/like', [LikeController::class, 'destroy']);
 });
