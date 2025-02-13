@@ -5,6 +5,7 @@
     <p class="contact-description">We would love to hear from you! Please fill out the form below to get in touch with us.</p>
     <div class="contact-card">
       <v-form ref="form" v-model="valid">
+        <input type="hidden" name="_token" :value="csrfToken" />
         <v-text-field
           v-model="name"
           label="Name"
@@ -31,7 +32,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import Navbar from '@/components/NavBar.vue'
 import Footer from '@/components/AppFooter.vue'
 
@@ -39,16 +40,62 @@ const valid = ref(false)
 const name = ref('')
 const email = ref('')
 const message = ref('')
+const csrfToken = ref('')
 
 const rules = {
   required: value => !!value || 'Required.',
   email: value => /.+@.+\..+/.test(value) || 'E-mail must be valid.',
 }
 
-const submit = () => {
+onMounted(async () => {
+  try {
+    // Fetch CSRF token
+    await fetch('http://127.0.0.1:8000/sanctum/csrf-cookie', {
+      credentials: 'include',
+    })
+    csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    console.log('CSRF token fetched:', csrfToken.value)
+
+    // Fetch the logged-in user's details
+    const response = await fetch('http://127.0.0.1:8000/api/user', {
+      credentials: 'include',
+    })
+    if (response.ok) {
+      const userData = await response.json()
+      console.log('User data fetched:', userData)
+      email.value = userData.email
+    } else {
+      console.error('Failed to fetch user data:', response.status, response.statusText)
+    }
+  } catch (error) {
+    console.error('Error fetching user data:', error)
+  }
+})
+
+const submit = async () => {
   if (valid.value) {
-    // Handle form submission
-    console.log('Form submitted:', { name: name.value, email: email.value, message: message.value })
+    try {
+      const response = await fetch('http://127.0.0.1:8000/contact/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken.value,
+        },
+        body: JSON.stringify({
+          name: name.value,
+          email: email.value,
+          message: message.value,
+        }),
+        credentials: 'include',
+      })
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+      const data = await response.json()
+      console.log('Form submitted:', data)
+    } catch (error) {
+      console.error('Error:', error)
+    }
   }
 }
 </script>
