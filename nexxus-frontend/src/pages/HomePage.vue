@@ -45,9 +45,9 @@
         alt="Post" /> -->
 
       <div class="post-actions">
-        <div class="action-item" @click="likePost">
-          <i class="mdi mdi-thumb-up-outline"></i>
-          <span>{{ likes }} Likes</span>
+        <div class="action-item" @click="toggleLike(post)">
+          <i class="mdi" :class="post.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
+          <span>{{ post.likes_count }} Likes</span>
         </div>
         <div class="action-item" @click="commentOnPost">
           <i class="mdi mdi-comment-outline"></i>
@@ -67,12 +67,14 @@
 </template>
 
 <script setup>
+
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import UserRecommendation from '@/components/UserRecommendation.vue';
 import { ref } from 'vue';
 import { onMounted } from 'vue';
 import axios from 'axios';
+
 const posts = ref([])
 const users = ref({}) // Guardará un diccionario { id_user: nombre }
 
@@ -102,6 +104,7 @@ onMounted(async () => {
       }
     })
 
+
     // Verifica que usersResult.data tenga la estructura esperada
     if (!usersResult.data || !usersResult.data.data) {
       console.error('Estructura inesperada en la respuesta de usuarios:', usersResult.data)
@@ -110,9 +113,9 @@ onMounted(async () => {
 
     // Convertimos la lista de usuarios en un diccionario { id: nombre  i foto}
     users.value = usersResult.data.data.reduce((acc, user) => {
-      acc[user.id] = { 
-        name: user.name, 
-        profile_photo_path: user.profile_photo_path 
+      acc[user.id] = {
+        name: user.name,
+        profile_photo_path: user.profile_photo_path
       }
       return acc
     }, {})
@@ -133,6 +136,37 @@ const getUserNameById = (id) => {
   const user = users.value[id]
   return user && user.name ? user.name : 'usuario desconocido'
 }
+
+// funcion para saber si el post tiene like o no
+
+
+
+const toggleLike = async (post) => {
+  console.log('Toggling like for post:', post);
+  const token = localStorage.getItem('token');
+  if (!token) {
+    console.error('No token available');
+    return;
+  }
+
+  const url = `http://localhost:8000/api/posts/${post.id}/like`;
+  const method = post.liked_by_user ? 'delete' : 'post';
+
+  try {
+    await axios({
+      method,
+      url,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    post.liked_by_user = !post.liked_by_user;
+    post.likes_count += post.liked_by_user ? 1 : -1;
+  } catch (error) {
+    console.error('Error toggling like for post:', error.response?.data || error.message);
+  }
+};
 
 // const stories = [
 //   {name: 'My Story', image: ''},

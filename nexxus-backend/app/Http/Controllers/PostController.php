@@ -10,7 +10,11 @@ class PostController extends Controller
 
     public function index()
     {
-        $posts = Post::all();
+        $posts = Post::with('likes')->get()->map(function ($post) {
+            $post->liked_by_user = $post->likes->contains('user_id', auth()->id());
+            $post->likes_count = $post->likes->count();
+            return $post;
+        });
 
         return response()->json([
             'message' => 'Posts retrieved successfully',

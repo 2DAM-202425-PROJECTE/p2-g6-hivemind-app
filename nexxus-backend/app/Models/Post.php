@@ -36,4 +36,9 @@ class Post extends Model
     {
         $this->attributes['publish_date'] = \Carbon\Carbon::parse($value);
     }
+
+    public function likes()
+    {
+        return $this->hasMany(Like::class);
+    }
 }
