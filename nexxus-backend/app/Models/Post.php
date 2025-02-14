@@ -15,6 +15,8 @@ class Post extends Model
         'content',
         'publish_date',
         'id_user',
+        'file_path',
+        'description',
     ];
 
     public function user()

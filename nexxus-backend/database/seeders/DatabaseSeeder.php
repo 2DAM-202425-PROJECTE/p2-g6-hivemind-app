@@ -43,6 +43,7 @@ class DatabaseSeeder extends Seeder
 
         Post::factory()->create([
             'content' => 'https://c.files.bbci.co.uk/assets/4da9473d-2f23-4b23-aac5-32c728a4da8f',
+            'file_path' => '/uploads/1.png',
             'description' => 'This is a test post',
             'publish_date' => now(),
             'id_user' => 1,
@@ -50,6 +51,7 @@ class DatabaseSeeder extends Seeder
 
         Post::factory()->create([
             'content' => 'https://www.mskcc.org/sites/default/files/styles/large/public/node/226378/3x2/gettyimages-508687706_1200x800-tight.jpg',
+            'file_path' => '/uploads/1.png',
             'description' => 'This is another test post',
             'publish_date' => now(),
             'id_user' => 2,

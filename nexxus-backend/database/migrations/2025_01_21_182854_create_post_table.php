@@ -18,6 +18,7 @@ return new class extends Migration
             $table->date('publish_date');
             $table->foreignId('id_user');
             $table->foreign('id_user')->references('id')->on('users');
+            $table->string('file_path')->nullable();
             $table->timestamps();
         });
     }

@@ -47,6 +47,8 @@ const handleFileUpload = (event) => {
 }
 
 const submitPost = async () => {
+  localStorage.setItem('postContent', postContent.value)
+
   if (!postContent.value && !postFile.value) {
     alert('Please enter content or upload a file!')
     return
@@ -56,13 +58,19 @@ const submitPost = async () => {
   formData.append('content', postContent.value)
   formData.append('description', postDescription.value)
   formData.append('id_user', user.value.id) // Assuming user is logged in
+  formData.append('publish_date', new Date().toISOString()) // Add publish_date
+
   if (postFile.value) {
     formData.append('file', postFile.value)
   }
 
   try {
-    const response = await axios.post('/api/posts', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+    const response = await axios.post('http://localhost:8000/api/posts', formData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Accept: 'application/json',
+        'Content-Type': 'multipart/form-data'
+      }
     })
     alert('Post created successfully!')
     postPopup.value = false
