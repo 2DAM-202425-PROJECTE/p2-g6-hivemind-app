@@ -17,4 +17,6 @@ import router from './router'
 
 import axios from 'axios'
 
+import './styles/styles.css'
+
 createApp(App).use(axios).use(router).use(registerPlugins).mount('#app')

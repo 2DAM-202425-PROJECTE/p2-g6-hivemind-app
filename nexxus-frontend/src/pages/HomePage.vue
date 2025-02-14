@@ -40,7 +40,7 @@
         </div>
       </div>
 
-      <!-- <img class="post-image" 
+      <!-- <img class="post-image"
         src="https://plus.unsplash.com/premium_photo-1672115680958-54438df0ab82?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8bW91bnRhaW5zfGVufDB8fDB8fHww"
         alt="Post" /> -->
 
@@ -49,9 +49,9 @@
           <i class="mdi" :class="post.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
           <span>{{ post.likes_count }} Likes</span>
         </div>
-        <div class="action-item" @click="commentOnPost">
+        <div class="action-item" @click="openCommentModal(post)">
           <i class="mdi mdi-comment-outline"></i>
-          <span>{{ comments }} Comments</span>
+          <span>{{ post.comments.length }} Comments</span>
         </div>
         <div class="action-item" @click="sharePost">
           <i class="mdi mdi-share-outline"></i>
@@ -60,86 +60,84 @@
       </div>
     </div>
 
-    <UserRecommendation />
+    <CommentModal
+      :visible="isCommentModalVisible"
+      :comments="selectedPostComments"
+      @close="closeCommentModal"
+      @add-comment="addComment"
+    />
 
+    <UserRecommendation />
     <Footer />
   </div>
 </template>
 
 <script setup>
-
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import UserRecommendation from '@/components/UserRecommendation.vue';
+import CommentModal from '@/components/CommentModal.vue';
 import { ref } from 'vue';
 import { onMounted } from 'vue';
 import axios from 'axios';
 
-const posts = ref([])
-const users = ref({}) // Guardará un diccionario { id_user: nombre }
+const posts = ref([]);
+const users = ref({});
+const isCommentModalVisible = ref(false);
+const selectedPostComments = ref([]);
 
 onMounted(async () => {
   try {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('token');
 
     if (!token) {
-      console.error('No hay token disponible')
-      return
+      console.error('No hay token disponible');
+      return;
     }
 
-    // Obtener los posts
     const result = await axios.get('http://localhost:8000/api/posts', {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/json'
       }
-    })
-    posts.value = result.data
+    });
+    posts.value = result.data;
 
-    // Obtener los usuarios
     const usersResult = await axios.get('http://localhost:8000/api/users', {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/json'
       }
-    })
+    });
 
-
-    // Verifica que usersResult.data tenga la estructura esperada
     if (!usersResult.data || !usersResult.data.data) {
-      console.error('Estructura inesperada en la respuesta de usuarios:', usersResult.data)
-      return
+      console.error('Estructura inesperada en la respuesta de usuarios:', usersResult.data);
+      return;
     }
 
-    // Convertimos la lista de usuarios en un diccionario { id: nombre  i foto}
     users.value = usersResult.data.data.reduce((acc, user) => {
       acc[user.id] = {
         name: user.name,
         profile_photo_path: user.profile_photo_path
-      }
-      return acc
-    }, {})
+      };
+      return acc;
+    }, {});
 
-    console.log('Usuarios:', users.value)
+    console.log('Usuarios:', users.value);
   } catch (error) {
-    console.error('Error al obtener datos', error)
+    console.error('Error al obtener datos', error);
   }
-})
+});
 
 const getProfilePhotoById = (id) => {
-  const user = users.value[id]
-  return user && user.profile_photo_path ? user.profile_photo_path : 'https://via.placeholder.com/50'
-}
+  const user = users.value[id];
+  return user && user.profile_photo_path ? user.profile_photo_path : 'https://via.placeholder.com/50';
+};
 
-// Función para obtener el nombre del usuario por ID
 const getUserNameById = (id) => {
-  const user = users.value[id]
-  return user && user.name ? user.name : 'usuario desconocido'
-}
-
-// funcion para saber si el post tiene like o no
-
-
+  const user = users.value[id];
+  return user && user.name ? user.name : 'usuario desconocido';
+};
 
 const toggleLike = async (post) => {
   console.log('Toggling like for post:', post);
@@ -168,45 +166,22 @@ const toggleLike = async (post) => {
   }
 };
 
-// const stories = [
-//   {name: 'My Story', image: ''},
-//   {name: 'mendez', image: 'https://via.placeholder.com/50'},
-//   {name: 'harrywhite', image: 'https://via.placeholder.com/50'},
-//   {name: 'garadm', image: 'https://via.placeholder.com/50'},
-// ];
+const openCommentModal = (post) => {
+  selectedPostComments.value = post.comments || [];
+  isCommentModalVisible.value = true;
+};
 
-// const likes = ref(0);
-// const comments = ref(0);
-// const shares = ref(0);
-// const menuVisible = ref(false);
+const closeCommentModal = () => {
+  isCommentModalVisible.value = false;
+};
 
-// const likePost = () => {
-//   likes.value++;
-// };
-
-// const commentOnPost = () => {
-//   comments.value++;
-// };
-
-// const sharePost = () => {
-//   shares.value++;
-// };
-
-// const toggleMenu = () => {
-//   menuVisible.value = !menuVisible.value;
-// };
-
-// const reportPost = () => {
-//   alert('Post reported');
-// };
-
-// const editPost = () => {
-//   alert('Edit post');
-// };
-
-// const deletePost = () => {
-//   alert('Post deleted');
-// };
+const addComment = (comment) => {
+  selectedPostComments.value.push({
+    id: Date.now(),
+    user: { name: 'Current User' },
+    text: comment,
+  });
+};
 </script>
 
 <style scoped>
