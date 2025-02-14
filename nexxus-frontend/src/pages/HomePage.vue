@@ -21,7 +21,8 @@
               <!-- <strong>Usuario:</strong> {{ getUserNameById(post.id_user) }} <br> -->
               <strong>{{ getUserNameById(post.id_user) }}</strong>
               <h5>{{ post.description }}</h5>
-              <img :src="post.content" alt="Post Image" class="post-content" />
+              <!-- <img :src="post.content" alt="Post Image" class="post-content" /> -->
+              <img :src="getImageUrl(post.file_path)" alt="file Image" class="post-content" />
             </li>
           </ul>
           <!--<p>{{ post.location }}</p>-->
@@ -51,7 +52,7 @@
         </div>
         <div class="action-item" @click="openCommentModal(post)">
           <i class="mdi mdi-comment-outline"></i>
-          <span>{{ post.comments.length }} Comments</span>
+          <span>{{ null }} Comments</span>
         </div>
         <div class="action-item" @click="sharePost">
           <i class="mdi mdi-share-outline"></i>
@@ -60,12 +61,8 @@
       </div>
     </div>
 
-    <CommentModal
-      :visible="isCommentModalVisible"
-      :comments="selectedPostComments"
-      @close="closeCommentModal"
-      @add-comment="addComment"
-    />
+    <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal"
+      @add-comment="addComment" />
 
     <UserRecommendation />
     <Footer />
@@ -128,6 +125,24 @@ onMounted(async () => {
     console.error('Error al obtener datos', error);
   }
 });
+
+// const localStorageResult = async (path) => {
+//   const token = localStorage.getItem('token');
+
+//   const result = await axios.get(`http://localhost:8000/api/storage/${path}`, {
+//     headers: {
+//       Authorization: `Bearer ${token}`,
+//       Accept: 'application/json'
+//     }
+//   });
+//   return result.data;
+// };
+
+const getImageUrl = (path) => {
+  if (!path) return 'https://via.placeholder.com/150';
+  return `http://localhost:8000/storage/${path}`;
+};
+
 
 const getProfilePhotoById = (id) => {
   const user = users.value[id];
