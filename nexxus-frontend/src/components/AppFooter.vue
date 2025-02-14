@@ -25,7 +25,8 @@
   align-items: center;
   width: 100%;
   padding: 0 16px;
-  color: rgba(255, 255, 255, 0.7);
+  background-color: #000; /* Black background */
+  color: rgba(255, 255, 255, 0.7); /* Light text color */
 }
 
 .footer-center {
@@ -36,6 +37,7 @@
   display: flex;
   justify-content: center;
   gap: 15px;
+  margin-top: 10px; /* Add some space between the text and links */
 }
 
 .footer-links a {

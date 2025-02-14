@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <div class="login-box">
-      <img class="logo" src="../assets/nexxus.jpeg" alt="Hivemind Logo" />
+      <img class="logo" src="/logo.png" alt="Hivemind Logo" />
       <h1>Log in to Hivemind Account</h1>
       <form @submit.prevent="login">
         <label for="email">Email:</label>
@@ -106,6 +106,9 @@ export default {
   width: 50px;
   height: 50px;
   margin-bottom: 1rem;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 h1 {
