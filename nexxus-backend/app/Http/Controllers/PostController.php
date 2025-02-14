@@ -19,13 +19,12 @@ class PostController extends Controller
         return response()->json([
             'message' => 'Posts retrieved successfully',
             'data' => $posts,
-        ], 200);
+        ], 200);        
     }
 
     public function store(Request $request)
 {
     $validatedData = $request->validate([
-        'content' => 'required|string|max:255',
         'description' => 'nullable|string',
         'publish_date' => 'required|date',
         'id_user' => 'required|integer|exists:users,id',

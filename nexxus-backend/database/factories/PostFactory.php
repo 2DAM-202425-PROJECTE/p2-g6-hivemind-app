@@ -20,7 +20,7 @@ class PostFactory extends Factory
     public function definition(): array
     {
         return [
-            'content' => $this->faker->sentence,
+            'file_path' => $this->faker->imageUrl(),
             'publish_date' => $this->faker->date(),
             'id_user' => User::factory(),
         ];

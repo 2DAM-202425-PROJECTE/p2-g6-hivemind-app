@@ -12,11 +12,10 @@ class Post extends Model
     protected $table = 'post';
     
     protected $fillable = [
-        'content',
-        'publish_date',
-        'id_user',
         'file_path',
         'description',
+        'publish_date',
+        'id_user',
     ];
 
     public function user()

@@ -101,15 +101,8 @@ onMounted(() => {
       </v-btn>
     </div>
 
-    <v-text-field
-      class="search-field"
-      v-model="searchQuery"
-      placeholder="Search"
-      hide-details
-      solo
-      flat
-      prepend-inner-icon="mdi-magnify"
-    ></v-text-field>
+    <v-text-field class="search-field" v-model="searchQuery" placeholder="Search" hide-details solo flat
+      prepend-inner-icon="mdi-magnify"></v-text-field>
 
     <div class="right-section flex items-center">
       <template v-if="user">
@@ -132,12 +125,8 @@ onMounted(() => {
     </div>
     <v-divider></v-divider>
     <v-list class="menu-list flex flex-col items-center justify-center gap-4">
-      <v-list-item
-        v-for="item in menuItems"
-        :key="item.text"
-        :to="item.to"
-        class="menu-item text-white flex items-center justify-start w-full px-4"
-      >
+      <v-list-item v-for="item in menuItems" :key="item.text" :to="item.to"
+        class="menu-item text-white flex items-center justify-start w-full px-4">
         <v-icon class="mr-4">{{ item.icon }}</v-icon>
         <v-list-item-title>{{ item.text }}</v-list-item-title>
       </v-list-item>
@@ -165,15 +154,10 @@ onMounted(() => {
     <v-card>
       <v-card-title>Create a Post</v-card-title>
       <v-card-text>
-        <v-text-field v-model="postContent" label="Post Content" outlined></v-text-field>
-        <v-text-field v-model="postDescription" label="Description (optional)" outlined></v-text-field>
+        <v-file-input label="Upload Image/Video (.png, .mp4)" accept=".png, .mp4" @change="handleFileUpload"
+          outlined></v-file-input>
 
-        <v-file-input
-          label="Upload Image/Video (.png, .mp4)"
-          accept=".png, .mp4"
-          @change="handleFileUpload"
-          outlined
-        ></v-file-input>
+        <v-text-field v-model="postDescription" label="Description" outlined></v-text-field>
       </v-card-text>
 
       <v-card-actions>
@@ -197,7 +181,8 @@ onMounted(() => {
   z-index: 1000;
 }
 
-.left-section, .right-section {
+.left-section,
+.right-section {
   display: flex;
   align-items: center;
 }
