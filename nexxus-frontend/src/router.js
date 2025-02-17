@@ -10,6 +10,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicyPage.vue";
 import TermsOfService from "./pages/TermsOfServicePage.vue";
 import ContactPage from "@/pages/ContactPage.vue";
 import ChatPage from "@/pages/ChatPage.vue";
+import ServerPage from "@/pages/ServerPage.vue"; // Ensure this import is correct
 
 const routes = [
   { path: '/', component: Login },
@@ -30,12 +31,12 @@ const routes = [
   { path: '/login', component: Login },
   { path: '/contact', component: ContactPage },
   { path: '/chat', component: ChatPage },
+  { path: '/servers', component: ServerPage },
   { path: '/profile', component: ProfilePage },
   { path: '/edit-profile', component: EditProfilePage },
   { path: '/about', component: About },
   { path: '/privacy-policy', component: PrivacyPolicy },
   { path: '/terms-of-service', component: TermsOfService },
-
 ];
 
 const router = createRouter({

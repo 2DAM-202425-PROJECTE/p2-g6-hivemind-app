@@ -18,6 +18,15 @@
         <router-link to="/register">Register here</router-link>
       </p>
     </div>
+
+    <!-- Success Popup -->
+    <div v-if="showPopup" class="popup">
+      <div class="popup-content">
+        <p>✅ Signed in successfully!</p>
+        <button @click="closePopup">OK</button>
+      </div>
+    </div>
+
     <div class="icons">
       <i class="icon network-icon"></i>
       <i class="icon profile-icon"></i>
@@ -26,7 +35,6 @@
 </template>
 
 <script>
-
 import apiClient from '../axios.js';
 
 export default {
@@ -36,7 +44,8 @@ export default {
       password: '',
       deviceName: 'web',
       error: null,
-    }
+      showPopup: false, // Controls popup visibility
+    };
   },
   methods: {
     async login() {
@@ -46,36 +55,25 @@ export default {
           password: this.password,
           device_name: this.deviceName,
         });
+
         localStorage.setItem('token', response.data.token);
         this.error = null;
-        alert('Login successfully!');
-        this.$router.push('/home');
+        this.showPopup = true; // Show the popup
+
+        // Automatically redirect after 1.5 seconds
+        setTimeout(() => {
+          this.$router.push('/home');
+        }, 1500);
       } catch (err) {
-        this.error = 'Login failed. Please check your credentials.'
+        this.error = 'Login failed. Please check your credentials.';
       }
     },
+    closePopup() {
+      this.showPopup = false;
+      this.$router.push('/home'); // Ensure redirection on manual close
+    },
   },
-}
-
-
-//export default {
-//  data() {
-//    return {
-//      username: "",
-//      password: "",
-//   };
-//  },
-//  methods: {
-//    register() {
-//      // Handle registration logic
-//      console.log("Registering with:", this.username, this.password);
-//    },
-//    navigateToLogin() {
-//      // Redirect to login page
-//      console.log("Navigating to login page");
-//    },
-//  },
-//};
+};
 </script>
 
 <style scoped>
@@ -121,7 +119,6 @@ h1 {
 form {
   display: flex;
   flex-direction: column;
-  background-color: ;
 }
 
 label {
@@ -137,8 +134,9 @@ input {
   font-size: 1rem;
 }
 input::placeholder {
-  color: white; /* Set placeholder text color to white */
+  color: white;
 }
+
 button {
   margin-top: 1rem;
   padding: 0.7rem;
@@ -189,5 +187,37 @@ a:hover {
   background: url("/profile-icon.png") no-repeat center;
   width: 24px;
   height: 24px;
+}
+
+/* Popup styles */
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #7f7f7f;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  z-index: 1000;
+}
+
+.popup-content {
+  font-size: 1.2rem;
+}
+
+.popup button {
+  margin-top: 10px;
+  padding: 5px 15px;
+  border: none;
+  background: #28a745;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.popup button:hover {
+  background: #218838;
 }
 </style>

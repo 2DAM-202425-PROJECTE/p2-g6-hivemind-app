@@ -11,20 +11,26 @@ const postPopup = ref(false)
 const postContent = ref('')
 const postDescription = ref('')
 const postFile = ref(null)
+const showLogoutConfirm = ref(false) // Add this line
 
-const menuItems = [
+const menuItems = ref([
   { text: 'Chat', to: '/chat', icon: 'mdi-chat' },
+  { text: 'Servers', to: '/servers', icon: 'mdi-server' },
   { text: 'Live Now', to: '/live', icon: 'mdi-video' },
   { text: 'Videos', to: '/videos', icon: 'mdi-video-outline' },
   { text: 'My Profile', to: '/profile', icon: 'mdi-account' },
-  { text: 'Login', to: '/login', icon: 'mdi-login' },
-  { text: 'Register', to: '/register', icon: 'mdi-account-plus' },
-]
+])
 
 const fetchUser = async () => {
   try {
     const response = await axios.get('/api/user')
     user.value = response.data
+    if (!user.value) {
+      menuItems.value.push(
+        { text: 'Login', to: '/login', icon: 'mdi-login' },
+        { text: 'Register', to: '/register', icon: 'mdi-account-plus' }
+      )
+    }
   } catch (error) {
     console.log(error)
   }
@@ -78,6 +84,17 @@ const submitPost = async () => {
   }
 }
 
+const confirmLogout = () => {
+  showLogoutConfirm.value = true
+}
+
+const handleLogoutConfirm = (confirm) => {
+  if (confirm) {
+    logout()
+  }
+  showLogoutConfirm.value = false
+}
+
 onMounted(() => {
   fetchUser()
 })
@@ -88,7 +105,6 @@ onMounted(() => {
     <div class="left-section flex items-center">
       <img src="/logo.png" alt="Logo" class="logo" />
       <v-btn text :to="'/home'" class="title-btn text-white flex items-center">
-        <img src="/logo.png" alt="Logo" class="small-logo mr-2" />
         Hivemind
       </v-btn>
     </div>
@@ -106,7 +122,6 @@ onMounted(() => {
     <div class="right-section flex items-center">
       <template v-if="user">
         <span class="user-greeting">Hello, {{ user.name }}</span>
-        <v-btn text @click="logout" class="text-white">Logout</v-btn>
       </template>
 
       <v-btn icon class="text-white ml-2" @click="popup = true">
@@ -118,23 +133,38 @@ onMounted(() => {
   </v-app-bar>
 
   <!-- Pop-out Menu -->
-  <v-navigation-drawer v-model="menu" temporary location="right" class="bg-black">
-    <div class="menu-header flex justify-center items-center py-4">
-      <img src="/logo.png" alt="Logo" class="menu-logo" />
-    </div>
-    <v-divider></v-divider>
-    <v-list class="menu-list flex flex-col items-center justify-center gap-4">
-      <v-list-item
-        v-for="item in menuItems"
-        :key="item.text"
-        :to="item.to"
-        class="menu-item text-white flex items-center justify-start w-full px-4"
-      >
-        <v-icon class="mr-4">{{ item.icon }}</v-icon>
-        <v-list-item-title>{{ item.text }}</v-list-item-title>
-      </v-list-item>
+  <v-navigation-drawer v-model="menu" temporary location="right" class="bg-black d-flex flex-column justify-between">
+    <div>
+      <div class="menu-header flex justify-center items-center py-4">
+        <img src="/logo.png" alt="Logo" class="menu-logo" />
+      </div>
       <v-divider></v-divider>
-    </v-list>
+      <v-list class="menu-list flex flex-col items-center justify-center gap-4">
+        <v-list-item
+          v-for="item in menuItems"
+          :key="item.text"
+          :to="item.to"
+          class="menu-item text-white flex items-center justify-start w-full px-4"
+          @click="item.action && item.action()"
+        >
+          <v-icon class="mr-4">{{ item.icon }}</v-icon>
+          <v-list-item-title>{{ item.text }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </div>
+    <div class="logout-container">
+      <v-divider></v-divider>
+      <template v-if="user">
+        <v-list-item
+          :to="'#'"
+          class="menu-item text-white flex items-center justify-start w-full px-4"
+          @click="confirmLogout"
+        >
+          <v-icon class="mr-4">mdi-logout</v-icon>
+          <v-list-item-title>Logout</v-list-item-title>
+        </v-list-item>
+      </template>
+    </div>
   </v-navigation-drawer>
 
   <!-- Create Post Options Popup -->
@@ -175,6 +205,19 @@ onMounted(() => {
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <!-- Logout Confirmation Dialog -->
+  <v-dialog v-model="showLogoutConfirm" max-width="400">
+    <v-card>
+      <v-card-title>Confirm Logout</v-card-title>
+      <v-card-text>Are you sure you want to logout?</v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn text @click="handleLogoutConfirm(false)">No</v-btn>
+        <v-btn color="primary" @click="handleLogoutConfirm(true)">Yes</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <style scoped>
@@ -200,11 +243,6 @@ onMounted(() => {
   margin-right: 10px;
 }
 
-.small-logo {
-  width: 20px;
-  height: 20px;
-}
-
 .menu-logo {
   width: 60px;
   height: 60px;
@@ -225,6 +263,12 @@ onMounted(() => {
   margin: 0 auto;
   flex-grow: 1;
   text-align: center;
+}
+
+.logout-container {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
 }
 
 @media (max-width: 1024px) {

@@ -32,7 +32,6 @@
 import apiClient from '../axios.js';
 
 export default {
-
   data() {
     return {
       name: '',
@@ -116,9 +115,11 @@ input {
   border-radius: 5px;
   font-size: 1rem;
 }
+
 input::placeholder {
-  color: white; /* Set placeholder text color to white */
+  color: white;
 }
+
 button {
   margin-top: 1rem;
   padding: 0.7rem;
