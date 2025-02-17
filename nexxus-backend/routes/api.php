@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\MessageController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\PostController;
@@ -28,14 +29,14 @@ Route::middleware('auth:sanctum')->group(function ()
     Route::delete('/posts/{id}/like', [LikeController::class, 'destroy']);
 
     // Chats routes
-    Route::post('/chats/private', [ChatController::class, 'storePrivateChat']);
-    Route::get('/chats/{chat}', [ChatController::class, 'show']);
+    Route::get('/chats/private', [ChatController::class, 'getPrivateChat']);
 //    Route::delete('/chats/{chat}', [ChatController::class, 'destroy']);
 
     // Messages routes
-    Route::post('/chats/{chat}/messages', [ChatController::class, 'store']);
-//    Route::patch('/messages/{message}', [ChatController::class, 'update']);
-//    Route::delete('/messages/{message}', [ChatController::class, 'destroy']);
+    Route::post('/chats/{chatName}/messages', [MessageController::class, 'postMessages']);
+    Route::get('/chats/{chatName}/messages', [MessageController::class, 'getMessages']);
+//    Route::patch('/messages/{message}', [MessageController::class, 'update']);
+//    Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
 
 
 });
