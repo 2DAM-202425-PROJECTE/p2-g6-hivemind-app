@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ChatController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\PostController;
@@ -25,4 +26,16 @@ Route::middleware('auth:sanctum')->group(function ()
     Route::post('/posts', [App\Http\Controllers\PostController::class, 'store']);
     Route::post('/posts/{id}/like', [LikeController::class, 'store']);
     Route::delete('/posts/{id}/like', [LikeController::class, 'destroy']);
+
+    // Chats routes
+    Route::post('/chats/private', [ChatController::class, 'storePrivateChat']);
+    Route::get('/chats/{chat}', [ChatController::class, 'show']);
+//    Route::delete('/chats/{chat}', [ChatController::class, 'destroy']);
+
+    // Messages routes
+    Route::post('/chats/{chat}/messages', [ChatController::class, 'store']);
+//    Route::patch('/messages/{message}', [ChatController::class, 'update']);
+//    Route::delete('/messages/{message}', [ChatController::class, 'destroy']);
+
+
 });

@@ -4,12 +4,11 @@
     <h1>Messages</h1>
     <div class="chat-content">
       <div class="chat-list">
-        <button @click="showPopup = true" class="new-chat-button">Add New Chat</button>
-        <div class="chat-item" v-for="(chat, index) in chats" :key="index" @click="selectChat(chat)">
+        <div class="chat-item" v-for="(chat, index) in ChatsList" :key="index" @click="selectChat(chat)">
           <img :src="chat.avatar" alt="Avatar" class="chat-avatar" />
           <div class="chat-info">
             <h3>{{ chat.name }}</h3>
-            <p>{{ chat.lastMessage }}</p>
+            <p>{{ chat.email }}</p>
           </div>
         </div>
       </div>
@@ -44,20 +43,10 @@
       <ul v-if="isMine">
         <li @click="editMessage(selectedMessageIndex)">Edit</li>
         <li @click="deleteMessage(selectedMessageIndex)">Delete</li>
-        <li @click="reportMessage(selectedMessageIndex)">Report</li>
       </ul>
       <ul v-else>
         <li @click="reportMessage(selectedMessageIndex)">Report</li>
       </ul>
-    </div>
-    <div v-if="showPopup" class="popup-overlay" @click.self="showPopup = false">
-      <div class="popup">
-        <h2>Recommended Users</h2>
-        <ul>
-          <li v-for="user in recommendedUsers" :key="user.id" @click="startChat(user)">{{ user.name }}</li>
-        </ul>
-        <button @click="showPopup = false">Close</button>
-      </div>
     </div>
   </div>
 </template>
@@ -66,18 +55,9 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import Navbar from '@/components/NavBar.vue'
 import Footer from '@/components/AppFooter.vue'
+import apiClient from "@/axios.js";
 
-const chats = ref([
-  { name: 'User 1', avatar: 'https://via.placeholder.com/50', lastMessage: 'Hello!', messages: [{ text: 'Hello!', isMine: false }] },
-  { name: 'User 2', avatar: 'https://via.placeholder.com/50', lastMessage: 'How are you?', messages: [{ text: 'How are you?', isMine: false }] },
-  // Add more chat data as needed
-])
-
-const recommendedUsers = ref([
-  { id: 1, name: 'User 3' },
-  { id: 2, name: 'User 4' },
-  // Add more recommended users as needed
-])
+const ChatsList = ref([])
 
 const selectedChat = ref(null)
 const newMessage = ref('')
@@ -86,7 +66,19 @@ const messageMenuVisible = ref(false)
 const menuPosition = ref({ x: 0, y: 0 })
 const selectedMessageIndex = ref(null)
 const isMine = ref(false)
-const showPopup = ref(false)
+
+const fetchUsers = async () => {
+  try {
+    const response = await apiClient.get('/api/users', {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    })
+    ChatsList.value = response.data
+  } catch (error) {
+    console.error("Error al obtener la lista de usuarios:", error.response?.data || error.message)
+  }
+}
 
 const selectChat = (chat) => {
   selectedChat.value = chat
@@ -137,11 +129,6 @@ const reportMessage = (index) => {
   messageMenuVisible.value = false
 }
 
-const startChat = (user) => {
-  chats.value.push({ name: user.name, avatar: 'https://via.placeholder.com/50', lastMessage: '', messages: [] })
-  showPopup.value = false
-}
-
 const handleClickOutside = (event) => {
   if (!event.target.closest('.context-menu') && !event.target.closest('.chat-options button')) {
     messageMenuVisible.value = false
@@ -151,6 +138,7 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
   window.addEventListener('click', handleClickOutside)
+  fetchUsers();
 })
 
 onBeforeUnmount(() => {
