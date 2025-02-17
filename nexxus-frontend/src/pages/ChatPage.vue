@@ -5,7 +5,7 @@
     <div class="chat-content">
       <div class="chat-list">
         <div class="chat-item" v-for="(chat, index) in ChatsList" :key="index" @click="selectChat(chat)">
-          <img :src="chat.avatar" alt="Avatar" class="chat-avatar" />
+          <img :src="chat.profile_photo_url" alt="Avatar" class="chat-avatar" />
           <div class="chat-info">
             <h3>{{ chat.name }}</h3>
             <p>{{ chat.email }}</p>
@@ -56,6 +56,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import Navbar from '@/components/NavBar.vue'
 import Footer from '@/components/AppFooter.vue'
 import apiClient from "@/axios.js";
+import "@/echo.js";
 
 const ChatsList = ref([])
 
@@ -65,7 +66,19 @@ const chatMenuVisible = ref(null)
 const messageMenuVisible = ref(false)
 const menuPosition = ref({ x: 0, y: 0 })
 const selectedMessageIndex = ref(null)
+const userId = ref(null);
 const isMine = ref(false)
+
+const fetchUserId = async () => {
+  try {
+    const response = await apiClient.get("/api/user", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+    userId.value = response.data.id;
+  } catch (error) {
+    console.error("Error al obtenir l'ID de l'usuari:", error.response?.data || error.message);
+  }
+};
 
 const fetchUsers = async () => {
   try {
@@ -74,22 +87,77 @@ const fetchUsers = async () => {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     })
-    ChatsList.value = response.data
+    ChatsList.value = response.data.data.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      profile_photo_url: user.profile_photo_url,
+    }))
   } catch (error) {
     console.error("Error al obtener la lista de usuarios:", error.response?.data || error.message)
   }
 }
 
-const selectChat = (chat) => {
-  selectedChat.value = chat
-}
+const selectChat = async (chat) => {
+  try {
 
-const sendMessage = () => {
-  if (newMessage.value.trim() !== '') {
-    selectedChat.value.messages.push({ text: newMessage.value, isMine: true })
-    newMessage.value = ''
+    const findChat = await apiClient.get("/api/chats/private",
+      { params: { recipient_id: chat.id },
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+    )
+    selectedChat.value = findChat.data;
+
+    // Obtenim els missatges del xat
+    const messagesResponse = await apiClient.get(`/api/chats/${selectedChat.value.chat.name}/messages`);
+    selectedChat.value.messages = messagesResponse.data.messages.map(msg => ({
+      id: msg.id,
+      text: msg.content,
+      isMine: msg.user_id === userId.value,
+    }));
+
+    window.Echo.channel(`${selectedChat.value.chat.name}`)
+      .listen('MessageSentEvent', (message) => {
+        if (message.user_id !== userId.value) { // Evitar mensajes duplicados
+          selectedChat.value.messages.push({
+            id: message.id,
+            text: message.content,
+            isMine: message.user_id === userId.value,
+          });
+        }
+      });
+
+    console.log("Missatges carregats:", selectedChat.value.messages);
+  } catch (error) {
+    console.error("Error al obtener o crear el chat:", error.response?.data || error.message);
+    selectedChat.value = { ...chat, messages: [] };
   }
-}
+};
+
+const sendMessage = async () => {
+  if (!newMessage.value.trim()) return;
+  try {
+    const response = await apiClient.post(`/api/chats/${selectedChat.value.chat.name}/messages`,
+      { content: newMessage.value.trim() },
+      { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+    );
+
+    // Assegurar que `messages` està inicialitzat com a array
+    if (!selectedChat.value.messages) {
+      selectedChat.value.messages = [];
+    }
+
+    selectedChat.value.messages.push({
+      id: response.data.message.id,
+      text: response.data.message.content,
+      isMine: true,
+    });
+
+    newMessage.value = '';
+  } catch (error) {
+    console.error("Error al enviar mensaje:", error.response?.data || error.message);
+  }
+};
+
 
 const toggleChatMenu = (index) => {
   chatMenuVisible.value = chatMenuVisible.value === index ? null : index
@@ -138,6 +206,7 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
   window.addEventListener('click', handleClickOutside)
+  fetchUserId();
   fetchUsers();
 })
 

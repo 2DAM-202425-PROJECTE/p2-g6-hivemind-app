@@ -29,7 +29,19 @@ const routes = [
   { path: '/register', component: Register },
   { path: '/login', component: Login },
   { path: '/contact', component: ContactPage },
-  { path: '/chat', component: ChatPage },
+  {
+    path: '/chat',
+    component: ChatPage,
+    beforeEnter: (to, from, next) => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        setAuthToken(token);
+        next();
+      } else {
+        next('/');
+      }
+    },
+  },
   { path: '/profile', component: ProfilePage },
   { path: '/edit-profile', component: EditProfilePage },
   { path: '/about', component: About },
