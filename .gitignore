@@ -1,0 +1,63 @@
+/vendor/
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Laravel 4 specific
+bootstrap/compiled.php
+app/storage/
+
+# Laravel 5 & Lumen specific
+public/storage
+public/hot
+
+# Laravel 5 & Lumen specific with changed public path
+public_html/storage
+public_html/hot
+
+storage/*.key
+.env
+Homestead.yaml
+Homestead.json
+/.vagrant
+.phpunit.result.cache
+
+/public/build
+/storage/pail
+.env.backup
+.env.production
+.phpactor.json
+auth.json
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn.lock
+package-lock.json
+
+# Ignorar archivos de entorno
+.env
+.env.local
+.env.*.local
+
+# Ignorar dependencias autogeneradas
+/vendor/
+node_modules/
+package-lock.json
+yarn.lock
+composer.lock
+
+# Ignorar archivos de IDEs
+.idea/
+.vscode/
+
+# Ignorar logs y caché
+storage/logs/
+storage/framework/
+bootstrap/cache/
+
+# Ignorar archivos de compilación
+public/hot
+public/storage
+public/mix-manifest.json
+
