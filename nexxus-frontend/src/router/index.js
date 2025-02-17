@@ -7,6 +7,7 @@ import Register from '../pages/Register.vue';
 import About from '../pages/About.vue';
 import PrivacyPolicy from '../pages/PrivacyPolicyPage.vue';
 import TermsOfService from '../pages/TermsOfServicePage.vue';
+import ChatPage from '../pages/ChatPage.vue';
 
 
 const routes = [
