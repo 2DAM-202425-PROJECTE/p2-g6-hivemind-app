@@ -28,14 +28,17 @@
         <div class="chat-and-users">
           <div class="channels">
             <ul v-if="selectedServer" class="channel-list">
-              <li v-for="channel in selectedServer.channels" :key="channel.id" class="channel-item">
+              <li v-for="channel in selectedServer.channels" :key="channel.id" class="channel-item" @click="selectChannel(channel)">
                 <div class="channel-info">
-                  <span>
-                    <i v-if="channel.isCategory" class="fas fa-folder"></i>
-                    <i v-else class="fas fa-comments"></i>
-                    {{ channel.name }}
-                  </span>
+          <span>
+            <i v-if="channel.isCategory" class="fas fa-folder"></i>
+            <i v-else class="fas fa-comments"></i>
+            {{ channel.name }}
+          </span>
                   <button @click.stop="toggleCreateOptions" class="create-button">+</button>
+                  <button @click.stop="deleteChannel(channel)" class="delete-button">
+                    <i class="fas fa-trash"></i>
+                  </button>
                 </div>
                 <div v-if="showCreateOptions" class="dropdown-menu">
                   <ul>
@@ -241,13 +244,23 @@ const selectServer = (server) => {
   selectedServer.value = server
   selectedChannel.value = server.channels.length > 0 ? server.channels[0] : null
 }
+
+const selectChannel = (channel) => {
+  selectedChannel.value = channel
+}
+
 const createServer = () => {
   if (newServer.value.name.trim()) {
-    servers.value.push({ id: Date.now(), ...newServer.value, channels: [], users: [] })
-    newServer.value = { name: "", description: "", category: "Gaming", visibility: "Public", icon: null }
-    showCreateServer.value = false
+    servers.value.push({
+      id: Date.now(),
+      ...newServer.value,
+      channels: [{ id: Date.now(), name: "General", messages: [] }],
+      users: []
+    });
+    newServer.value = { name: "", description: "", category: "Gaming", visibility: "Public", icon: null };
+    showCreateServer.value = false;
   }
-}
+};
 
 const createChannel = () => {
   if (newChannel.value.name.trim()) {
@@ -294,6 +307,13 @@ const onlineUsers = computed(() => {
   return selectedServer.value ? selectedServer.value.users.filter(user => user.online) : []
 })
 
+const deleteChannel = (channel) => {
+  selectedServer.value.channels = selectedServer.value.channels.filter(c => c.id !== channel.id)
+  if (selectedChannel.value.id === channel.id) {
+    selectedChannel.value = selectedServer.value.channels.length > 0 ? selectedServer.value.channels[0] : null
+  }
+}
+
 onMounted(() => {
   window.addEventListener('click', handleClickOutside)
 })
@@ -333,8 +353,6 @@ const editServer = ref({
   icon: null,
 });
 
-
-
 const editServerConfig = () => {
   editServer.value = { ...selectedServer.value };
   showEditServer.value = true;
@@ -357,6 +375,7 @@ const handleEditFileUpload = (event) => {
 const deleteServer = () => {
   servers.value = servers.value.filter(server => server.id !== selectedServer.value.id);
   selectedServer.value = null;
+  selectedChannel.value = null;
 };
 
 const reportServer = () => {
@@ -408,7 +427,18 @@ const toggleOptionsMenu = () => {
   overflow-y: auto;
   flex: 1;
 }
+.delete-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #000000;
+  font-size: 18px;
+  margin-left: 10px;
+}
 
+.delete-button:hover {
+  color: #dc0d0d;
+}
 .search-input, .create-server-button, .server-item, .modal-input, .modal-textarea, .modal-button {
   background-color: #7f7f7f;
   color: white;
@@ -788,6 +818,13 @@ const toggleOptionsMenu = () => {
   background-color: #0056b3;
 }
 
+.server-options-modal h2, .modal h2, .modal label, .modal select, .modal textarea, .modal input {
+  color: black; /* Set text color to black */
+}
+
+.server-options-modal .modal-button, .server-options-modal .cancel-button {
+  color: white; /* Ensure button text color is white */
+}
 .server-options-modal .modal-buttons {
   display: flex;
   justify-content: space-between;
@@ -814,4 +851,5 @@ const toggleOptionsMenu = () => {
 .server-options-modal .cancel-button:hover {
   background-color: #cc0000;
 }
+
 </style>
