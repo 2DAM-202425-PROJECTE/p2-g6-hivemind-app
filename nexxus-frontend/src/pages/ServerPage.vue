@@ -427,7 +427,6 @@ const toggleOptionsMenu = () => {
   overflow-y: auto;
   flex: 1;
 }
-
 .delete-button {
   background: none;
   border: none;
@@ -440,7 +439,6 @@ const toggleOptionsMenu = () => {
 .delete-button:hover {
   color: #dc0d0d;
 }
-
 .search-input, .create-server-button, .server-item, .modal-input, .modal-textarea, .modal-button {
   background-color: #7f7f7f;
   color: white;
