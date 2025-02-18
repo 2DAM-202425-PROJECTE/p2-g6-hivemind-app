@@ -2,13 +2,16 @@
   <div v-if="visible" class="modal-overlay" @click.self="close">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Comments</h3>
+        <span>Comments</span>
         <button @click="close">X</button>
       </div>
       <div class="modal-body">
         <div v-for="comment in comments" :key="comment.id" class="comment">
-          <strong>{{ comment.user.name }}</strong>
-          <p>{{ comment.text }}</p>
+          <img :src="comment.user.profile_photo_path" alt="Profile" class="comment-profile-pic" />
+          <div class="comment-text">
+            <strong>{{ comment.user.name }}</strong>
+            <p>{{ comment.text }}</p>
+          </div>
         </div>
         <div class="add-comment">
           <input v-model="newComment" placeholder="Add a comment..." />
@@ -25,6 +28,7 @@ import { ref } from 'vue';
 const props = defineProps({
   visible: Boolean,
   comments: Array,
+  currentUser: Object
 });
 
 const emit = defineEmits(['close', 'add-comment']);
@@ -72,16 +76,33 @@ const addComment = () => {
 
 .modal-body {
   margin-top: 20px;
+  text-align: center;
 }
 
 .comment {
+  display: flex;
+  align-items: center;
   margin-bottom: 10px;
+  justify-content: center;
+}
+
+.comment-profile-pic {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.comment-text {
+  flex: 1;
+  text-align: left;
 }
 
 .add-comment {
   display: flex;
   gap: 10px;
   margin-top: 20px;
+  justify-content: center;
 }
 
 .add-comment input {

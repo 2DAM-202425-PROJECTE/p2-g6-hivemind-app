@@ -61,8 +61,13 @@
       </div>
     </div>
 
-    <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal"
-      @add-comment="addComment" />
+    <CommentModal
+      :visible="isCommentModalVisible"
+      :comments="selectedPostComments"
+      :current-user="currentUser"
+      @close="closeCommentModal"
+      @add-comment="addComment"
+    />
 
     <UserRecommendation />
     <Footer />
@@ -82,6 +87,10 @@ const posts = ref([]);
 const users = ref({});
 const isCommentModalVisible = ref(false);
 const selectedPostComments = ref([]);
+const currentUser = ref({
+  name: 'Current User', // Replace with actual user data
+  profile_photo_path: 'https://via.placeholder.com/50' // Replace with actual user profile photo URL
+});
 
 onMounted(async () => {
   try {
@@ -121,28 +130,24 @@ onMounted(async () => {
     }, {});
 
     console.log('Usuarios:', users.value);
+
+    // Fetch current user data
+    const userResult = await axios.get('http://localhost:8000/api/user', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json'
+      }
+    });
+    currentUser.value = userResult.data;
   } catch (error) {
     console.error('Error al obtener datos', error);
   }
 });
 
-// const localStorageResult = async (path) => {
-//   const token = localStorage.getItem('token');
-
-//   const result = await axios.get(`http://localhost:8000/api/storage/${path}`, {
-//     headers: {
-//       Authorization: `Bearer ${token}`,
-//       Accept: 'application/json'
-//     }
-//   });
-//   return result.data;
-// };
-
 const getImageUrl = (path) => {
   if (!path) return 'https://via.placeholder.com/150';
   return `http://localhost:8000/storage/${path}`;
 };
-
 
 const getProfilePhotoById = (id) => {
   const user = users.value[id];
@@ -193,7 +198,7 @@ const closeCommentModal = () => {
 const addComment = (comment) => {
   selectedPostComments.value.push({
     id: Date.now(),
-    user: { name: 'Current User' },
+    user: { name: currentUser.value.name },
     text: comment,
   });
 };
