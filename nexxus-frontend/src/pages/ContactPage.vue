@@ -26,6 +26,7 @@
         ></v-textarea>
         <v-btn :disabled="!valid" @click="submit">Submit</v-btn>
       </v-form>
+      <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
     </div>
     <Footer />
   </div>
@@ -43,6 +44,7 @@ const email = ref('')
 const message = ref('')
 const csrfToken = ref('')
 const userId = ref('')
+const successMessage = ref('')
 
 const rules = {
   required: value => !!value || 'Required.',
@@ -55,6 +57,8 @@ const fetchUserId = async () => {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     userId.value = response.data.id;
+    name.value = response.data.name;
+    email.value = response.data.email;
   } catch (error) {
     console.error("Error al obtenir l'ID de l'usuari:", error.response?.data || error.message);
   }
@@ -76,7 +80,9 @@ const submit = async () => {
         name: name.value,
         email: email.value,
         message: message.value,
-      })
+      });
+      successMessage.value = 'Form sent successfully!';
+      message.value = '';
     } catch (error) {
       console.error('Error:', error)
     }
@@ -127,5 +133,11 @@ h1 {
 
 .v-btn:hover {
   background-color: #5f5f5f;
+}
+
+.success-message {
+  color: #000000;
+  text-align: center;
+  margin-top: 20px;
 }
 </style>
