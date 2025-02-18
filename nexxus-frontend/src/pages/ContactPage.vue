@@ -35,38 +35,34 @@
 import { ref, onMounted } from 'vue'
 import Navbar from '@/components/NavBar.vue'
 import Footer from '@/components/AppFooter.vue'
+import apiClient from "@/axios.js";
 
 const valid = ref(false)
 const name = ref('')
 const email = ref('')
 const message = ref('')
 const csrfToken = ref('')
+const userId = ref('')
 
 const rules = {
   required: value => !!value || 'Required.',
   email: value => /.+@.+\..+/.test(value) || 'E-mail must be valid.',
 }
 
+const fetchUserId = async () => {
+  try {
+    const response = await apiClient.get("/api/user", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+    userId.value = response.data.id;
+  } catch (error) {
+    console.error("Error al obtenir l'ID de l'usuari:", error.response?.data || error.message);
+  }
+};
+
 onMounted(async () => {
   try {
-    // Fetch CSRF token
-    await fetch('http://127.0.0.1:8000/sanctum/csrf-cookie', {
-      credentials: 'include',
-    })
-    csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-    console.log('CSRF token fetched:', csrfToken.value)
-
-    // Fetch the logged-in user's details
-    const response = await fetch('http://127.0.0.1:8000/api/user', {
-      credentials: 'include',
-    })
-    if (response.ok) {
-      const userData = await response.json()
-      console.log('User data fetched:', userData)
-      email.value = userData.email
-    } else {
-      console.error('Failed to fetch user data:', response.status, response.statusText)
-    }
+    fetchUserId();
   } catch (error) {
     console.error('Error fetching user data:', error)
   }
@@ -75,24 +71,12 @@ onMounted(async () => {
 const submit = async () => {
   if (valid.value) {
     try {
-      const response = await fetch('http://127.0.0.1:8000/contact/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': csrfToken.value,
-        },
-        body: JSON.stringify({
-          name: name.value,
-          email: email.value,
-          message: message.value,
-        }),
-        credentials: 'include',
+      const response = await apiClient.post("/api/contact/submit", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        name: name.value,
+        email: email.value,
+        message: message.value,
       })
-      if (!response.ok) {
-        throw new Error('Network response was not ok')
-      }
-      const data = await response.json()
-      console.log('Form submitted:', data)
     } catch (error) {
       console.error('Error:', error)
     }

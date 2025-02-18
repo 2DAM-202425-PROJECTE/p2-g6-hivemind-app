@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\MessageController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\AuthController;
@@ -37,6 +38,8 @@ Route::middleware('auth:sanctum')->group(function ()
     Route::get('/chats/{chatName}/messages', [MessageController::class, 'getMessages']);
 //    Route::patch('/messages/{message}', [MessageController::class, 'update']);
 //    Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
+
+    Route::post('/contact/submit', [ContactController::class, 'submit']);
 
 
 });
