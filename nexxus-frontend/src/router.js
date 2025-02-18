@@ -30,6 +30,19 @@ const routes = [
   { path: '/register', component: Register },
   { path: '/login', component: Login },
   { path: '/contact', component: ContactPage },
+  {
+    path: '/chat',
+    component: ChatPage,
+    beforeEnter: (to, from, next) => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        setAuthToken(token);
+        next();
+      } else {
+        next('/');
+      }
+    },
+  },
   { path: '/chat', component: ChatPage },
   { path: '/servers', component: ServerPage },
   { path: '/profile', component: ProfilePage },

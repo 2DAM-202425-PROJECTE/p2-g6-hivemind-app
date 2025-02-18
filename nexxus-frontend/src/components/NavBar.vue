@@ -53,6 +53,8 @@ const handleFileUpload = (event) => {
 }
 
 const submitPost = async () => {
+  localStorage.setItem('postContent', postContent.value)
+
   if (!postContent.value && !postFile.value) {
     alert('Please enter content or upload a file!')
     return
@@ -62,13 +64,19 @@ const submitPost = async () => {
   formData.append('content', postContent.value)
   formData.append('description', postDescription.value)
   formData.append('id_user', user.value.id) // Assuming user is logged in
+  formData.append('publish_date', new Date().toISOString()) // Add publish_date
+
   if (postFile.value) {
     formData.append('file', postFile.value)
   }
 
   try {
-    const response = await axios.post('/api/posts', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+    const response = await axios.post('http://localhost:8000/api/posts', formData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Accept: 'application/json',
+        'Content-Type': 'multipart/form-data'
+      }
     })
     alert('Post created successfully!')
     postPopup.value = false
@@ -109,15 +117,8 @@ onMounted(() => {
       </v-btn>
     </div>
 
-    <v-text-field
-      class="search-field"
-      v-model="searchQuery"
-      placeholder="Search"
-      hide-details
-      solo
-      flat
-      prepend-inner-icon="mdi-magnify"
-    ></v-text-field>
+    <v-text-field class="search-field" v-model="searchQuery" placeholder="Search" hide-details solo flat
+      prepend-inner-icon="mdi-magnify"></v-text-field>
 
     <div class="right-section flex items-center">
       <template v-if="user">
@@ -187,15 +188,10 @@ onMounted(() => {
     <v-card>
       <v-card-title>Create a Post</v-card-title>
       <v-card-text>
-        <v-text-field v-model="postContent" label="Post Content" outlined></v-text-field>
-        <v-text-field v-model="postDescription" label="Description (optional)" outlined></v-text-field>
+        <v-file-input label="Upload Image/Video (.png, .mp4)" accept=".png, .mp4" @change="handleFileUpload"
+          outlined></v-file-input>
 
-        <v-file-input
-          label="Upload Image/Video (.png, .mp4)"
-          accept=".png, .mp4"
-          @change="handleFileUpload"
-          outlined
-        ></v-file-input>
+        <v-text-field v-model="postDescription" label="Description" outlined></v-text-field>
       </v-card-text>
 
       <v-card-actions>
@@ -232,7 +228,8 @@ onMounted(() => {
   z-index: 1000;
 }
 
-.left-section, .right-section {
+.left-section,
+.right-section {
   display: flex;
   align-items: center;
 }

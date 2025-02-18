@@ -12,7 +12,8 @@ class Post extends Model
     protected $table = 'post';
     
     protected $fillable = [
-        'content',
+        'file_path',
+        'description',
         'publish_date',
         'id_user',
     ];
