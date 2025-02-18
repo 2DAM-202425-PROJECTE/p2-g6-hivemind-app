@@ -14,7 +14,7 @@
       </div>
       <div class="main-content">
         <div class="server-header">
-          <h2 id="server-name">{{ selectedServer ? selectedServer.name : 'Nom del servidor' }}</h2>
+          <h2 id="server-name">{{ selectedServer ? selectedServer.name : '' }}</h2>
           <button id="server-options-btn" class="options-button" @click="toggleOptionsMenu">⋮</button>
           <div id="server-options-menu" class="options-menu" :class="{ hidden: !showOptionsMenu }">
             <ul>
@@ -246,8 +246,10 @@ const selectServer = (server) => {
 }
 
 const selectChannel = (channel) => {
-  selectedChannel.value = channel
-}
+  if (!channel.isCategory) {
+    selectedChannel.value = channel;
+  }
+};
 
 const createServer = () => {
   if (newServer.value.name.trim()) {
