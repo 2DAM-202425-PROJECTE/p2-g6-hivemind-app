@@ -71,7 +71,7 @@ onMounted(async () => {
 const submit = async () => {
   if (valid.value) {
     try {
-      const response = await apiClient.post("/api/contact/submit", {
+      await apiClient.post("/api/contact/submit", {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         name: name.value,
         email: email.value,
