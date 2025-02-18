@@ -150,8 +150,13 @@ if [ "$SKIP_WORKERS" = false ]; then
   echo -e "${GREEN}🛠️  Starting workers...${NC}"
   cd nexxus-backend || exit 1
   if [ -f artisan ]; then
-    php artisan queue:work --tries=3 &
+    # Iniciar queue:work en segundo plano
+    php artisan queue:work &  
     WORKER_PID=$!
+    
+    # Iniciar reverb:start en segundo plano
+    php artisan reverb:start &  
+    REVERB_PID=$!
   else
     echo -e "${RED}artisan file not found in nexxus-backend.${NC}"
     exit 1
@@ -164,6 +169,7 @@ trap "
   echo -e '${RED}🛑 Stopping servers...${NC}';
   [ -n "$BACKEND_PID" ] && kill $BACKEND_PID;
   [ -n "$FRONTEND_PID" ] && kill $FRONTEND_PID;
+  [ -n "$REVERB_PID" ] && kill $REVERB_PID;
   [ -n "$WORKER_PID" ] && kill $WORKER_PID;
   exit 0;
 " SIGINT
