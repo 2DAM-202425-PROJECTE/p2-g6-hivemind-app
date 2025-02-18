@@ -146,6 +146,20 @@
       <path value="$PROJECT_DIR$/nexxus-backend/vendor/symfony/string" />
       <path value="$PROJECT_DIR$/nexxus-backend/vendor/league/uri-interfaces" />
       <path value="$PROJECT_DIR$/nexxus-backend/vendor/league/uri" />
+      <path value="$PROJECT_DIR$/nexxus-backend/vendor/paragonie/sodium_compat" />
+      <path value="$PROJECT_DIR$/nexxus-backend/vendor/clue/redis-react" />
+      <path value="$PROJECT_DIR$/nexxus-backend/vendor/clue/redis-protocol" />
+      <path value="$PROJECT_DIR$/nexxus-backend/vendor/ratchet/rfc6455" />
+      <path value="$PROJECT_DIR$/nexxus-backend/vendor/evenement/evenement" />
+      <path value="$PROJECT_DIR$/nexxus-backend/vendor/laravel/reverb" />
+      <path value="$PROJECT_DIR$/nexxus-backend/vendor/pusher/pusher-php-server" />
+      <path value="$PROJECT_DIR$/nexxus-backend/vendor/react/dns" />
+      <path value="$PROJECT_DIR$/nexxus-backend/vendor/react/stream" />
+      <path value="$PROJECT_DIR$/nexxus-backend/vendor/react/promise" />
+      <path value="$PROJECT_DIR$/nexxus-backend/vendor/react/event-loop" />
+      <path value="$PROJECT_DIR$/nexxus-backend/vendor/react/cache" />
+      <path value="$PROJECT_DIR$/nexxus-backend/vendor/react/promise-timer" />
+      <path value="$PROJECT_DIR$/nexxus-backend/vendor/react/socket" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.2" />
