@@ -151,7 +151,8 @@
     <div class="modal server-options-modal">
       <h2>Server Options</h2>
       <ul>
-        <li @click="editServerConfig">Server Settings</li>
+        <li @click="showServerDetails">View Server Details</li>
+        <li @click="editServerConfig">Edit Server Settings</li>
         <li @click="deleteServer">Leave Server</li>
         <li @click="reportServer">Report Server</li>
       </ul>
@@ -160,7 +161,26 @@
       </div>
     </div>
   </div>
-
+  <!-- Server Details Modal -->
+  <div v-if="showServerDetailsPopup" class="modal-overlay" @click.self="showServerDetailsPopup = false">
+    <div class="modal">
+      <h2>Server Details</h2>
+      <label>Server Name</label>
+      <input v-model="selectedServer.name" disabled class="modal-input" />
+      <label>Description</label>
+      <textarea v-model="selectedServer.description" disabled class="modal-textarea"></textarea>
+      <label>Server Icon</label>
+      <img :src="selectedServer.icon" alt="Server Icon" class="server-icon" />
+      <label>Category</label>
+      <input v-model="selectedServer.category" disabled class="modal-input" />
+      <label>Visibility</label>
+      <input v-model="selectedServer.visibility" disabled class="modal-input" />
+      <div class="modal-buttons">
+        <button @click="showServerDetailsPopup = false" class="modal-button cancel-button">Close</button>
+      </div>
+    </div>
+  </div>
+  <!-- Edit Server Modal -->
   <div v-if="showEditServer" class="modal-overlay" @click.self="showEditServer = false">
     <div class="modal">
       <h2>Edit Server</h2>
@@ -185,6 +205,18 @@
       <div class="modal-buttons">
         <button @click="saveServerChanges" class="modal-button create-modal-button">Save Changes</button>
         <button @click="showEditServer = false" class="modal-button cancel-button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leave Server Confirmation Modal -->
+  <div v-if="showLeaveServerPopup" class="modal-overlay" @click.self="showLeaveServerPopup = false">
+    <div class="modal">
+      <h2>Leave Server</h2>
+      <p>Are you sure you want to leave the server?</p>
+      <div class="modal-buttons">
+        <button @click="confirmLeaveServer" class="modal-button create-modal-button">Yes</button>
+        <button @click="showLeaveServerPopup = false" class="modal-button cancel-button">No</button>
       </div>
     </div>
   </div>
@@ -219,6 +251,8 @@ const showCreateServer = ref(false)
 const showChannelPopup = ref(false)
 const showCategoryPopup = ref(false)
 const showCreateOptions = ref(false)
+const showLeaveServerPopup = ref(false)
+const showServerDetailsPopup = ref(false)
 const newServer = ref({
   name: "",
   description: "",
@@ -232,7 +266,7 @@ const newChannel = ref({
 const newCategory = ref({
   name: "",
 })
-const servers = ref([]) // Removed the test server data
+const servers = ref([])
 const selectedServer = ref(null)
 const selectedChannel = ref(null)
 const newMessage = ref("")
@@ -287,7 +321,6 @@ const createServer = () => {
   }
 };
 
-// Update createChannel function
 const createChannel = () => {
   if (newChannel.value.name.trim() && newChannel.value.category.trim()) {
     let category = selectedServer.value.channels.find(channel => channel.name === newChannel.value.category && channel.isCategory);
@@ -302,7 +335,6 @@ const createChannel = () => {
       selectedServer.value.channels.push(category);
     }
 
-    // Create new channel under the category
     const newChannelData = {
       id: Date.now(),
       name: newChannel.value.name,
@@ -405,6 +437,7 @@ const editServer = ref({
 const editServerConfig = () => {
   editServer.value = { ...selectedServer.value };
   showEditServer.value = true;
+  showOptionsMenu.value = false; // Close the options menu
 };
 
 const saveServerChanges = () => {
@@ -422,13 +455,20 @@ const handleEditFileUpload = (event) => {
 };
 
 const deleteServer = () => {
+  showLeaveServerPopup.value = true;
+  showOptionsMenu.value = false; // Close the options menu
+};
+
+const confirmLeaveServer = () => {
   servers.value = servers.value.filter(server => server.id !== selectedServer.value.id);
   selectedServer.value = null;
   selectedChannel.value = null;
+  showLeaveServerPopup.value = false;
 };
 
 const reportServer = () => {
   showReportPopup.value = true;
+  showOptionsMenu.value = false; // Close the options menu
 };
 
 const submitReport = () => {
@@ -445,6 +485,10 @@ const toggleOptionsMenu = () => {
   showOptionsMenu.value = !showOptionsMenu.value;
 };
 
+const showServerDetails = () => {
+  showServerDetailsPopup.value = true;
+  showOptionsMenu.value = false; // Close the options menu
+};
 </script>
 
 <style scoped>
@@ -465,7 +509,13 @@ const toggleOptionsMenu = () => {
   gap: 20px;
   flex: 1;
 }
-
+.server-icon {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
 .sidebar {
   background: white;
   border-radius: 10px;
