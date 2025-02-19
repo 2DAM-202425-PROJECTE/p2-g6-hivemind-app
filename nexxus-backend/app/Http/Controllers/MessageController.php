@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MessageDeletedEvent;
 use App\Events\MessageSentEvent;
 use App\Models\Chat;
 use App\Models\Message;
@@ -62,31 +63,53 @@ class MessageController extends Controller
         ], 201);
     }
 
-//    public function update(Request $request, Message $message)
-//    {
-//        $this->authorize('update', $message);
-//
-//        // Guardar el historial antes de modificar el mensaje
-//        MessageHistory::create([
-//            'message_id' => $message->id,
-//            'content' => $message->content,
-//            'edited_at' => now(),
-//        ]);
-//
-//        $message->update([
-//            'content' => $request->content,
-//            'is_edited' => true,
-//        ]);
-//
-//        return response()->json($message);
-//    }
-//
-//    public function destroy(Message $message)
-//    {
-//        $this->authorize('delete', $message);
-//
-//        $message->delete();
-//
-//        return response()->json(['message' => 'Mensaje eliminado']);
-//    }
+    public function updateMessages(Request $request, Message $message)
+    {
+        $request->validate([
+            'content' => 'required|string|min:1',
+        ]);
+
+        // Guardar en historial antes de modificar
+        MessageHistory::create([
+            'message_id' => $message->id,
+            'user_id' => Auth::id(),
+            'old_content' => $message->content,
+            'action' => 'edited',
+            'changed_at' => now(),
+        ]);
+
+        // Actualizar mensaje
+        $message->update([
+            'content' => $request->input('content'),
+            'is_edited' => true,
+        ]);
+
+        // Enviar evento para WebSockets
+        broadcast(new MessageSentEvent($message))->toOthers();
+
+        return response()->json([
+            'message' => $message,
+            'edited' => true,
+        ]);
+    }
+
+
+    public function destroy(Message $message)
+    {
+        // Guardar en historial antes de eliminar
+        MessageHistory::create([
+            'message_id' => $message->id,
+            'user_id' => Auth::id(),
+            'old_content' => $message->content,
+            'action' => 'deleted',
+            'changed_at' => now(),
+        ]);
+
+        $message->delete();
+
+        // Emitir evento de eliminación de mensaje
+        broadcast(new MessageDeletedEvent($message->id, $message->chat->name))->toOthers();
+
+        return response()->json(['message' => 'Mensaje eliminado']);
+    }
 }

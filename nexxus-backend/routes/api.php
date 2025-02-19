@@ -10,8 +10,8 @@ use App\Http\Controllers\LikeController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
-Route::post('/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
 
 Route::middleware('auth:sanctum')->group(function ()
 {
@@ -36,8 +36,8 @@ Route::middleware('auth:sanctum')->group(function ()
     // Messages routes
     Route::post('/chats/{chatName}/messages', [MessageController::class, 'postMessages']);
     Route::get('/chats/{chatName}/messages', [MessageController::class, 'getMessages']);
-//    Route::patch('/messages/{message}', [MessageController::class, 'update']);
-//    Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
+    Route::patch('/chats/{chatName}/messages/{message}', [MessageController::class, 'updateMessages']);
+    Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
 
     Route::post('/contact/submit', [ContactController::class, 'submit']);
 
