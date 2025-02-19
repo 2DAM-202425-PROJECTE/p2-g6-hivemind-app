@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\MessageDeletedEvent;
+use App\Events\MessageEditedEvent;
 use App\Events\MessageSentEvent;
 use App\Models\Chat;
 use App\Models\Message;
@@ -55,6 +56,7 @@ class MessageController extends Controller
             'content' => $content,
         ]);
 
+        // Enviar evento para WebSockets
         broadcast(new MessageSentEvent($message))->toOthers();
 
         return response()->json([
@@ -85,7 +87,7 @@ class MessageController extends Controller
         ]);
 
         // Enviar evento para WebSockets
-        broadcast(new MessageSentEvent($message))->toOthers();
+        broadcast(new MessageEditedEvent($message))->toOthers();
 
         return response()->json([
             'message' => $message,

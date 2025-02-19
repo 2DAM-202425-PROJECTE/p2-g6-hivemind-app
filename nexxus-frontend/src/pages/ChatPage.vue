@@ -136,8 +136,15 @@ const selectChat = async (chat) => {
           });
         }
       })
-      .listen('MessageDeletedEvent', (message) => {
-        selectedChat.value.messages = selectedChat.value.messages.filter(msg => msg.id !== message.message_id);
+      .listen('MessageEditedEvent', (event) => {
+        const message = selectedChat.value.messages.find(msg => msg.id === event.id);
+        if (message) {
+          message.text = event.content;
+          message.is_edited = event.is_edited;
+        }
+      })
+      .listen('MessageDeletedEvent', (event) => {
+        selectedChat.value.messages = selectedChat.value.messages.filter(msg => msg.id !== event.message_id);
       });
 
     scrollToBottom();
@@ -204,7 +211,7 @@ const editMessage = async (index) => {
   const newContent = prompt("Edit your message:", message.text);
   if (newContent !== null) {
     try {
-      const response = await apiClient.patch(`/api/chats/${selectedChat.value.chat.name}/messages/${message.id}`, {
+      const response = await apiClient.patch(`/api/messages/${message.id}`, {
         content: newContent
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
