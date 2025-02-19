@@ -108,10 +108,11 @@
       </div>
     </div>
 
-    <!-- Create Channel Modal -->
     <div v-if="showChannelPopup" class="modal-overlay" @click.self="showChannelPopup = false">
       <div class="modal">
         <h2>Create a New Channel</h2>
+        <label>Category Name</label>
+        <input v-model="newChannel.category" placeholder="Enter category name" class="modal-input" />
         <label>Channel Name</label>
         <input v-model="newChannel.name" placeholder="Enter channel name" class="modal-input" />
         <div class="modal-buttons">
@@ -138,7 +139,7 @@
     <div v-if="showCreateOptions" class="modal-overlay" @click.self="showCreateOptions = false">
       <div class="modal">
         <h2>Create Options</h2>
-        <button @click="showChannelPopup = true; showCreateOptions = false" class="modal-button create-options-button">Create Channel</button>
+        <button @click="showChannelPopup = true; showCreateOptions = false">Create Channel</button>
         <button @click="showCategoryPopup = true; showCreateOptions = false" class="modal-button create-options-button">Create Category</button>
         <button @click="showCreateOptions = false" class="modal-button cancel-button">Cancel</button>
       </div>
@@ -231,7 +232,7 @@ const newChannel = ref({
 const newCategory = ref({
   name: "",
 })
-const servers = ref([{ id: 1, name: "Test Server", description: "A test server", category: "Gaming", visibility: "Public", channels: [{ id: 1, name: "General", messages: [] }], users: [{ id: 1, name: "User1", online: true }, { id: 2, name: "User2", online: false }] }])
+const servers = ref([]) // Removed the test server data
 const selectedServer = ref(null)
 const selectedChannel = ref(null)
 const newMessage = ref("")
@@ -253,25 +254,71 @@ const selectChannel = (channel) => {
 
 const createServer = () => {
   if (newServer.value.name.trim()) {
-    servers.value.push({
-      id: Date.now(),
+    const mainCategoryId = Date.now();
+    const generalChannelId = mainCategoryId + 1;
+
+    const newServerData = {
+      id: mainCategoryId,
       ...newServer.value,
-      channels: [{ id: Date.now(), name: "General", messages: [] }],
+      channels: [
+        {
+          id: mainCategoryId,
+          name: "Main",
+          isCategory: true,
+          channels: []
+        },
+        {
+          id: generalChannelId,
+          name: "General",
+          isCategory: false,
+          messages: [],
+          parentCategoryId: mainCategoryId
+        }
+      ],
       users: []
-    });
+    };
+
+    servers.value.push(newServerData);
+    selectedServer.value = newServerData;
+    selectedChannel.value = newServerData.channels.find(channel => channel.name === "General");
+
     newServer.value = { name: "", description: "", category: "Gaming", visibility: "Public", icon: null };
     showCreateServer.value = false;
   }
 };
 
+// Update createChannel function
 const createChannel = () => {
-  if (newChannel.value.name.trim()) {
-    selectedServer.value.channels.push({ id: Date.now(), name: newChannel.value.name, messages: [] })
-    newChannel.value = { name: "" }
-    showChannelPopup.value = false
-    selectedChannel.value = selectedServer.value.channels[selectedServer.value.channels.length - 1]
+  if (newChannel.value.name.trim() && newChannel.value.category.trim()) {
+    let category = selectedServer.value.channels.find(channel => channel.name === newChannel.value.category && channel.isCategory);
+
+    if (!category) {
+      category = {
+        id: Date.now(),
+        name: newChannel.value.category,
+        isCategory: true,
+        channels: []
+      };
+      selectedServer.value.channels.push(category);
+    }
+
+    // Create new channel under the category
+    const newChannelData = {
+      id: Date.now(),
+      name: newChannel.value.name,
+      isCategory: false,
+      messages: [],
+      parentCategoryId: category.id
+    };
+
+    category.channels.push(newChannelData);
+    selectedServer.value.channels.push(newChannelData);
+
+    newChannel.value = { name: "", category: "" };
+    showChannelPopup.value = false;
+    selectedChannel.value = newChannelData;
   }
-}
+};
 
 const createCategory = () => {
   if (newCategory.value.name.trim()) {
