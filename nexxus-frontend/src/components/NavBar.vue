@@ -38,14 +38,30 @@ const fetchUser = async () => {
   }
 }
 
+const clearAuthToken = () => {
+  axios.defaults.headers.common['Authorization'] = ''
+}
+
 const logout = async () => {
   try {
-    await axios.post('/api/logout')
-    localStorage.removeItem("token")
-    clearAuthToken()
-    user.value = null
-    window.location.href = "/"
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+      throw new Error("No token found");
+    }
+
+    await axios.post('/api/logout', {}, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    localStorage.removeItem("token");
+    clearAuthToken();
+    user.value = null;
+    window.location.href = "/";
   } catch (err) {
+    console.error(err)
     alert('Logout failed.')
   }
 }
