@@ -22,8 +22,7 @@
             </div>
             <h3 class="item-name">{{ item.name }}</h3>
             <p class="item-price">{{ item.price }}</p>
-            <button class="buy-button">Purchase</button>
-          </div>
+            <button class="buy-button" @click="navigateToPurchase(item)">Purchase</button>          </div>
         </div>
       </section>
 
@@ -45,31 +44,29 @@
       </section>
 
       <!-- Credits Section -->
-      <section class="credits-section">
+      <section id="buy-credits" class="credits-section">
         <h2 class="section-title">Buy Credits</h2>
         <div class="credits-grid">
           <div v-for="(credit, index) in creditPacks" :key="index" class="credit-card">
             <img :src="credit.iconUrl" :alt="credit.amount" class="credit-icon">
             <h3 class="credit-amount">{{ credit.amount }} Credits</h3>
             <p class="credit-price">{{ credit.price }}</p>
-            <button class="buy-button">Purchase</button>
-          </div>
+            <button class="buy-button" @click="navigateToPurchase(item)">Purchase</button>          </div>
         </div>
       </section>
-
       <!-- Cosmetics Section -->
       <section class="cosmetics-section">
         <h2 class="section-title">Cosmetics</h2>
         <div class="cosmetics-grid">
           <div class="category-card" v-for="category in cosmeticCategories" :key="category.title">
             <h3 class="category-title">{{ category.title }}</h3>
+            <p class="category-description">{{ category.description }}</p>
             <div class="items-grid">
               <div v-for="item in category.items" :key="item.name" class="cosmetic-item">
                 <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon">
                 <h4 class="item-name">{{ item.name }}</h4>
                 <p class="item-price">{{ item.price }}</p>
-                <button class="buy-button">Purchase</button>
-              </div>
+                <button class="buy-button" @click="navigateToPurchase(item)">Purchase</button>              </div>
             </div>
           </div>
         </div>
@@ -130,37 +127,86 @@ export default {
       cosmeticCategories: [
         {
           title: 'Profile Icons',
+          description: 'Stand out with unique profile icons that showcase your personality',
           items: [
             { name: 'Crown Icon', price: '250 Credits', iconUrl: 'https://api.iconify.design/lucide/crown.svg' },
             { name: 'Star Icon', price: '150 Credits', iconUrl: 'https://api.iconify.design/lucide/star.svg' },
             { name: 'Heart Icon', price: '100 Credits', iconUrl: 'https://api.iconify.design/lucide/heart.svg' },
-            { name: 'Ghost Icon', price: '200 Credits', iconUrl: 'https://api.iconify.design/lucide/ghost.svg' }
+            { name: 'Ghost Icon', price: '200 Credits', iconUrl: 'https://api.iconify.design/lucide/ghost.svg' },
+            { name: 'Diamond Icon', price: '300 Credits', iconUrl: 'https://api.iconify.design/lucide/diamond.svg' },
+            { name: 'Lightning Icon', price: '200 Credits', iconUrl: 'https://api.iconify.design/lucide/zap.svg' },
+            { name: 'Fire Icon', price: '200 Credits', iconUrl: 'https://api.iconify.design/lucide/flame.svg' },
+            { name: 'Music Icon', price: '150 Credits', iconUrl: 'https://api.iconify.design/lucide/music.svg' }
           ]
         },
         {
           title: 'Backgrounds',
+          description: 'Transform your profile with stunning background themes',
           items: [
             { name: 'Galaxy', price: '500 Credits', iconUrl: 'https://api.iconify.design/lucide/sparkles.svg' },
             { name: 'Night City', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/building-2.svg' },
             { name: 'Mountain', price: '300 Credits', iconUrl: 'https://api.iconify.design/lucide/mountain.svg' },
-            { name: 'Blossom', price: '350 Credits', iconUrl: 'https://api.iconify.design/lucide/flower-2.svg' }
+            { name: 'Blossom', price: '350 Credits', iconUrl: 'https://api.iconify.design/lucide/flower-2.svg' },
+            { name: 'Ocean', price: '450 Credits', iconUrl: 'https://api.iconify.design/lucide/waves.svg' },
+            { name: 'Forest', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/trees.svg' },
+            { name: 'Desert', price: '350 Credits', iconUrl: 'https://api.iconify.design/lucide/sun.svg' },
+            { name: 'Space', price: '550 Credits', iconUrl: 'https://api.iconify.design/lucide/moon.svg' }
           ]
         },
         {
           title: 'Animations',
+          description: 'Add dynamic effects to make your profile come alive',
           items: [
             { name: 'Sparkle', price: '600 Credits', iconUrl: 'https://api.iconify.design/lucide/sparkles.svg' },
             { name: 'Wind', price: '700 Credits', iconUrl: 'https://api.iconify.design/lucide/wind.svg' },
             { name: 'Fire', price: '800 Credits', iconUrl: 'https://api.iconify.design/lucide/flame.svg' },
-            { name: 'Wave', price: '750 Credits', iconUrl: 'https://api.iconify.design/lucide/waves.svg' }          ]
+            { name: 'Wave', price: '750 Credits', iconUrl: 'https://api.iconify.design/lucide/waves.svg' },
+            { name: 'Rainbow', price: '900 Credits', iconUrl: 'https://api.iconify.design/lucide/palette.svg' },
+            { name: 'Glitch', price: '850 Credits', iconUrl: 'https://api.iconify.design/lucide/scan-line.svg' },
+            { name: 'Pulse', price: '700 Credits', iconUrl: 'https://api.iconify.design/lucide/activity.svg' },
+            { name: 'Orbit', price: '800 Credits', iconUrl: 'https://api.iconify.design/lucide/orbit.svg' }
+          ]
         },
         {
           title: 'Emojis',
+          description: 'Express yourself with premium animated emojis',
           items: [
             { name: 'Smile Emoji', price: '50 Credits', iconUrl: 'https://api.iconify.design/lucide/smile.svg' },
             { name: 'Laugh Emoji', price: '50 Credits', iconUrl: 'https://api.iconify.design/lucide/laugh.svg' },
             { name: 'Wink Emoji', price: '50 Credits', iconUrl: 'https://api.iconify.design/lucide/smile-plus.svg' },
-            { name: 'Cool Emoji', price: '50 Credits', iconUrl: 'https://api.iconify.design/lucide/sun.svg' }
+            { name: 'Cool Emoji', price: '50 Credits', iconUrl: 'https://api.iconify.design/lucide/sun.svg' },
+            { name: 'Party Emoji', price: '75 Credits', iconUrl: 'https://api.iconify.design/lucide/party-popper.svg' },
+            { name: 'Love Emoji', price: '75 Credits', iconUrl: 'https://api.iconify.design/lucide/heart-handshake.svg' },
+            { name: 'Surprised Emoji', price: '50 Credits', iconUrl: 'https://api.iconify.design/lucide/circle-dot.svg' },
+            { name: 'Star Eyes Emoji', price: '75 Credits', iconUrl: 'https://api.iconify.design/lucide/star.svg' }
+          ]
+        },
+        {
+          title: 'Name Effects',
+          description: 'Make your username stand out with eye-catching effects',
+          items: [
+            { name: 'Gradient', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/gradient.svg' },
+            { name: 'Neon', price: '450 Credits', iconUrl: 'https://api.iconify.design/lucide/lamp.svg' },
+            { name: 'Gold', price: '500 Credits', iconUrl: 'https://api.iconify.design/lucide/badge.svg' },
+            { name: 'Rainbow', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/palette.svg' },
+            { name: 'Glitter', price: '450 Credits', iconUrl: 'https://api.iconify.design/lucide/sparkles.svg' },
+            { name: 'Shadow', price: '350 Credits', iconUrl: 'https://api.iconify.design/lucide/box.svg' },
+            { name: 'Pixel', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/square.svg' },
+            { name: 'Cosmic', price: '500 Credits', iconUrl: 'https://api.iconify.design/lucide/stars.svg' }
+          ]
+        },
+        {
+          title: 'Profile Frames',
+          description: 'Frame your profile picture with stunning borders',
+          items: [
+            { name: 'Golden Frame', price: '300 Credits', iconUrl: 'https://api.iconify.design/lucide/square.svg' },
+            { name: 'Crystal Frame', price: '350 Credits', iconUrl: 'https://api.iconify.design/lucide/pentagon.svg' },
+            { name: 'Flame Frame', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/flame.svg' },
+            { name: 'Nature Frame', price: '300 Credits', iconUrl: 'https://api.iconify.design/lucide/flower.svg' },
+            { name: 'Tech Frame', price: '350 Credits', iconUrl: 'https://api.iconify.design/lucide/cpu.svg' },
+            { name: 'Star Frame', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/star.svg' },
+            { name: 'Cloud Frame', price: '300 Credits', iconUrl: 'https://api.iconify.design/lucide/cloud.svg' },
+            { name: 'Royal Frame', price: '450 Credits', iconUrl: 'https://api.iconify.design/lucide/crown.svg' }
           ]
         }
       ]
@@ -179,9 +225,13 @@ export default {
         [array[i], array[j]] = [array[j], array[i]];
       }
       return array;
+    },
+    navigateToPurchase(item) {
+      this.$router.push({ name: 'PurchasePage', params: { item } });
     }
   }
 }
+
 </script>
 
 <style scoped>
@@ -198,12 +248,36 @@ export default {
   padding: 0 1rem;
 }
 
-.navbar-brand {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
+.category-description {
+  color: #666;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
 }
 
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 columns for all screen sizes */
+  gap: 1rem;
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .items-grid {
+    grid-template-columns: repeat(4, 1fr); /* Exactly 4 columns on desktop */
+  }
+}
+
+@media (min-width: 480px) and (max-width: 767px) {
+  .items-grid {
+    grid-template-columns: repeat(3, 1fr); /* 3 columns on tablets */
+  }
+}
+
+@media (max-width: 479px) {
+  .items-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
+  }
+}
 .shop-content {
   padding: 2rem 1rem;
 }
@@ -268,12 +342,6 @@ section {
   padding: 1.5rem;
   text-align: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.emoji-icon {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  display: block;
 }
 
 .trending-item h3,
@@ -341,11 +409,7 @@ section {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.items-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 1rem;
-}
+
 
 .cosmetic-item {
   padding: 1rem;

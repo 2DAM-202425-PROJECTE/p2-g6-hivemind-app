@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "vue-draggable-next": "^2.2.1",
-    "vuedraggable": "^2.24.3"
+    "vuedraggable": "^2.24.3",
+    "vuetify": "^3.7.13"
   }
 }

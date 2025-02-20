@@ -129,7 +129,7 @@ onMounted(() => {
           </v-avatar>
         </v-btn>
         <span class="user-greeting text-white ml-2">{{ user.name }}</span>
-        <v-btn text class="text-white ml-2" :to="'/shop'">
+        <v-btn text class="text-white ml-2" :to="'/shop#buy-credits'">
           <span>{{ user.credits || 0 }} Credits</span>
         </v-btn>
         <v-btn icon class="text-white ml-2" @click="popup = true">
