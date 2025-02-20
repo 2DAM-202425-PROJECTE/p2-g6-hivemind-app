@@ -22,7 +22,7 @@
 <script>
 import NavBar from '../components/NavBar.vue'
 import AppFooter from '../components/AppFooter.vue'
-import { VTextField, VBtn } from 'vuetify/lib'
+import { VTextField, VBtn } from 'vuetify/components'
 
 export default {
   name: 'PurchasePage',
@@ -45,6 +45,10 @@ export default {
   },
   methods: {
     handlePurchase() {
+      console.log('Purchase button clicked');
+      console.log('Card Number:', this.cardNumber);
+      console.log('Expiry Date:', this.expiryDate);
+      console.log('CVV:', this.cvv);
       // Handle the purchase logic here
       alert('Purchase successful!');
       this.$router.push('/shop');

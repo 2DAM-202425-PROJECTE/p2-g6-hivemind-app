@@ -12,6 +12,7 @@ import ContactPage from "@/pages/ContactPage.vue";
 import ChatPage from "@/pages/ChatPage.vue";
 import ServerPage from "@/pages/ServerPage.vue";
 import ShopPage from "@/pages/ShopPage.vue";
+import PurchasePage from "@/pages/PurchasePage.vue";
 
 const routes = [
   { path: '/', component: Login },
@@ -64,6 +65,8 @@ const routes = [
   { path: '/privacy-policy', component: PrivacyPolicy },
   { path: '/terms-of-service', component: TermsOfService },
   { path: '/shop', component: ShopPage },
+  { path: '/purchase', component: PurchasePage },
+
 
 
 ];

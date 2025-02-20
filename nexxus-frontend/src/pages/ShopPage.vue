@@ -22,7 +22,8 @@
             </div>
             <h3 class="item-name">{{ item.name }}</h3>
             <p class="item-price">{{ item.price }}</p>
-            <button class="buy-button" @click="navigateToPurchase(item)">Purchase</button>          </div>
+            <button class="buy-button" @click="navigateToPurchase(item)">Purchase</button>
+          </div>
         </div>
       </section>
 
@@ -38,7 +39,7 @@
                 {{ feature }}
               </li>
             </ul>
-            <button class="subscribe-button">Subscribe Now</button>
+            <button class="subscribe-button" @click="navigateToPurchase(tier)">Subscribe Now</button>
           </div>
         </div>
       </section>
@@ -51,9 +52,11 @@
             <img :src="credit.iconUrl" :alt="credit.amount" class="credit-icon">
             <h3 class="credit-amount">{{ credit.amount }} Credits</h3>
             <p class="credit-price">{{ credit.price }}</p>
-            <button class="buy-button" @click="navigateToPurchase(item)">Purchase</button>          </div>
+            <button class="buy-button" @click="navigateToPurchase(credit)">Purchase</button>
+          </div>
         </div>
       </section>
+
       <!-- Cosmetics Section -->
       <section class="cosmetics-section">
         <h2 class="section-title">Cosmetics</h2>
@@ -66,7 +69,8 @@
                 <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon">
                 <h4 class="item-name">{{ item.name }}</h4>
                 <p class="item-price">{{ item.price }}</p>
-                <button class="buy-button" @click="navigateToPurchase(item)">Purchase</button>              </div>
+                <button class="buy-button" @click="navigateToPurchase(item)">Purchase</button>
+              </div>
             </div>
           </div>
         </div>
@@ -227,11 +231,9 @@ export default {
       return array;
     },
     navigateToPurchase(item) {
-      this.$router.push({ name: 'PurchasePage', params: { item } });
     }
   }
 }
-
 </script>
 
 <style scoped>
