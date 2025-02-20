@@ -7,6 +7,9 @@ import Register from '../pages/Register.vue';
 import About from '../pages/About.vue';
 import PrivacyPolicy from '../pages/PrivacyPolicyPage.vue';
 import TermsOfService from '../pages/TermsOfServicePage.vue';
+import ChatPage from '../pages/ChatPage.vue';
+import ShopPage from '../pages/ShopPage.vue'
+import PurchasePage from '../pages/PurchasePage.vue'
 
 
 const routes = [
@@ -50,6 +53,16 @@ const routes = [
     name: 'TermsOfService',
     component: TermsOfService,
   },
+  {
+    path: '/shop',
+    name: 'ShopPage',
+    component: ShopPage
+  },
+  {
+    path: '/purchase',
+    name: 'PurchasePage',
+    component: PurchasePage
+  }
 ];
 
 const router = createRouter({
