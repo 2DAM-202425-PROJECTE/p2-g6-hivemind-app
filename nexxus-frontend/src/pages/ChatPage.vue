@@ -132,6 +132,12 @@ const selectChat = async (chat) => {
       id: msg.id,
       text: msg.content,
       isMine: msg.user_id === userId.value,
+      user: {
+        id: msg.user.id,
+        name: msg.user.name,
+        profile_photo_url: msg.user.profile_photo_url,
+      },
+      timestamp: new Date(msg.created_at).toLocaleString(),
     }));
 
     window.Echo.channel(`${chatName}`)
@@ -141,6 +147,12 @@ const selectChat = async (chat) => {
             id: message.id,
             text: message.content,
             isMine: message.user_id === userId.value,
+            user: {
+              id: message.user_id,
+              name: message.user?.name || 'Unknown',
+              profile_photo_url: message.user?.profile_photo_url || '',
+            },
+            timestamp: new Date(message.created_at).toLocaleString(),
           });
         }
       })
@@ -183,15 +195,17 @@ const sendMessage = async () => {
       selectedChat.value.messages = [];
     }
 
+    const user = response.data.message.user || {};
     selectedChat.value.messages.push({
       id: response.data.message.id,
       text: response.data.message.content,
       isMine: true,
       user: {
-        id: userId.value,
-        name: response.data.message.user.name,
-        profile_photo_url: response.data.message.user.profile_photo_url,
+        id: user.id || userId.value,
+        name: user.name || 'Unknown',
+        profile_photo_url: user.profile_photo_url || '',
       },
+      timestamp: new Date(response.data.message.created_at).toLocaleString(),
     });
 
     newMessage.value = '';

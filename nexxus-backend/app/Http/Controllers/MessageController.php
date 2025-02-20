@@ -25,6 +25,8 @@ class MessageController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
+        $messages->load('user');
+
         return response()->json(['messages' => $messages]);
     }
 
@@ -37,24 +39,27 @@ class MessageController extends Controller
         $userId = Auth::id();
         $content = trim($request->input('content'));
 
-        // Buscar el chat per nom
+        // Buscar el chat por nombre
         $chat = Chat::where('name', $chatName)->first();
 
         if (!$chat) {
-            return response()->json(['error' => 'El chat no existeix'], 404);
+            return response()->json(['error' => 'El chat no existe'], 404);
         }
 
-        // Comprovar que l'usuari forma part del xat
+        // Comprobar que el usuario forma parte del chat
         if (!$chat->users()->where('user_id', $userId)->exists()) {
-            return response()->json(['error' => 'No tens permís per enviar missatges en aquest chat'], 403);
+            return response()->json(['error' => 'No tienes permiso para enviar mensajes en este chat'], 403);
         }
 
-        // Crear el missatge
+        // Crear el mensaje
         $message = Message::create([
             'chat_id' => $chat->id,
             'user_id' => $userId,
             'content' => $content,
         ]);
+
+        // Cargar la relación del usuario
+        $message->load('user');
 
         // Enviar evento para WebSockets
         broadcast(new MessageSentEvent($message))->toOthers();

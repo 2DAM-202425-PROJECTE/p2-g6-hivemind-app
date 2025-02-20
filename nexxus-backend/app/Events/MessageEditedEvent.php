@@ -31,7 +31,12 @@ class MessageEditedEvent implements ShouldBroadcast
             'id' => $this->message->id,
             'content' => $this->message->content,
             'user_id' => $this->message->user_id,
-            'is_edited' => $this->message->is_edited,
+            'user' => [
+                'id' => $this->message->user->id,
+                'name' => $this->message->user->name,
+                'profile_photo_url' => $this->message->user->profile_photo_url,
+            ],
+            'created_at' => $this->message->created_at->toDateTimeString(),
         ];
     }
 }
