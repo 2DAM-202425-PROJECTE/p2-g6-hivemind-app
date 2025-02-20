@@ -52,7 +52,7 @@
         </div>
         <div class="action-item" @click="openCommentModal(post)">
           <i class="mdi mdi-comment-outline"></i>
-          <span>{{ null }} Comments</span>
+          <span>{{ post.comments ? post.comments.length : 0 }} Comments</span>
         </div>
         <div class="action-item" @click="sharePost">
           <i class="mdi mdi-share-outline"></i>
@@ -61,8 +61,7 @@
       </div>
     </div>
 
-    <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal"
-      @add-comment="addComment" />
+    <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal" @add-comment="addComment" :post="selectedPost" />
 
     <UserRecommendation />
     <Footer />
@@ -82,6 +81,8 @@ const posts = ref([]);
 const users = ref({});
 const isCommentModalVisible = ref(false);
 const selectedPostComments = ref([]);
+const selectedPostId = ref(null);
+const selectedPost = ref(null);
 
 onMounted(async () => {
   try {
@@ -181,21 +182,41 @@ const toggleLike = async (post) => {
   }
 };
 
-const openCommentModal = (post) => {
-  selectedPostComments.value = post.comments || [];
+const openCommentModal = async (post) => {
+  selectedPost.value = post;
+  selectedPostId.value = post.id;
   isCommentModalVisible.value = true;
+  
+  try {
+    const response = await axios.get(
+      `http://localhost:8000/api/posts/${post.id}/comments`,
+      { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+    );
+    selectedPostComments.value = response.data;
+    isCommentModalVisible.value = true;
+  } catch (error) {
+    console.error('Error:', error.response.data);
+  }
 };
 
 const closeCommentModal = () => {
   isCommentModalVisible.value = false;
 };
 
-const addComment = (comment) => {
-  selectedPostComments.value.push({
-    id: Date.now(),
-    user: { name: 'Current User' },
-    text: comment,
-  });
+const addComment = async (comment) => {
+  try {
+    const response = await axios.post(`http://localhost:8000/api/posts/${selectedPostId.value}/comments`, {
+      content: comment,
+    }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    selectedPostComments.value.push(response.data);
+  } catch (error) {
+    console.error('Error adding comment:', error.response?.data || error.message);
+  }
 };
 </script>
 

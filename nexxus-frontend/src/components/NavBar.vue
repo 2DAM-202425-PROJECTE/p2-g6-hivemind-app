@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from '../axios'
-import { clearAuthToken } from '../auth'
 
 const menu = ref(false)
 const searchQuery = ref('')
