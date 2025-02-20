@@ -18,6 +18,7 @@ const menuItems = ref([
   { text: 'Servers', to: '/servers', icon: 'mdi-server' },
   { text: 'Live Now', to: '/live', icon: 'mdi-video' },
   { text: 'Videos', to: '/videos', icon: 'mdi-video-outline' },
+  { text: 'Shop', to: '/shop', icon: 'mdi-cart' },
   { text: 'My Profile', to: '/profile', icon: 'mdi-account' },
 ])
 
@@ -118,16 +119,26 @@ onMounted(() => {
     </div>
 
     <v-text-field class="search-field" v-model="searchQuery" placeholder="Search" hide-details solo flat
-      prepend-inner-icon="mdi-magnify"></v-text-field>
+                  prepend-inner-icon="mdi-magnify"></v-text-field>
 
     <div class="right-section flex items-center">
       <template v-if="user">
-        <span class="user-greeting">Hello, {{ user.name }}</span>
+        <v-btn icon class="text-white ml-2" :to="'/profile'">
+          <v-avatar size="32">
+            <img :src="user.profilePic" alt="Profile Picture" />
+          </v-avatar>
+        </v-btn>
+        <span class="user-greeting text-white ml-2">{{ user.name }}</span>
+        <v-btn text class="text-white ml-2" :to="'/shop#buy-credits'">
+          <span>{{ user.credits || 0 }} Credits</span>
+        </v-btn>
+        <v-btn icon class="text-white ml-2" @click="popup = true">
+          <v-icon>mdi-plus</v-icon>
+        </v-btn>
+        <v-btn icon class="text-white ml-2">
+          <v-icon>mdi-bell</v-icon>
+        </v-btn>
       </template>
-
-      <v-btn icon class="text-white ml-2" @click="popup = true">
-        <v-icon>mdi-plus</v-icon>
-      </v-btn>
 
       <v-app-bar-nav-icon @click="menu = !menu" class="text-white ml-2"></v-app-bar-nav-icon>
     </div>
@@ -189,7 +200,7 @@ onMounted(() => {
       <v-card-title>Create a Post</v-card-title>
       <v-card-text>
         <v-file-input label="Upload Image/Video (.png, .mp4)" accept=".png, .mp4" @change="handleFileUpload"
-          outlined></v-file-input>
+                      outlined></v-file-input>
 
         <v-text-field v-model="postDescription" label="Description" outlined></v-text-field>
       </v-card-text>
@@ -260,6 +271,11 @@ onMounted(() => {
   margin: 0 auto;
   flex-grow: 1;
   text-align: center;
+}
+
+.credits-display {
+  display: flex;
+  align-items: center;
 }
 
 .logout-container {

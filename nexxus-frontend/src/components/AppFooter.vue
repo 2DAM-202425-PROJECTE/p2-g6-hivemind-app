@@ -2,7 +2,7 @@
   <v-footer height="60" app>
     <div class="footer-content">
       <div class="footer-center">
-        <span>Nexxus by Hivemind</span>
+        <span> Hivemind by Nexxus</span>
         <span>&copy; 2025-{{ new Date().getFullYear() }}</span>
         <div class="footer-links">
           <router-link to="/about">About</router-link>
