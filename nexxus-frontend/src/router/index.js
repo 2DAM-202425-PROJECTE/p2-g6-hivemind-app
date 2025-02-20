@@ -7,7 +7,6 @@ import Register from '../pages/Register.vue';
 import About from '../pages/About.vue';
 import PrivacyPolicy from '../pages/PrivacyPolicyPage.vue';
 import TermsOfService from '../pages/TermsOfServicePage.vue';
-import ChatPage from '../pages/ChatPage.vue';
 import ShopPage from '../pages/ShopPage.vue'
 import PurchasePage from '../pages/PurchasePage.vue'
 
@@ -59,7 +58,7 @@ const routes = [
     component: ShopPage
   },
   {
-    path: '/purchase',
+    path: '/purchase/:id',
     name: 'PurchasePage',
     component: PurchasePage
   }
