@@ -20,6 +20,8 @@ const menuItems = ref([
   { text: 'Videos', to: '/videos', icon: 'mdi-video-outline' },
   { text: 'Shop', to: '/shop', icon: 'mdi-cart' },
   { text: 'My Profile', to: '/profile', icon: 'mdi-account' },
+  { text: 'Settings', to: '/settings', icon: 'mdi-cog' }
+
 ])
 
 const fetchUser = async () => {
