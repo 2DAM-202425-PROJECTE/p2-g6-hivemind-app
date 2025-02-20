@@ -26,9 +26,15 @@
         <div ref="chatMessages" class="flex-1 overflow-y-auto my-3 space-y-2">
           <div v-for="(message, index) in selectedChat.messages" :key="index"
                @contextmenu.prevent="showMessageMenu($event, index, message.isMine)"
-               class="w-fit max-w-[70%] p-3 rounded-lg"
-               :class="message.isMine ? 'bg-green-200 self-end' : 'bg-gray-200'">
-            <p>{{ message.text }}</p>
+               class="flex items-start gap-3 p-3 rounded-lg bg-gray-800">
+            <img :src="message.user.profile_photo_url" alt="Avatar" class="w-10 h-10 rounded-full">
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="text-sm font-semibold text-white">{{ message.user.name }}</h4>
+                <span class="text-xs text-gray-400">{{ message.timestamp }}</span>
+              </div>
+              <p class="text-white">{{ message.text }}</p>
+            </div>
           </div>
         </div>
 
@@ -181,6 +187,11 @@ const sendMessage = async () => {
       id: response.data.message.id,
       text: response.data.message.content,
       isMine: true,
+      user: {
+        id: userId.value,
+        name: response.data.message.user.name,
+        profile_photo_url: response.data.message.user.profile_photo_url,
+      },
     });
 
     newMessage.value = '';
