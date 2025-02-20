@@ -30,6 +30,7 @@ class MessageDeletedEvent implements ShouldBroadcast
     {
         return [
             'message_id' => $this->messageId,
+            'content' => '(message deleted)',
         ];
     }
 }
