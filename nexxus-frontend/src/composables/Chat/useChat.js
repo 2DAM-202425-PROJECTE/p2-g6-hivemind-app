@@ -1,4 +1,3 @@
-// useChat.js
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import apiClient from '@/axios.js';
 import '@/echo.js';
@@ -14,6 +13,9 @@ export function useChat() {
   const selectedMessageIndex = ref(null);
   const userId = ref(null);
   const isMine = ref(false);
+  const showModal = ref(false);
+  const messageToDelete = ref(null);
+  const isShiftPressed = ref(false);
 
   const fetchUserId = async () => {
     try {
@@ -42,14 +44,6 @@ export function useChat() {
     } catch (error) {
       console.error("Error al obtener la lista de usuarios:", error.response?.data || error.message);
     }
-  };
-
-  const scrollToBottom = () => {
-    nextTick(() => {
-      if (chatMessages.value) {
-        chatMessages.value.scrollTop = chatMessages.value.scrollHeight;
-      }
-    });
   };
 
   const sendMessage = async (messageContent) => {
@@ -183,19 +177,43 @@ export function useChat() {
     messageMenuVisible.value = false;
   };
 
-  const deleteMessage = async (index) => {
-    const message = selectedChat.value.messages[index];
-    if (confirm("Are you sure you want to delete this message?")) {
-      try {
-        await apiClient.delete(`/api/messages/${message.id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        });
-        selectedChat.value.messages.splice(index, 1);
-        alert("Message deleted successfully");
-      } catch (error) {
-        console.error("Error al eliminar el mensaje:", error.response?.data || error.message);
-      }
+  const deleteMessage = async (message) => {
+    if (!message) {
+      console.error("Mensaje no proporcionado");
+      return;
     }
+
+    // Buscar el índice del mensaje en la lista
+    const index = selectedChat.value.messages.findIndex(m => m.id === message.id);
+    if (index === -1) {
+      console.error("Mensaje no encontrado en la lista");
+      return;
+    }
+
+    if (isShiftPressed.value) {
+      await confirmDeleteMessage();
+    } else {
+      messageToDelete.value = message;
+      showModal.value = true;
+    }
+  };
+
+  const confirmDeleteMessage = async () => {
+    const message = messageToDelete.value;
+    if (!message) return;
+
+    try {
+      await apiClient.delete(`/api/messages/${message.id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      const index = selectedChat.value.messages.findIndex(m => m.id === message.id);
+      if (index !== -1) {
+        selectedChat.value.messages.splice(index, 1);
+      }
+    } catch (error) {
+      console.error("Error al eliminar el mensaje:", error.response?.data || error.message);
+    }
+    showModal.value = false;
     messageMenuVisible.value = false;
   };
 
@@ -232,15 +250,17 @@ export function useChat() {
     selectedMessageIndex,
     userId,
     isMine,
+    showModal,
+    messageToDelete,
     fetchUserId,
     fetchChats,
-    scrollToBottom,
     selectChat,
     sendMessage,
     toggleChatMenu,
     showMessageMenu,
     editMessage,
     deleteMessage,
+    confirmDeleteMessage,
     reportMessage,
   };
 }
