@@ -44,10 +44,6 @@ const fetchUser = async () => {
   }
 }
 
-const clearAuthToken = () => {
-  axios.defaults.headers.common['Authorization'] = ''
-}
-
 const logout = async () => {
   try {
     const token = localStorage.getItem("token");
