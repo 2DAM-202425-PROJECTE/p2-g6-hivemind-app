@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import axios from '../axios'
+import { clearAuthToken } from '../auth'
 import NotificationsModal from './NotificationsModal.vue' // Import the NotificationsModal component
 
 const menu = ref(false)
@@ -11,13 +12,12 @@ const postPopup = ref(false)
 const postContent = ref('')
 const postDescription = ref('')
 const postFile = ref(null)
-const showLogoutConfirm = ref(false)
+const showLogoutConfirm = ref(false) // Add this line
 const showNotifications = ref(false) // Add this line
 const notifications = ref([   // Add notifications here
   { id: 1, message: 'New notification' },
   { id: 2, message: 'Another notification' }
 ])
-
 const menuItems = ref([
   { text: 'Chat', to: '/chat', icon: 'mdi-chat' },
   { text: 'Servers', to: '/servers', icon: 'mdi-server' },
@@ -26,6 +26,7 @@ const menuItems = ref([
   { text: 'Shop', to: '/shop', icon: 'mdi-cart' },
   { text: 'My Profile', to: '/profile', icon: 'mdi-account' },
   { text: 'Settings', to: '/settings', icon: 'mdi-cog' }
+
 ])
 
 const fetchUser = async () => {
@@ -43,13 +44,30 @@ const fetchUser = async () => {
   }
 }
 
+const clearAuthToken = () => {
+  axios.defaults.headers.common['Authorization'] = ''
+}
+
 const logout = async () => {
   try {
-    await axios.post('/api/logout')
-    localStorage.removeItem("token")
-    user.value = null
-    window.location.href = "/"
-  } catch (error) {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      throw new Error("No token found");
+    }
+
+    await axios.post('/api/logout', {}, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    localStorage.removeItem("token");
+    clearAuthToken();
+    user.value = null;
+    window.location.href = "/";
+  } catch (err) {
+    console.error(err)
     alert('Logout failed.')
   }
 }
@@ -90,6 +108,7 @@ const submitPost = async () => {
     postDescription.value = ''
     postFile.value = null
 
+    // Update the home page with the new post
     window.location.href = "/home"
   } catch (error) {
     console.error(error)

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CommentController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
@@ -29,6 +30,10 @@ Route::middleware('auth:sanctum')->group(function ()
     Route::post('/posts/{id}/like', [LikeController::class, 'store']);
     Route::delete('/posts/{id}/like', [LikeController::class, 'destroy']);
 
+    Route::post('/posts/{post}/comments', [CommentController::class, 'store']);
+    Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+
     // Chats routes
     Route::get('/chats/private', [ChatController::class, 'getPrivateChat']);
 //    Route::delete('/chats/{chat}', [ChatController::class, 'destroy']);
@@ -40,6 +45,4 @@ Route::middleware('auth:sanctum')->group(function ()
 //    Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
 
     Route::post('/contact/submit', [ContactController::class, 'submit']);
-
-
 });

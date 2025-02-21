@@ -10,7 +10,9 @@ class PostController extends Controller
 
     public function index()
     {
-        $posts = Post::with('likes')->get()->map(function ($post) {
+        $posts = Post::with(['likes', 'comments.user']) // Incluir comentarios y usuarios
+        ->get()
+        ->map(function ($post) {
             $post->liked_by_user = $post->likes->contains('user_id', auth()->id());
             $post->likes_count = $post->likes->count();
             return $post;

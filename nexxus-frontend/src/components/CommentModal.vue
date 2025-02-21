@@ -10,12 +10,14 @@
           <img :src="comment.user.profile_photo_path" alt="Profile" class="comment-profile-pic" />
           <div class="comment-text">
             <strong>{{ comment.user.name }}</strong>
-            <p>{{ comment.text }}</p>
+            <p class="date_created_at">{{ comment.created_at}}</p>
+            <p>{{ comment.content }}</p>
           </div>
+
         </div>
         <div class="add-comment">
           <input v-model="newComment" placeholder="Add a comment..." />
-          <button @click="addComment">Post</button>
+          <button @click="addComment(post)">Post</button>
         </div>
       </div>
     </div>
@@ -23,12 +25,15 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import axios from '../axios'
 
 const props = defineProps({
   visible: Boolean,
   comments: Array,
+  post: Object,
   currentUser: Object
+
 });
 
 const emit = defineEmits(['close', 'add-comment']);
@@ -39,12 +44,34 @@ const close = () => {
   emit('close');
 };
 
-const addComment = () => {
-  if (newComment.value.trim()) {
-    emit('add-comment', newComment.value);
-    newComment.value = '';
+const addComment = async (post) => {
+
+  localStorage.setItem('newComment', newComment.value);
+
+  if (!newComment.value) {
+    alert('Please enter a comment!');
+    return;
   }
-};
+
+  const formData = new FormData();
+  formData.append('content', newComment.value);
+
+  try {
+    const response = await axios.post(`http://localhost:8000/api/posts/${post.id}/comments`, formData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Accept: 'application/json',
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    alert('Comment created successfully!');
+    newComment.value = '';
+    window.location.href = '/home';
+  } catch (error) {
+    console.error(error);
+    alert('Failed to create comment.');
+  }
+}
 </script>
 
 <style scoped>
@@ -119,5 +146,10 @@ const addComment = () => {
   border: none;
   border-radius: 5px;
   cursor: pointer;
+}
+
+.date_created_at{
+  font-size: smaller;
+  margin-bottom: 5px;
 }
 </style>
