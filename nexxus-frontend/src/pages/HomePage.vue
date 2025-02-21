@@ -15,35 +15,25 @@
         <div class="post-info">
           <ul>
             <li>
-              <!-- <strong>ID:</strong> {{ post.id }} <br> -->
-              <!-- <strong>Contenido:</strong> {{ post.content }} <br> -->
-              <!-- <strong>Fecha:</strong> {{ post.publish_date }} <br> -->
-              <!-- <strong>Usuario:</strong> {{ getUserNameById(post.id_user) }} <br> -->
               <strong>{{ getUserNameById(post.id_user) }}</strong>
               <h5>{{ post.description }}</h5>
-              <!-- <img :src="post.content" alt="Post Image" class="post-content" /> -->
               <img :src="getImageUrl(post.file_path)" alt="file Image" class="post-content" />
             </li>
           </ul>
-          <!--<p>{{ post.location }}</p>-->
         </div>
         <div class="post-menu">
-          <button @click="toggleMenu">
+          <button @click="togglePostMenu(post.id)">
             <i class="mdi mdi-dots-vertical"></i>
           </button>
-          <div v-if="menuVisible" class="dropdown-menu">
+          <div v-if="postMenuVisible === post.id" class="dropdown-menu">
             <ul>
-              <li @click="reportPost">Report</li>
-              <li @click="editPost">Edit</li>
-              <li @click="deletePost">Delete</li>
+              <li @click="editPost(post)">Edit</li>
+              <li @click="deletePost(post)">Delete</li>
+              <li @click="reportPost(post)">Report</li>
             </ul>
           </div>
         </div>
       </div>
-
-      <!-- <img class="post-image"
-        src="https://plus.unsplash.com/premium_photo-1672115680958-54438df0ab82?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8bW91bnRhaW5zfGVufDB8fDB8fHww"
-        alt="Post" /> -->
 
       <div class="post-actions">
         <div class="action-item" @click="toggleLike(post)">
@@ -83,6 +73,7 @@ const isCommentModalVisible = ref(false);
 const selectedPostComments = ref([]);
 const selectedPostId = ref(null);
 const selectedPost = ref(null);
+const postMenuVisible = ref(null);
 
 const currentUser = ref({
   name: 'Current User', // Replace with actual user data
@@ -187,7 +178,7 @@ const openCommentModal = async (post) => {
   selectedPost.value = post;
   selectedPostId.value = post.id;
   isCommentModalVisible.value = true;
-  
+
   try {
     const response = await axios.get(
       `http://localhost:8000/api/posts/${post.id}/comments`,
@@ -218,7 +209,27 @@ const addComment = async (comment) => {
   } catch (error) {
     console.error('Error adding comment:', error.response?.data || error.message);
   }
+};
 
+const togglePostMenu = (postId) => {
+  postMenuVisible.value = postMenuVisible.value === postId ? null : postId;
+};
+
+const editPost = (post) => {
+  // Implement edit post logic
+};
+
+const deletePost = (post) => {
+  // Implement delete post logic
+};
+
+const reportPost = (post) => {
+  // Implement report post logic
+  alert(`Reported post with ID: ${post.id}`);
+};
+
+const sharePost = (post) => {
+  // Implement share post logic
 };
 </script>
 

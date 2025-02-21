@@ -228,7 +228,7 @@ export default {
   methods: {
     navigateToPurchase(itemId) {
       this.$router.push({ name: 'PurchasePage', params: { id: itemId } });
-    },
+  },
     shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -439,22 +439,6 @@ section {
   color: #000;
 }
 
-/* Buttons */
-.buy-button,
-.subscribe-button {
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.buy-button:hover,
-.subscribe-button:hover {
-  background-color: #1d4ed8;
-}
 
 /* Responsive Design */
 @media (max-width: 768px) {
