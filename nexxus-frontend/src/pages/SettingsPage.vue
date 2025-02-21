@@ -2,6 +2,7 @@
   <div class="settings-container">
     <NavBar />
     <div class="settings-content container">
+      <!-- Existing sections here -->
       <section class="theme-section">
         <h1 class="section-title">Settings</h1>
         <div class="theme-selection">
@@ -12,9 +13,43 @@
             <input type="radio" id="dark-mode" value="dark" v-model="selectedTheme">
             <label for="dark-mode">Dark Mode</label>
           </div>
-          <button @click="applyTheme">Apply</button>
         </div>
       </section>
+      <!-- Other sections here -->
+      <section class="language-section">
+        <h2 class="section-title">Language</h2>
+        <select v-model="selectedLanguage" @change="applyLanguage">
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+        </select>
+      </section>
+      <section class="notifications-section">
+        <h2 class="section-title">Notifications</h2>
+        <label>
+          <input type="checkbox" v-model="notificationsEnabled" @change="toggleNotifications">
+          Enable Notifications
+        </label>
+      </section>
+      <section class="font-size-section">
+        <h2 class="section-title">Font Size</h2>
+        <select v-model="selectedFontSize" @change="applyFontSize">
+          <option value="small">Small</option>
+          <option value="medium">Medium</option>
+          <option value="large">Large</option>
+        </select>
+      </section>
+      <section class="privacy-mode-section">
+        <h2 class="section-title">Privacy Mode</h2>
+        <label>
+          <input type="checkbox" v-model="privacyModeEnabled" @change="togglePrivacyMode">
+          Enable Privacy Mode
+        </label>
+      </section>
+      <div class="settings-actions">
+        <button @click="applySettings">Apply</button>
+        <button @click="resetSettings">Reset</button>
+      </div>
     </div>
     <AppFooter />
   </div>
@@ -32,7 +67,11 @@ export default {
   },
   data() {
     return {
-      selectedTheme: 'light'
+      selectedTheme: 'light',
+      selectedLanguage: 'en',
+      notificationsEnabled: false,
+      selectedFontSize: 'medium',
+      privacyModeEnabled: false
     }
   },
   mounted() {
@@ -40,7 +79,24 @@ export default {
     if (savedTheme) {
       this.selectedTheme = savedTheme;
       this.applyTheme();
-    } else { /* empty */ }
+    }
+    const savedLanguage = localStorage.getItem('language');
+    if (savedLanguage) {
+      this.selectedLanguage = savedLanguage;
+    }
+    const savedNotifications = localStorage.getItem('notificationsEnabled');
+    if (savedNotifications) {
+      this.notificationsEnabled = JSON.parse(savedNotifications);
+    }
+    const savedFontSize = localStorage.getItem('fontSize');
+    if (savedFontSize) {
+      this.selectedFontSize = savedFontSize;
+      this.applyFontSize();
+    }
+    const savedPrivacyMode = localStorage.getItem('privacyModeEnabled');
+    if (savedPrivacyMode) {
+      this.privacyModeEnabled = JSON.parse(savedPrivacyMode);
+    }
   },
   methods: {
     applyTheme() {
@@ -51,12 +107,39 @@ export default {
         document.body.classList.add('light-mode');
         document.body.classList.remove('dark-mode');
       }
-      localStorage.setItem('theme', this.selectedTheme); // Save the selected theme
+      localStorage.setItem('theme', this.selectedTheme);
+    },
+    applyLanguage() {
+      localStorage.setItem('language', this.selectedLanguage);
+    },
+    toggleNotifications() {
+      localStorage.setItem('notificationsEnabled', this.notificationsEnabled);
+    },
+    applyFontSize() {
+      document.body.style.fontSize = this.selectedFontSize;
+      localStorage.setItem('fontSize', this.selectedFontSize);
+    },
+    togglePrivacyMode() {
+    },
+    applySettings() {
+      this.applyTheme();
+      this.applyLanguage();
+      this.toggleNotifications();
+      this.applyFontSize();
+      this.togglePrivacyMode();
+    },
+    resetSettings() {
+      this.selectedTheme = 'light';
+      this.selectedLanguage = 'en';
+      this.notificationsEnabled = false;
+      this.selectedFontSize = 'medium';
+      this.privacyModeEnabled = false;
+      this.applySettings();
     }
   }
 }
-
 </script>
+
 <style scoped>
 .settings-container {
   min-height: 100vh;
@@ -72,26 +155,26 @@ export default {
 }
 
 .settings-content {
-  padding: 2rem 1rem;
+  padding: 1rem 0.5rem;
 }
 
-.theme-section {
+.theme-section, .language-section, .notifications-section, .font-size-section, .privacy-mode-section {
   background: white;
   border-radius: 8px;
-  padding: 2rem;
-  margin-bottom: 2rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   color: #000;
 }
 
 .section-title {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: bold;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   color: #000;
 }
 
-.theme-selection {
+.theme-selection, .language-section, .notifications-section, .font-size-section, .privacy-mode-section {
   display: flex;
   flex-direction: column;
   color: #000;
@@ -99,22 +182,25 @@ export default {
 
 .theme-options {
   display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
+  gap: 10px;
+  margin-bottom: 0.5rem;
   color: #000;
 }
 
-.theme-options input {
-  margin-right: 0.5rem;
+.language-section select, .notifications-section label, .font-size-section select, .privacy-mode-section label {
+  margin-bottom: 0.5rem;
+  color: #000;
 }
 
-.theme-options label {
-  margin-right: 1rem;
-  color: #000;
+.settings-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 1rem;
+  justify-content: flex-end;
 }
 
 button {
-  background-color: #2563eb;
+  background-color: #7e7e7e;
   color: white;
   border: none;
   padding: 0.5rem 1rem;
