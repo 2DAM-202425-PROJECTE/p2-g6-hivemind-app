@@ -252,9 +252,11 @@ const hasNotifications = computed(() => notifications.value.length > 0);
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn color="primary" @click="handleLogoutConfirm(true)">Yes</v-btn>
+        <v-btn color="primary" @click="handleLogoutConfirm(false)">No</v-btn>
       </v-card-actions>
-    </v-card>
+  </v-card>
   </v-dialog>
+
 
   <!-- Notifications Modal -->
   <NotificationsModal
