@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import axios from '../axios'
-import { clearAuthToken } from '../auth'
+import NotificationsModal from './NotificationsModal.vue' // Import the NotificationsModal component
 
 const menu = ref(false)
 const searchQuery = ref('')
@@ -11,7 +11,12 @@ const postPopup = ref(false)
 const postContent = ref('')
 const postDescription = ref('')
 const postFile = ref(null)
-const showLogoutConfirm = ref(false) // Add this line
+const showLogoutConfirm = ref(false)
+const showNotifications = ref(false) // Add this line
+const notifications = ref([   // Add notifications here
+  { id: 1, message: 'New notification' },
+  { id: 2, message: 'Another notification' }
+])
 
 const menuItems = ref([
   { text: 'Chat', to: '/chat', icon: 'mdi-chat' },
@@ -21,7 +26,6 @@ const menuItems = ref([
   { text: 'Shop', to: '/shop', icon: 'mdi-cart' },
   { text: 'My Profile', to: '/profile', icon: 'mdi-account' },
   { text: 'Settings', to: '/settings', icon: 'mdi-cog' }
-
 ])
 
 const fetchUser = async () => {
@@ -43,10 +47,9 @@ const logout = async () => {
   try {
     await axios.post('/api/logout')
     localStorage.removeItem("token")
-    clearAuthToken()
     user.value = null
     window.location.href = "/"
-  } catch (err) {
+  } catch (error) {
     alert('Logout failed.')
   }
 }
@@ -87,7 +90,6 @@ const submitPost = async () => {
     postDescription.value = ''
     postFile.value = null
 
-    // Update the home page with the new post
     window.location.href = "/home"
   } catch (error) {
     console.error(error)
@@ -106,9 +108,21 @@ const handleLogoutConfirm = (confirm) => {
   showLogoutConfirm.value = false
 }
 
+const updateNotifications = (updatedNotifications) => {
+  notifications.value = updatedNotifications
+}
+
 onMounted(() => {
   fetchUser()
 })
+
+watch([menu, showNotifications], ([newMenu, newShowNotifications]) => {
+  if (newMenu && newShowNotifications) {
+    showNotifications.value = false
+  }
+})
+const hasNotifications = computed(() => notifications.value.length > 0);
+
 </script>
 
 <template>
@@ -137,8 +151,8 @@ onMounted(() => {
         <v-btn icon class="text-white ml-2" @click="popup = true">
           <v-icon>mdi-plus</v-icon>
         </v-btn>
-        <v-btn icon class="text-white ml-2">
-          <v-icon>mdi-bell</v-icon>
+        <v-btn icon class="text-white ml-2" @click="showNotifications = true">
+          <v-icon :class="{ 'has-notifications': hasNotifications }">mdi-bell</v-icon>
         </v-btn>
       </template>
 
@@ -222,11 +236,18 @@ onMounted(() => {
       <v-card-text>Are you sure you want to logout?</v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn text @click="handleLogoutConfirm(false)">No</v-btn>
         <v-btn color="primary" @click="handleLogoutConfirm(true)">Yes</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <!-- Notifications Modal -->
+  <NotificationsModal
+    :visible="showNotifications"
+    :notifications="notifications"
+    @update:notifications="updateNotifications"
+    @close="showNotifications = false"
+  />
 </template>
 
 <style scoped>
@@ -290,5 +311,15 @@ onMounted(() => {
   .search-field {
     max-width: 200px;
   }
+}
+.has-notifications::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  background-color: red;
+  border-radius: 50%;
 }
 </style>

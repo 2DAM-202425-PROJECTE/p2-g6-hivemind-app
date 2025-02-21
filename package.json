@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "@mdi/js": "^7.4.47",
+    "@vue-hero-icons/outline": "^1.7.2",
     "vue-draggable-next": "^2.2.1",
     "vuedraggable": "^2.24.3",
     "vuetify": "^3.7.0-beta.1",
