@@ -10,6 +10,7 @@ use App\Http\Controllers\LikeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CommentController;
 use Illuminate\Support\Facades\Route;
+use App\Models\User;
 
 Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
 Route::post('/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
@@ -45,4 +46,9 @@ Route::middleware('auth:sanctum')->group(function ()
 //    Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
 
     Route::post('/contact/submit', [ContactController::class, 'submit']);
+});
+
+Route::get('/api/random-users', function (Request $request) {
+    $users = User::inRandomOrder()->limit(4)->get(['id', 'name', 'profile_photo_url']);
+    return response()->json($users);
 });

@@ -2,8 +2,8 @@
   <div class="recommendation-box">
     <h2>Recommended Users</h2>
     <div class="user-list">
-      <div v-for="user in users" :key="user.id" class="user-item">
-        <img :src="getProfilePic(user.profilePic)" alt="Profile Picture" class="profile-pic" />
+      <div v-for="user in users.slice(0, 4)" :key="user.id" class="user-item">
+        <img :src="user.profile_photo_url" alt="Profile Picture" class="profile-pic" />
         <span>{{ user.name }}</span>
         <button @click="addFriend(user.name)" class="add-button">+</button>
       </div>
@@ -15,16 +15,13 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'UserRecommendation',
   data() {
     return {
-      users: [
-        { id: 1, name: '@harrywhite', profilePic: 'path/to/harrywhite.jpg' },
-        { id: 2, name: '@gerardmoreno', profilePic: '' },
-        { id: 3, name: '@johncena', profilePic: 'path/to/johncena.jpg' },
-        { id: 4, name: '@therock', profilePic: '' },
-      ],
+      users: [],
       showPopup: false,
       addedUser: '',
     };
@@ -37,9 +34,18 @@ export default {
         this.showPopup = false;
       }, 2000);
     },
-    getProfilePic(profilePic) {
-      return profilePic || 'path/to/graybox.jpg';
+    fetchRandomUsers() {
+      axios.get('/api/random-users')
+        .then(response => {
+          this.users = response.data;
+        })
+        .catch(error => {
+          console.error('Error fetching random users:', error);
+        });
     },
+  },
+  mounted() {
+    this.fetchRandomUsers();
   },
 };
 </script>
