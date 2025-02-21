@@ -309,6 +309,8 @@ const hasNotifications = computed(() => notifications.value.length > 0);
   margin: 0 auto;
   flex-grow: 1;
   text-align: center;
+  margin-left: 650px; /* Adjust this value to move the search bar to the right */
+
 }
 
 .credits-display {
