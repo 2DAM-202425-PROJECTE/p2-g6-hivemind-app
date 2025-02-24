@@ -5,17 +5,19 @@
       <h3 class="text-lg font-semibold text-white">{{ chat.name }}</h3>
     </div>
 
-    <div ref="chatMessages" class="flex-1 overflow-y-auto my-3 space-y-2" @scroll="handleScroll">
+    <div ref="chatMessages" class="flex-1 overflow-y-auto my-3 space-y-2 break-words" @scroll="handleScroll">
       <ChatMessage v-for="(message, index) in chat.messages"
                    :key="index"
                    :message="message"
                    :user-id="userId"
                    @edit="(msg) => $emit('edit-message', msg)"
-                   @delete="(msg) => $emit('delete-message', msg)"
+                   @delete="(msg) => displayDeleteModal(msg)"
                    @report="(msg) => $emit('report-message', msg)" />
     </div>
 
     <ChatInput @send="sendMessage" />
+
+    <DeleteMessageModal v-if="showDeleteModal" :message="messageToDelete" @confirm="confirmDeleteMessage" @cancel="cancelDeleteMessage" />
   </div>
 </template>
 
@@ -23,6 +25,7 @@
 import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import ChatMessage from './ChatMessage.vue';
 import ChatInput from './ChatInput.vue';
+import DeleteMessageModal from './DeleteMessageModal.vue';
 
 const emit = defineEmits(['send-message', 'edit-message', 'delete-message', 'report-message']);
 
@@ -33,9 +36,25 @@ const props = defineProps({
 
 const chatMessages = ref(null);
 const isNearBottom = ref(true);
+const showDeleteModal = ref(false);
+const messageToDelete = ref(null);
 
 const sendMessage = async (messageContent) => {
   emit('send-message', messageContent);
+};
+
+const displayDeleteModal = (msg) => {
+  messageToDelete.value = msg;
+  showDeleteModal.value = true;
+};
+
+const confirmDeleteMessage = () => {
+  emit('delete-message', messageToDelete.value);
+  showDeleteModal.value = false;
+};
+
+const cancelDeleteMessage = () => {
+  showDeleteModal.value = false;
 };
 
 const scrollToBottom = () => {
@@ -59,7 +78,7 @@ const observer = new MutationObserver(() => {
 
 onMounted(() => {
   if (chatMessages.value) {
-    observer.observe(chatMessages.value, { childList: true, subtree: true });
+    observer.observe(chatMessages.value, {childList: true, subtree: true});
   }
 });
 

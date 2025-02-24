@@ -1,4 +1,4 @@
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import apiClient from '@/axios.js';
 import '@/echo.js';
 
@@ -13,9 +13,10 @@ export function useChat() {
   const selectedMessageIndex = ref(null);
   const userId = ref(null);
   const isMine = ref(false);
-  const showModal = ref(false);
   const messageToDelete = ref(null);
-  const isShiftPressed = ref(false);
+  const showEditModal = ref(false);
+  const showDeleteModal = ref(false);
+  const messageToEdit = ref(null);
 
   const fetchUserId = async () => {
     try {
@@ -110,6 +111,7 @@ export function useChat() {
           profile_photo_url: msg.user.profile_photo_url,
         },
         timestamp: new Date(msg.created_at).toLocaleString(),
+        is_edited: msg.is_edited,
       }));
 
       window.Echo.channel(`${chatName}`)
@@ -125,6 +127,7 @@ export function useChat() {
                 profile_photo_url: message.user?.profile_photo_url || '',
               },
               timestamp: new Date(message.created_at).toLocaleString(),
+              is_edited: false,
             });
           }
         })
@@ -132,13 +135,13 @@ export function useChat() {
           const message = selectedChat.value.messages.find(msg => msg.id === event.id);
           if (message) {
             message.text = event.content;
-            message.is_edited = event.is_edited;
+            message.is_edited = true;
           }
         })
         .listen('MessageDeletedEvent', (event) => {
-          const message = selectedChat.value.messages.find(msg => msg.id === event.message_id);
-          if (message) {
-            message.text = event.content;
+          const index = selectedChat.value.messages.findIndex(msg => msg.id === event.message_id);
+          if (index !== -1) {
+            selectedChat.value.messages.splice(index, 1);
           }
         });
     } catch (error) {
@@ -157,51 +160,25 @@ export function useChat() {
     messageMenuVisible.value = true;
   };
 
-  const editMessage = async (index) => {
-    const message = selectedChat.value.messages[index];
-    const newContent = prompt("Edit your message:", message.text);
-    if (newContent !== null) {
-      try {
-        const response = await apiClient.patch(`/api/messages/${message.id}`, {
-          content: newContent,
-        }, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        });
+  const confirmEditMessage = async (message) => {
+    try {
+      const response = await apiClient.patch(`/api/messages/${message.id}`, {
+        content: message.text,
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      const index = selectedChat.value.messages.findIndex(m => m.id === message.id);
+      if (index !== -1) {
         selectedChat.value.messages[index].text = response.data.message.content;
         selectedChat.value.messages[index].is_edited = true;
-        alert("Message edited successfully");
-      } catch (error) {
-        console.error("Error al editar el mensaje:", error.response?.data || error.message);
       }
+    } catch (error) {
+      console.error("Error editing message:", error.response?.data || error.message);
     }
-    messageMenuVisible.value = false;
+    showEditModal.value = false;
   };
 
-  const deleteMessage = async (message) => {
-    if (!message) {
-      console.error("Mensaje no proporcionado");
-      return;
-    }
-
-    // Buscar el índice del mensaje en la lista
-    const index = selectedChat.value.messages.findIndex(m => m.id === message.id);
-    if (index === -1) {
-      console.error("Mensaje no encontrado en la lista");
-      return;
-    }
-
-    if (isShiftPressed.value) {
-      await confirmDeleteMessage();
-    } else {
-      messageToDelete.value = message;
-      showModal.value = true;
-    }
-  };
-
-  const confirmDeleteMessage = async () => {
-    const message = messageToDelete.value;
-    if (!message) return;
-
+  const confirmDeleteMessage = async (message) => {
     try {
       await apiClient.delete(`/api/messages/${message.id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
@@ -213,7 +190,7 @@ export function useChat() {
     } catch (error) {
       console.error("Error al eliminar el mensaje:", error.response?.data || error.message);
     }
-    showModal.value = false;
+    showDeleteModal.value = false;
     messageMenuVisible.value = false;
   };
 
@@ -250,7 +227,6 @@ export function useChat() {
     selectedMessageIndex,
     userId,
     isMine,
-    showModal,
     messageToDelete,
     fetchUserId,
     fetchChats,
@@ -258,8 +234,7 @@ export function useChat() {
     sendMessage,
     toggleChatMenu,
     showMessageMenu,
-    editMessage,
-    deleteMessage,
+    confirmEditMessage,
     confirmDeleteMessage,
     reportMessage,
   };

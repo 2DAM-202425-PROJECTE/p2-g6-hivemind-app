@@ -27,7 +27,20 @@ class MessageController extends Controller
 
         $messages->load('user');
 
-        return response()->json(['messages' => $messages]);
+        return response()->json(['messages' => $messages->map(function ($message) {
+            return [
+                'id' => $message->id,
+                'content' => $message->content,
+                'user_id' => $message->user_id,
+                'user' => [
+                    'id' => $message->user->id,
+                    'name' => $message->user->name,
+                    'profile_photo_url' => $message->user->profile_photo_url,
+                ],
+                'created_at' => $message->created_at->toDateTimeString(),
+                'is_edited' => $message->is_edited,
+            ];
+        })]);
     }
 
     public function postMessages(Request $request, $chatName)
