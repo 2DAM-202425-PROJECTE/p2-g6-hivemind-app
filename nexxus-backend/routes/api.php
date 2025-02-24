@@ -49,13 +49,9 @@ Route::middleware('auth:sanctum')->group(function ()
     // messages routes
     Route::post('/chats/{chatName}/messages', [MessageController::class, 'postMessages']);
     Route::get('/chats/{chatName}/messages', [MessageController::class, 'getMessages']);
-<<<<<<< HEAD
+
     Route::patch('/messages/{message}', [MessageController::class, 'updateMessages']);
     Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
-=======
-    // Route::patch('/messages/{message}', [MessageController::class, 'update']);
-    // Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
->>>>>>> 7e693164d8df0fbcd5a610414b2d5d55dcdc9721
 
     Route::post('/contact/submit', [ContactController::class, 'submit']);
 });
@@ -64,3 +60,4 @@ Route::get('/api/random-users', function (Request $request) {
     $users = User::inRandomOrder()->limit(4)->get(['id', 'name', 'profile_photo_url']);
     return response()->json($users);
 });
+
