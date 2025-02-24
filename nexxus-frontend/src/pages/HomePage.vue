@@ -27,8 +27,8 @@
           </button>
           <div v-if="postMenuVisible === post.id" class="dropdown-menu">
             <ul>
-              <li @click="editPost(post)">Edit</li>
-              <li @click="deletePost(post.id)" :disabled="isDeleting">Delete</li>
+              <li v-show="isPostFromUser(post)" @click="editPost(post)">Edit</li>
+              <li v-show="isPostFromUser(post)" @click="deletePost(post.id)" :disabled="isDeleting">Delete</li>
               <li @click="reportPost(post)">Report</li>
             </ul>
           </div>
@@ -222,6 +222,10 @@ const editPost = async (post) => {
 
   location.reload();
 
+};
+
+const isPostFromUser = (post) => {
+  return post.id_user === currentUser.value.id;
 };
 
 const deletePost = async (postId) => {
