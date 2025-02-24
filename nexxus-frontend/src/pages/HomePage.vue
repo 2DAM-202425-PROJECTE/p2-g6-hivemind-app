@@ -28,7 +28,7 @@
           <div v-if="postMenuVisible === post.id" class="dropdown-menu">
             <ul>
               <li @click="editPost(post)">Edit</li>
-              <li @click="deletePost(post)">Delete</li>
+              <li @click="deletePost(post.id)" :disabled="isDeleting">Delete</li>
               <li @click="reportPost(post)">Report</li>
             </ul>
           </div>
@@ -51,7 +51,8 @@
       </div>
     </div>
 
-    <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal" @add-comment="addComment" :post="selectedPost" />
+    <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal"
+      @add-comment="addComment" :post="selectedPost" />
 
     <UserRecommendation />
     <Footer />
@@ -73,6 +74,7 @@ const isCommentModalVisible = ref(false);
 const selectedPostComments = ref([]);
 const selectedPostId = ref(null);
 const selectedPost = ref(null);
+const isDeleting = ref(false);
 const postMenuVisible = ref(null);
 
 const currentUser = ref({
@@ -215,12 +217,27 @@ const togglePostMenu = (postId) => {
   postMenuVisible.value = postMenuVisible.value === postId ? null : postId;
 };
 
-const editPost = (post) => {
+const editPost = async (post) => {
   // Implement edit post logic
 };
 
-const deletePost = (post) => {
-  // Implement delete post logic
+const deletePost = async (postId) => {
+  isDeleting.value = true;
+  try {
+    const response = await axios.delete(`http://localhost:8000/api/posts/${postId}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (Array.isArray(posts.value)) {
+      posts.value = posts.value.filter(post => post.id !== postId);
+    }
+  } catch (error) {
+    console.error('Error deleting post:', error.response?.data || error.message);
+  } finally {
+    isDeleting.value = false;
+  }
 };
 
 const reportPost = (post) => {

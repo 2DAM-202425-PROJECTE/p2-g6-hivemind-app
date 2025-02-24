@@ -16,33 +16,40 @@ Route::post('/register', [App\Http\Controllers\Api\AuthController::class, 'regis
 
 Route::middleware('auth:sanctum')->group(function ()
 {
+    //login and logout
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+
     // return all users
     Route::get('/users', [UserController::class, 'index']);
     // retun posts of a user
     Route::get('/users/{id}/posts', [UserController::class, 'posts']);
 
+    // posts routes
     Route::get('/posts', [App\Http\Controllers\PostController::class, 'index']);
     Route::post('/posts', [App\Http\Controllers\PostController::class, 'store']);
+    Route::delete('/posts/{id}', [App\Http\Controllers\PostController::class, 'destroy']);
+
+    // posts likes routes
     Route::post('/posts/{id}/like', [LikeController::class, 'store']);
     Route::delete('/posts/{id}/like', [LikeController::class, 'destroy']);
 
+    // comments routes
     Route::post('/posts/{post}/comments', [CommentController::class, 'store']);
     Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
-    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+    Route::delete('/posts/{post}/comments/{comment}', [CommentController::class, 'destroy']);
 
-    // Chats routes
+    // chats routes
     Route::get('/chats/private', [ChatController::class, 'getPrivateChat']);
-//    Route::delete('/chats/{chat}', [ChatController::class, 'destroy']);
+    // Route::delete('/chats/{chat}', [ChatController::class, 'destroy']);
 
-    // Messages routes
+    // messages routes
     Route::post('/chats/{chatName}/messages', [MessageController::class, 'postMessages']);
     Route::get('/chats/{chatName}/messages', [MessageController::class, 'getMessages']);
-//    Route::patch('/messages/{message}', [MessageController::class, 'update']);
-//    Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
+    // Route::patch('/messages/{message}', [MessageController::class, 'update']);
+    // Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
 
     Route::post('/contact/submit', [ContactController::class, 'submit']);
 });
