@@ -10,7 +10,8 @@ class Post extends Model
     use HasFactory;
 
     protected $table = 'post';
-    
+    protected $primaryKey = 'id';
+
     protected $fillable = [
         'file_path',
         'description',
@@ -41,5 +42,10 @@ class Post extends Model
     public function likes()
     {
         return $this->hasMany(Like::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class, 'post_id');
     }
 }
