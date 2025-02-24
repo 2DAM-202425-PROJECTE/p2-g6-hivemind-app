@@ -51,6 +51,7 @@ class PostController extends Controller
 
     public function destroy($id)
     {
+
         $post = Post::find($id);
 
         if (!$post) {
@@ -59,10 +60,20 @@ class PostController extends Controller
             ], 404);
         }
 
-        $post->delete();
+        // Eliminar el POST DEL USUARIO LOGUEADO
+        if ($post->id_user == auth()->id()) {
+            $post->delete();
+            return response()->json([
+                'message' => 'Post deleted successfully',
+            ], 200);
+        }  else {
+            return response()->json([
+                'message' => 'Unauthorized: You cannot delete this post',
+            ], 401);
+        }
 
-        return response()->json([
-            'message' => 'Post deleted successfully',
-        ], 200);
+
+
+
     }
 }
