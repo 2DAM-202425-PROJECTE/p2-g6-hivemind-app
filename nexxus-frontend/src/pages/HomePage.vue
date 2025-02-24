@@ -219,6 +219,9 @@ const togglePostMenu = (postId) => {
 
 const editPost = async (post) => {
   // Implement edit post logic
+
+  location.reload();
+
 };
 
 const deletePost = async (postId) => {
@@ -233,6 +236,9 @@ const deletePost = async (postId) => {
     if (Array.isArray(posts.value)) {
       posts.value = posts.value.filter(post => post.id !== postId);
     }
+
+    location.reload();
+
   } catch (error) {
     console.error('Error deleting post:', error.response?.data || error.message);
   } finally {
