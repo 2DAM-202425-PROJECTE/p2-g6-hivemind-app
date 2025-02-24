@@ -57,20 +57,44 @@ class DatabaseSeeder extends Seeder
             'id_user' => 2,
         ]);
 
+        Post::factory()->create([
+            'file_path' => '/uploads/1.png',
+            'description' => 'This is the last test post',
+            'publish_date' => now(),
+            'id_user' => 3,
+        ]);
+
         Like::factory()->create([
             'post_id' => 1,
-            'user_id' => 1,
+            'user_id' => 2,
         ]);
 
         Like::factory()->create([
             'post_id' => 2,
-            'user_id' => 2,
+            'user_id' => 3,
+        ]);
+
+        Like::factory()->create([
+            'post_id' => 3,
+            'user_id' => 1,
         ]);
 
         Comment::factory()->create([
             'post_id' => 1,
-            'user_id' => 1,
+            'user_id' => 2,
             'content' => 'This is a test comment',
+        ]);
+
+        Comment::factory()->create([
+            'post_id' => 2,
+            'user_id' => 3,
+            'content' => 'This is another test comment',
+        ]);
+
+        Comment::factory()->create([
+            'post_id' => 3,
+            'user_id' => 1,
+            'content' => 'This is the last test comment',
         ]);
     }
 }
