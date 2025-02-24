@@ -1,12 +1,18 @@
 <template>
   <div class="shop-container">
     <NavBar />
-    <router-view :subscription-tiers="subscriptionTiers" :credit-packs="creditPacks" :cosmetic-categories="cosmeticCategories" />
+    <router-view
+      :subscription-tiers="subscriptionTiers"
+      :credit-packs="creditPacks"
+      :cosmetic-categories="cosmeticCategories"
+    />
 
     <div class="shop-content container">
       <!-- Welcome Section -->
       <section class="welcome-section">
-        <h1 class="text-center title">Welcome to our product page!</h1>
+        <h1 class="text-center title">
+          Welcome to our product page!
+        </h1>
         <p class="text-center subtitle">
           Here you will find a wide range of subscriptions and credits to customize your profile.
           Explore our options and choose the one that best suits your needs.
@@ -15,62 +21,140 @@
 
       <!-- Trending Items Section -->
       <section class="trending-section">
-        <h2 class="section-title">Trending Items</h2>
+        <h2 class="section-title">
+          Trending Items
+        </h2>
         <div class="trending-grid">
-          <div v-for="(item, index) in trendingItems" :key="index" class="trending-item">
+          <div
+            v-for="(item, index) in trendingItems"
+            :key="index"
+            class="trending-item"
+          >
             <div class="item-icon">
-              <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon">
+              <img
+                :src="item.iconUrl"
+                :alt="item.name"
+                class="cosmetic-icon"
+              >
             </div>
-            <h3 class="item-name">{{ item.name }}</h3>
-            <p class="item-price">{{ item.price }}</p>
-            <a :href="`/purchase/${item.id}`" class="buy-button">Purchase</a>
+            <h3 class="item-name">
+              {{ item.name }}
+            </h3>
+            <p class="item-price">
+              {{ item.price }}
+            </p>
+            <a
+              :href="`/purchase/${item.id}`"
+              class="buy-button"
+            >Purchase</a>
           </div>
         </div>
       </section>
 
       <!-- Subscriptions Section -->
       <section class="subscriptions-section">
-        <h2 class="section-title">Subscriptions</h2>
+        <h2 class="section-title">
+          Subscriptions
+        </h2>
         <div class="subscription-grid">
-          <div v-for="tier in subscriptionTiers" :key="tier.title" class="subscription-card">
-            <h3 class="tier-title">{{ tier.title }}</h3>
-            <p class="tier-price">{{ tier.price }}</p>
+          <div
+            v-for="tier in subscriptionTiers"
+            :key="tier.title"
+            class="subscription-card"
+          >
+            <h3 class="tier-title">
+              {{ tier.title }}
+            </h3>
+            <p class="tier-price">
+              {{ tier.price }}
+            </p>
             <ul class="tier-features">
-              <li v-for="(feature, index) in tier.features" :key="index">
+              <li
+                v-for="(feature, index) in tier.features"
+                :key="index"
+              >
                 {{ feature }}
               </li>
             </ul>
-            <a :href="`/purchase/${tier.id}`" class="buy-button">Purchase</a>
+            <a
+              :href="`/purchase/${tier.id}`"
+              class="buy-button"
+            >Purchase</a>
           </div>
         </div>
       </section>
 
       <!-- Credits Section -->
-      <section id="buy-credits" class="credits-section">
-        <h2 class="section-title">Buy Credits</h2>
+      <section
+        id="buy-credits"
+        class="credits-section"
+      >
+        <h2 class="section-title">
+          Buy Credits
+        </h2>
         <div class="credits-grid">
-          <div v-for="(credit, index) in creditPacks" :key="index" class="credit-card">
-            <img :src="credit.iconUrl" :alt="credit.amount" class="credit-icon">
-            <h3 class="credit-amount">{{ credit.amount }} Credits</h3>
-            <p class="credit-price">{{ credit.price }}</p>
-            <a :href="`/purchase/${credit.id}`" class="buy-button">Purchase</a>
+          <div
+            v-for="(credit, index) in creditPacks"
+            :key="index"
+            class="credit-card"
+          >
+            <img
+              :src="credit.iconUrl"
+              :alt="credit.amount"
+              class="credit-icon"
+            >
+            <h3 class="credit-amount">
+              {{ credit.amount }} Credits
+            </h3>
+            <p class="credit-price">
+              {{ credit.price }}
+            </p>
+            <a
+              :href="`/purchase/${credit.id}`"
+              class="buy-button"
+            >Purchase</a>
           </div>
         </div>
       </section>
 
       <!-- Cosmetics Section -->
       <section class="cosmetics-section">
-        <h2 class="section-title">Cosmetics</h2>
+        <h2 class="section-title">
+          Cosmetics
+        </h2>
         <div class="cosmetics-grid">
-          <div class="category-card" v-for="category in cosmeticCategories" :key="category.title">
-            <h3 class="category-title">{{ category.title }}</h3>
-            <p class="category-description">{{ category.description }}</p>
+          <div
+            v-for="category in cosmeticCategories"
+            :key="category.title"
+            class="category-card"
+          >
+            <h3 class="category-title">
+              {{ category.title }}
+            </h3>
+            <p class="category-description">
+              {{ category.description }}
+            </p>
             <div class="items-grid">
-              <div v-for="item in category.items" :key="item.name" class="cosmetic-item">
-                <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon">
-                <h4 class="item-name">{{ item.name }}</h4>
-                <p class="item-price">{{ item.price }}</p>
-                <a :href="`/purchase/${item.id}`" class="buy-button">Purchase</a>
+              <div
+                v-for="item in category.items"
+                :key="item.name"
+                class="cosmetic-item"
+              >
+                <img
+                  :src="item.iconUrl"
+                  :alt="item.name"
+                  class="cosmetic-icon"
+                >
+                <h4 class="item-name">
+                  {{ item.name }}
+                </h4>
+                <p class="item-price">
+                  {{ item.price }}
+                </p>
+                <a
+                  :href="`/purchase/${item.id}`"
+                  class="buy-button"
+                >Purchase</a>
               </div>
             </div>
           </div>
@@ -473,7 +557,7 @@ section {
   padding: 0.25rem 0.5rem; /* Add some padding */
   border-radius: 4px; /* Optional: Add rounded corners */
   cursor: pointer; /* Change cursor to pointer */
-  margin-top: 2rem; /* Add margin to create space above the button */
+  margin-top: 50px; /* Add a bigger margin to create more space above the button */
 }
 
 .buy-button:hover {

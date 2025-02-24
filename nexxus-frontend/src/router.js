@@ -13,7 +13,8 @@ import ChatPage from "@/pages/ChatPage.vue";
 import ServerPage from "@/pages/ServerPage.vue";
 import ShopPage from "@/pages/ShopPage.vue";
 import PurchasePage from "@/pages/PurchasePage.vue";
-import SettingsPage from './pages/SettingsPage.vue';
+import AppSettingsPage from './pages/AppSettingsPage.vue';
+import AccountSettingsPage from './pages/AccountSettingsPage.vue';
 
 const routes = [
   { path: '/', component: Login },
@@ -67,7 +68,8 @@ const routes = [
   { path: '/terms-of-service', component: TermsOfService },
   { path: '/shop', component: ShopPage },
   { path: '/purchase/:id', component: PurchasePage },
-  { path: '/settings', component: SettingsPage },
+  { path: '/settings', component: AppSettingsPage },
+  { path: '/account-settings', component: AccountSettingsPage }, // Corrected path and component
 ];
 
 const router = createRouter({

@@ -60,7 +60,12 @@ const routes = [
   {
     path: '/purchase/:id',
     name: 'PurchasePage',
-    component: PurchasePage
+    component: PurchasePage,
+    props: route => ({
+      subscriptionTiers: JSON.parse(route.query.subscriptionTiers || '[]'),
+      creditPacks: JSON.parse(route.query.creditPacks || '[]'),
+      cosmeticCategories: JSON.parse(route.query.cosmeticCategories || '[]')
+    })
   }
 ];
 

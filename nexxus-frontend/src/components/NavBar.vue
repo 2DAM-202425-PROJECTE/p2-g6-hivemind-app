@@ -25,7 +25,8 @@ const menuItems = ref([
   { text: 'Videos', to: '/videos', icon: 'mdi-video-outline' },
   { text: 'Shop', to: '/shop', icon: 'mdi-cart' },
   { text: 'My Profile', to: '/profile', icon: 'mdi-account' },
-  { text: 'Settings', to: '/settings', icon: 'mdi-cog' }
+  { text: 'Account Settings', to: '/account-settings', icon: 'mdi-account-cog' }, // Add account settings
+  { text: 'App Settings', to: '/settings', icon: 'mdi-cog' } // Add app settings
 
 ])
 
