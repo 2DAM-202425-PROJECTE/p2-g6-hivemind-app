@@ -1,7 +1,7 @@
 <template>
   <div class="about-container">
     <Navbar />
-    <h1>About Nexxus by Hivemind</h1>
+    <h1>About Hivemind by Nexxus</h1>
     <div class="about-content">
       <h2>Project Overview</h2>
       <p>

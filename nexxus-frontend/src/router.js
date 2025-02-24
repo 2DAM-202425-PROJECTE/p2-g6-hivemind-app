@@ -66,7 +66,7 @@ const routes = [
   { path: '/privacy-policy', component: PrivacyPolicy },
   { path: '/terms-of-service', component: TermsOfService },
   { path: '/shop', component: ShopPage },
-  { path: '/purchase/:id', component: PurchasePage },  // Corrected route
+  { path: '/purchase/:id', component: PurchasePage },
   { path: '/settings', component: SettingsPage },
 ];
 

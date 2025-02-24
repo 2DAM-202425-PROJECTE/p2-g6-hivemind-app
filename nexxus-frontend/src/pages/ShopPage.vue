@@ -1,6 +1,7 @@
 <template>
   <div class="shop-container">
     <NavBar />
+    <router-view :subscription-tiers="subscriptionTiers" :credit-packs="creditPacks" :cosmetic-categories="cosmeticCategories" />
 
     <div class="shop-content container">
       <!-- Welcome Section -->
@@ -22,7 +23,7 @@
             </div>
             <h3 class="item-name">{{ item.name }}</h3>
             <p class="item-price">{{ item.price }}</p>
-            <button class="buy-button" @click="navigateToPurchase(item.id)">Purchase</button>
+            <a :href="`/purchase/${item.id}`" class="buy-button">Purchase</a>
           </div>
         </div>
       </section>
@@ -39,7 +40,7 @@
                 {{ feature }}
               </li>
             </ul>
-            <button class="buy-button" @click="navigateToPurchase(tier.id)">Purchase</button>
+            <a :href="`/purchase/${tier.id}`" class="buy-button">Purchase</a>
           </div>
         </div>
       </section>
@@ -52,7 +53,7 @@
             <img :src="credit.iconUrl" :alt="credit.amount" class="credit-icon">
             <h3 class="credit-amount">{{ credit.amount }} Credits</h3>
             <p class="credit-price">{{ credit.price }}</p>
-            <button class="buy-button" @click="navigateToPurchase(credit.id)">Purchase</button>
+            <a :href="`/purchase/${credit.id}`" class="buy-button">Purchase</a>
           </div>
         </div>
       </section>
@@ -69,7 +70,7 @@
                 <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon">
                 <h4 class="item-name">{{ item.name }}</h4>
                 <p class="item-price">{{ item.price }}</p>
-                <button class="buy-button" @click="navigateToPurchase(item.id)">Purchase</button>
+                <a :href="`/purchase/${item.id}`" class="buy-button">Purchase</a>
               </div>
             </div>
           </div>
@@ -226,9 +227,6 @@ export default {
     }
   },
   methods: {
-    navigateToPurchase(itemId) {
-      this.$router.push({ name: 'PurchasePage', params: { id: itemId } });
-  },
     shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -467,5 +465,18 @@ section {
   display: block;
   margin-left: auto;
   margin-right: auto;
+}
+.buy-button {
+  background-color: grey;
+  color: white; /* Ensure the text is readable */
+  border: none; /* Remove any default borders */
+  padding: 0.25rem 0.5rem; /* Add some padding */
+  border-radius: 4px; /* Optional: Add rounded corners */
+  cursor: pointer; /* Change cursor to pointer */
+  margin-top: 2rem; /* Add margin to create space above the button */
+}
+
+.buy-button:hover {
+  background-color: darkgrey; /* Optional: Change color on hover */
 }
 </style>

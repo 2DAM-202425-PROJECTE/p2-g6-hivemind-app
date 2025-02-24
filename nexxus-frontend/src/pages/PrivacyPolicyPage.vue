@@ -30,7 +30,8 @@
         </p>
         <h2>Contact Us</h2>
         <p>
-          If you have any questions about these terms, please contact us at support@nexxus.com.
+          If you have any questions about these terms, please contact us at hivemindnexxuscontact@gmail.com
+          .
         </p>
       </div>
     </div>

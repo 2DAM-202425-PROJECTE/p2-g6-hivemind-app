@@ -32,6 +32,11 @@ export default {
     NavBar,
     AppFooter
   },
+  props: {
+    subscriptionTiers: Array,
+    creditPacks: Array,
+    cosmeticCategories: Array
+  },
   data() {
     return {
       item: null,
@@ -49,9 +54,9 @@ export default {
   methods: {
     getItemById(id) {
       const allItems = [
-        ...this.$root.$data.subscriptionTiers,
-        ...this.$root.$data.creditPacks,
-        ...this.$root.$data.cosmeticCategories.flatMap(category => category.items)
+        ...this.subscriptionTiers,
+        ...this.creditPacks,
+        ...this.cosmeticCategories.flatMap(category => category.items)
       ];
       return allItems.find(item => item.id === id);
     },
@@ -71,7 +76,7 @@ export default {
 <style scoped>
 .purchase-container {
   min-height: 100vh;
-  background-color: #f0f2f5;
+  background-color: #ffffff;
   padding-top: 60px;
 }
 
