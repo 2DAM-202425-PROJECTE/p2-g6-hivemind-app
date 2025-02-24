@@ -7,12 +7,11 @@
                 :chat="selectedChat"
                 :user-id="userId"
                 @send-message="sendMessage"
-                @edit-message="editMessage"
-                @delete-message="deleteMessage"
-                @report-message="reportMessage" />
+                @edit-message="confirmEditMessage"
+                @delete-message="confirmDeleteMessage"
+                @report-message="reportMessage"/>
     </div>
     <Footer class="absolute bottom-0 w-full" />
-    <DeleteMessageModal v-if="showModal" :message="messageToDelete" @confirm="confirmDeleteMessage" @cancel="showModal = false" />
   </div>
 </template>
 
@@ -22,7 +21,6 @@ import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import ChatList from '@/components/Chat/ChatList.vue';
 import ChatArea from '@/components/Chat/ChatArea.vue';
-import DeleteMessageModal from '@/components/Chat/DeleteMessageModal.vue';
 import {useChat} from '@/composables/Chat/useChat';
 import {useUser} from '@/composables/useUser';
 
@@ -31,13 +29,10 @@ const {
   selectedChat,
   selectChat,
   sendMessage,
-  editMessage,
-  deleteMessage,
+  confirmEditMessage,
+  confirmDeleteMessage,
   reportMessage,
   fetchChats,
-  showModal,
-  messageToDelete,
-  confirmDeleteMessage
 } = useChat();
 const {userId, fetchUserId} = useUser();
 

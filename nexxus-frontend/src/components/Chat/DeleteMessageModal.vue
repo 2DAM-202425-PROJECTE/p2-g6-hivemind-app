@@ -5,8 +5,8 @@
         <h2 class="text-lg font-semibold">Delete Message</h2>
         <p class="mt-2 text-gray-300">Are you sure you want to delete this message?</p>
 
-        <!-- Mensaje mostrado en el modal -->
-        <div class="mt-4 p-3 bg-gray-700 rounded-lg flex items-start gap-3">
+        <!-- Check if message and message.user are defined -->
+        <div v-if="message && message.user" class="mt-4 p-3 bg-gray-700 rounded-lg flex items-start gap-3">
           <img :src="message.user.profile_photo_url" alt="Avatar" class="w-10 h-10 rounded-full">
           <div>
             <div class="flex items-center gap-2">
