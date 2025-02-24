@@ -40,7 +40,8 @@
         </p>
         <h2>Contact Us</h2>
         <p>
-          If you have any questions about this Privacy Policy, please contact us at support@nexxus.com.
+          If you have any questions about this Privacy Policy, please contact us at hivemindnexxuscontact@gmail.com
+          .
         </p>
       </div>
     </div>

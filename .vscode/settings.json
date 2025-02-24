@@ -1,0 +1,25 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "previewLimit": 50,
+            "server": "dasrado.com",
+            "port": 3306,
+            "driver": "MySQL",
+            "name": "Hivemind",
+            "group": "hivemind",
+            "database": "hivemind",
+            "username": "hivemind"
+        },
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "database": "nexxus-backend/database/database.sqlite",
+            "name": "NexxusDB",
+            "group": "Hivemind"
+        }
+    ]
+}
