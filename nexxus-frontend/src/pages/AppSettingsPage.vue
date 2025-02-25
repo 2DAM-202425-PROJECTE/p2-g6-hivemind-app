@@ -58,6 +58,24 @@
 <script>
 import NavBar from '../components/NavBar.vue'
 import AppFooter from '../components/AppFooter.vue'
+import { ref, watch, onMounted } from "vue";
+
+const selectedTheme = ref("light");
+
+onMounted(() => {
+  const savedTheme = localStorage.getItem("theme") || "light";
+  selectedTheme.value = savedTheme;
+  document.documentElement.classList.toggle("dark", savedTheme === "dark");
+});
+
+watch(selectedTheme, (newTheme) => {
+  if (newTheme === "dark") {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+  localStorage.setItem("theme", newTheme);
+});
 
 export default {
   name: 'SettingsPage',
