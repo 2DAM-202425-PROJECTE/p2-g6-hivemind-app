@@ -42,9 +42,11 @@ Route::middleware('auth:sanctum')->group(function ()
     // comments routes
     Route::post('/posts/{post}/comments', [CommentController::class, 'store']);
     Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
-    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+    Route::delete('/posts/{post}/comments/{comment}', [CommentController::class, 'destroy']);
 
-    // chats routes
+    Route::get('/stories', [StoryController::class, 'index']);
+
+    // Chats routes
     Route::get('/chats/private', [ChatController::class, 'getPrivateChat']);
     // Route::delete('/chats/{chat}', [ChatController::class, 'destroy']);
 

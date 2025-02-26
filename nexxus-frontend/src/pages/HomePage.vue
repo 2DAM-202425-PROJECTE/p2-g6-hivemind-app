@@ -3,29 +3,18 @@
     <Navbar />
     <h1>Home</h1>
     <StoriesBar :stories="stories.data"/> <!-- Añade el componente StoriesBar -->
- 
+
     <div class="post-card" v-for="post in posts.data" :key="post.id">
       <div class="post-header">
         <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
         <div class="post-info">
-          <ul>
-            <li>
-              <strong>{{ getUserNameById(post.id_user) }}</strong>
-              <h5>{{ post.description }}</h5>
-              <img :src="getImageUrl(post.file_path)" alt="file Image" class="post-content" />
-            </li>
-          </ul>
+          <strong>{{ getUserNameById(post.id_user) }}</strong>
+          <h5>{{ post.description }}</h5>
+          <img :src="getImageUrl(post.file_path)" alt="file Image" class="post-content" />
         </div>
         <div class="post-menu">
-          <button @click="togglePostMenu(post.id)">
-            <i class="mdi mdi-dots-vertical"></i>
-          </button>
           <div v-if="postMenuVisible === post.id" class="dropdown-menu">
-            <ul>
-              <li v-show="isPostFromUser(post)" @click="editPost(post)">Edit</li>
-              <li v-show="isPostFromUser(post)" @click="deletePost(post.id)" :disabled="isDeleting">Delete</li>
-              <li @click="reportPost(post)">Report</li>
-            </ul>
+            <!-- Menu items here -->
           </div>
         </div>
       </div>
@@ -70,6 +59,9 @@ const isCommentModalVisible = ref(false);
 const selectedPostComments = ref([]);
 const selectedPostId = ref(null);
 const selectedPost = ref(null);
+const isDeleting = ref(false);
+const postMenuVisible = ref(null);
+const stories = ref([]); // Añade el array de historias
 
 const currentUser = ref({
   name: 'Current User', // Replace with actual user data
@@ -134,7 +126,7 @@ onMounted(async () => {
     stories.value = storiesResult.data;
 
   } catch (error) {
-    console.error('Error al obtener datos', error);
+    console.error('Error al obtener datos', error.response?.data || error.message);
   }
 });
 
