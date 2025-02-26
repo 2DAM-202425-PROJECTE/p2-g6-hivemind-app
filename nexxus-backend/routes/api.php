@@ -9,6 +9,8 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\StoryController;
+use App\Models\Story;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
 
@@ -40,7 +42,7 @@ Route::middleware('auth:sanctum')->group(function ()
     // comments routes
     Route::post('/posts/{post}/comments', [CommentController::class, 'store']);
     Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
-    Route::delete('/posts/{post}/comments/{comment}', [CommentController::class, 'destroy']);
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
 
     // chats routes
     Route::get('/chats/private', [ChatController::class, 'getPrivateChat']);

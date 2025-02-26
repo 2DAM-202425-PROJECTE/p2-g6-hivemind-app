@@ -6,6 +6,7 @@ use App\Models\Like;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\User;
+use App\Models\Story;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -95,6 +96,13 @@ class DatabaseSeeder extends Seeder
             'post_id' => 3,
             'user_id' => 1,
             'content' => 'This is the last test comment',
+        ]);
+
+        Story::factory()->create([
+            'file_path' => '/uploads/1.png',
+            'description' => 'This is a test story',
+            'publish_date' => now(),
+            'id_user' => 1,
         ]);
     }
 }
