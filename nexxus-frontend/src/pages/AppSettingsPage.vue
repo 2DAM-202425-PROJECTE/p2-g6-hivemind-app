@@ -1,55 +1,49 @@
 <template>
   <div class="settings-container">
     <NavBar />
+    <div class="settings-sidebar">
+      <ul>
+        <li :class="{ active: selectedTab === 'appearance' }" @click="selectedTab = 'appearance'">Appearance</li>
+        <li :class="{ active: selectedTab === 'accessibility' }" @click="selectedTab = 'accessibility'">Accessibility</li>
+        <li :class="{ active: selectedTab === 'notifications' }" @click="selectedTab = 'notifications'">Notifications</li>
+        <li :class="{ active: selectedTab === 'voice' }" @click="selectedTab = 'voice'">Voice & Video</li>
+        <li :class="{ active: selectedTab === 'text' }" @click="selectedTab = 'text'">Text & Images</li>
+      </ul>
+    </div>
     <div class="settings-content container">
-      <!-- Existing sections here -->
-      <section class="theme-section">
-        <h1 class="section-title">Settings</h1>
+      <section v-if="selectedTab === 'appearance'" class="settings-section">
+        <h1 class="section-title">Appearance</h1>
         <div class="theme-selection">
           <label>Themes:</label>
-          <div class="theme-options">
-            <input type="radio" id="light-mode" value="light" v-model="selectedTheme">
-            <label for="light-mode">Light Mode</label>
-            <input type="radio" id="dark-mode" value="dark" v-model="selectedTheme">
-            <label for="dark-mode">Dark Mode</label>
-          </div>
+          <input type="radio" id="light-mode" value="light" v-model="selectedTheme">
+          <label for="light-mode">Light Mode</label>
+          <input type="radio" id="dark-mode" value="dark" v-model="selectedTheme">
+          <label for="dark-mode">Dark Mode</label>
         </div>
       </section>
-      <!-- Other sections here -->
-      <section class="language-section">
-        <h2 class="section-title">Language</h2>
-        <select v-model="selectedLanguage" @change="applyLanguage">
-          <option value="en">English</option>
-          <option value="es">Spanish</option>
-          <option value="fr">French</option>
-        </select>
-      </section>
-      <section class="notifications-section">
-        <h2 class="section-title">Notifications</h2>
+      <section v-if="selectedTab === 'accessibility'" class="settings-section">
+        <h1 class="section-title">Accessibility</h1>
         <label>
-          <input type="checkbox" v-model="notificationsEnabled" @change="toggleNotifications">
-          Enable Notifications
+          <input type="checkbox" v-model="reducedMotion"> Reduce Motion
         </label>
       </section>
-      <section class="font-size-section">
-        <h2 class="section-title">Font Size</h2>
-        <select v-model="selectedFontSize" @change="applyFontSize">
-          <option value="small">Small</option>
-          <option value="medium">Medium</option>
-          <option value="large">Large</option>
-        </select>
-      </section>
-      <section class="privacy-mode-section">
-        <h2 class="section-title">Privacy Mode</h2>
+      <section v-if="selectedTab === 'notifications'" class="settings-section">
+        <h1 class="section-title">Notifications</h1>
         <label>
-          <input type="checkbox" v-model="privacyModeEnabled" @change="togglePrivacyMode">
-          Enable Privacy Mode
+          <input type="checkbox" v-model="notificationsEnabled"> Enable Notifications
         </label>
       </section>
-      <div class="settings-actions">
-        <button @click="applySettings">Apply</button>
-        <button @click="resetSettings">Reset</button>
-      </div>
+      <section v-if="selectedTab === 'voice'" class="settings-section">
+        <h1 class="section-title">Voice & Video</h1>
+        <label>Microphone Volume:</label>
+        <input type="range" v-model="micVolume" min="0" max="100">
+      </section>
+      <section v-if="selectedTab === 'text'" class="settings-section">
+        <h1 class="section-title">Text & Images</h1>
+        <label>
+          <input type="checkbox" v-model="showEmbeds"> Show Embeds
+        </label>
+      </section>
     </div>
     <AppFooter />
   </div>
@@ -78,81 +72,16 @@ watch(selectedTheme, (newTheme) => {
 });
 
 export default {
-  name: 'SettingsPage',
-  components: {
-    NavBar,
-    AppFooter
-  },
+  name: 'AppSettingsPage',
+  components: { NavBar, AppFooter },
   data() {
     return {
+      selectedTab: 'appearance',
       selectedTheme: 'light',
-      selectedLanguage: 'en',
+      reducedMotion: false,
       notificationsEnabled: false,
-      selectedFontSize: 'medium',
-      privacyModeEnabled: false
-    }
-  },
-  mounted() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      this.selectedTheme = savedTheme;
-      this.applyTheme();
-    }
-    const savedLanguage = localStorage.getItem('language');
-    if (savedLanguage) {
-      this.selectedLanguage = savedLanguage;
-    }
-    const savedNotifications = localStorage.getItem('notificationsEnabled');
-    if (savedNotifications) {
-      this.notificationsEnabled = JSON.parse(savedNotifications);
-    }
-    const savedFontSize = localStorage.getItem('fontSize');
-    if (savedFontSize) {
-      this.selectedFontSize = savedFontSize;
-      this.applyFontSize();
-    }
-    const savedPrivacyMode = localStorage.getItem('privacyModeEnabled');
-    if (savedPrivacyMode) {
-      this.privacyModeEnabled = JSON.parse(savedPrivacyMode);
-    }
-  },
-  methods: {
-    applyTheme() {
-      if (this.selectedTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-        document.body.classList.remove('light-mode');
-      } else {
-        document.body.classList.add('light-mode');
-        document.body.classList.remove('dark-mode');
-      }
-      localStorage.setItem('theme', this.selectedTheme);
-    },
-    applyLanguage() {
-      localStorage.setItem('language', this.selectedLanguage);
-    },
-    toggleNotifications() {
-      localStorage.setItem('notificationsEnabled', this.notificationsEnabled);
-    },
-    applyFontSize() {
-      document.body.style.fontSize = this.selectedFontSize;
-      localStorage.setItem('fontSize', this.selectedFontSize);
-    },
-    togglePrivacyMode() {
-    },
-    applySettings() {
-      this.applyTheme();
-      this.applyLanguage();
-      this.toggleNotifications();
-      this.applyFontSize();
-      this.togglePrivacyMode();
-    },
-    resetSettings() {
-      this.selectedTheme = 'light';
-      this.selectedLanguage = 'en';
-      this.notificationsEnabled = false;
-      this.selectedFontSize = 'medium';
-      this.privacyModeEnabled = false;
-      this.applySettings();
+      micVolume: 50,
+      showEmbeds: true,
     }
   }
 }
@@ -160,29 +89,40 @@ export default {
 
 <style scoped>
 .settings-container {
+  display: flex;
   min-height: 100vh;
   background-color: #f0f2f5;
   padding-top: 60px;
 }
 
-.container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
+.settings-sidebar {
+  width: 250px;
+  background: #2c2f33;
+  padding: 20px;
+  color: white;
+  min-height: 100vh;
+}
+
+.settings-sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.settings-sidebar li {
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 5px;
+  margin-bottom: 5px;
+  transition: 0.2s;
+}
+
+.settings-sidebar li:hover, .settings-sidebar li.active {
+  background: #4f545c;
 }
 
 .settings-content {
-  padding: 1rem 0.5rem;
-}
-
-.theme-section, .language-section, .notifications-section, .font-size-section, .privacy-mode-section {
-  background: white;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  color: #000;
+  flex: 1;
+  padding: 2rem;
 }
 
 .section-title {
@@ -192,42 +132,13 @@ export default {
   color: #000;
 }
 
-.theme-selection, .language-section, .notifications-section, .font-size-section, .privacy-mode-section {
-  display: flex;
-  flex-direction: column;
-  color: #000;
-}
+.settings-section {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: black; /* Add this line */
 
-.theme-options {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 0.5rem;
-  color: #000;
-}
-
-.language-section select, .notifications-section label, .font-size-section select, .privacy-mode-section label {
-  margin-bottom: 0.5rem;
-  color: #000;
-}
-
-.settings-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 1rem;
-  justify-content: flex-end;
-}
-
-button {
-  background-color: #7e7e7e;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #1d4ed8;
 }
 </style>
