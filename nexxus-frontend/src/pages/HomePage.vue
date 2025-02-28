@@ -2,13 +2,8 @@
   <div class="home-container">
     <Navbar />
     <h1>Home</h1>
-    <div class="stories">
-      <div class="story" v-for="(story, index) in stories" :key="index">
-        <img :src="story.image" :alt="story.name" />
-        <p>{{ story.name }}</p>
-      </div>
-    </div>
-
+    <StoriesBar :stories="stories.data"/> <!-- Añade el componente StoriesBar -->
+ 
     <div class="post-card" v-for="post in posts.data" :key="post.id">
       <div class="post-header">
         <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
@@ -89,6 +84,7 @@ import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import UserRecommendation from '@/components/UserRecommendation.vue';
 import CommentModal from '@/components/CommentModal.vue';
+import StoriesBar from '@/components/StoriesBar.vue'; // Importa el componente StoriesBar
 import { ref } from 'vue';
 import { onMounted } from 'vue';
 import axios from 'axios';
@@ -157,6 +153,16 @@ onMounted(async () => {
       }
     });
     currentUser.value = userResult.data;
+
+    // Fetch stories data
+    const storiesResult = await axios.get('http://localhost:8000/api/stories', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json'
+      }
+    });
+    stories.value = storiesResult.data;
+
   } catch (error) {
     console.error('Error al obtener datos', error);
   }

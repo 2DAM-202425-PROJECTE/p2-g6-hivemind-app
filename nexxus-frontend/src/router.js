@@ -1,78 +1,66 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Login from "./pages/Login.vue";
-import HomePage from "./pages/HomePage.vue";
 import { setAuthToken } from "./auth.js";
+
+// Páginas
+import HomePage from "./pages/HomePage.vue";
+import Login from "./pages/Login.vue";
 import Register from "./pages/Register.vue";
 import ProfilePage from "./pages/ProfilePage.vue";
 import EditProfilePage from "./pages/EditProfilePage.vue";
 import About from "./pages/About.vue";
 import PrivacyPolicy from "./pages/PrivacyPolicyPage.vue";
 import TermsOfService from "./pages/TermsOfServicePage.vue";
-import ContactPage from "@/pages/ContactPage.vue";
-import ChatPage from "@/pages/ChatPage.vue";
-import ServerPage from "@/pages/ServerPage.vue";
-import ShopPage from "@/pages/ShopPage.vue";
-import PurchasePage from "@/pages/PurchasePage.vue";
-import SettingsPage from './pages/SettingsPage.vue';
+import ContactPage from "./pages/ContactPage.vue";
+import ChatPage from "./pages/ChatPage.vue";
+import ServerPage from "./pages/ServerPage.vue";
+import ShopPage from "./pages/ShopPage.vue";
+import PurchasePage from "./pages/PurchasePage.vue";
+import AppSettingsPage from "./pages/AppSettingsPage.vue";
+import AccountSettingsPage from "./pages/AccountSettingsPage.vue";
 
+// Definición de rutas
 const routes = [
-  { path: '/', component: Login },
   {
-    path: '/home',
-    component: HomePage,
-    beforeEnter: (to, from, next) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        setAuthToken(token);
-        next();
-      } else {
-        next('/');
-      }
+    path: "/",
+    redirect: () => {
+      const isAuthenticated = !!localStorage.getItem("token");
+      return isAuthenticated ? "/home" : "/login";
     },
   },
-  { path: '/register', component: Register },
-  { path: '/login', component: Login },
-  {
-    path: '/contact',
-    component: ContactPage,
-    beforeEnter: (to, from, next) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        setAuthToken(token);
-        next();
-      } else {
-        next('/');
-      }
-    },
-  },
-  {
-    path: '/chat',
-    component: ChatPage,
-    beforeEnter: (to, from, next) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        setAuthToken(token);
-        next();
-      } else {
-        next('/');
-      }
-    },
-  },
-  { path: '/chat', component: ChatPage },
-  { path: '/servers', component: ServerPage },
-  { path: '/profile', component: ProfilePage },
-  { path: '/edit-profile', component: EditProfilePage },
-  { path: '/about', component: About },
-  { path: '/privacy-policy', component: PrivacyPolicy },
-  { path: '/terms-of-service', component: TermsOfService },
-  { path: '/shop', component: ShopPage },
-  { path: '/purchase/:id', component: PurchasePage },
-  { path: '/settings', component: SettingsPage },
+  { path: "/home", name: "Home", component: HomePage },
+  { path: "/login", name: "Login", component: Login },
+  { path: "/register", name: "Register", component: Register },
+  { path: "/profile", name: "Profile", component: ProfilePage },
+  { path: "/edit-profile", name: "EditProfile", component: EditProfilePage },
+  { path: "/about", name: "About", component: About },
+  { path: "/privacy-policy", name: "PrivacyPolicy", component: PrivacyPolicy },
+  { path: "/terms-of-service", name: "TermsOfService", component: TermsOfService },
+  { path: "/contact", name: "Contact", component: ContactPage },
+  { path: "/chat", name: "Chat", component: ChatPage },
+  { path: "/servers", name: "Servers", component: ServerPage },
+  { path: "/shop", name: "Shop", component: ShopPage },
+  { path: "/purchase/:id", name: "Purchase", component: PurchasePage, props: true },
+  { path: "/settings", name: "Settings", component: AppSettingsPage },
+  { path: "/account-settings", name: "AccountSettings", component: AccountSettingsPage },
 ];
 
+// Creación del router
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+// Middleware para proteger rutas (excepto Login y Register)
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = !!localStorage.getItem("token");
+  const publicRoutes = ["Login", "Register"];
+
+  if (!isAuthenticated && !publicRoutes.includes(to.name)) {
+    next("/login");
+  } else {
+    if (isAuthenticated) setAuthToken(localStorage.getItem("token"));
+    next();
+  }
 });
 
 export default router;

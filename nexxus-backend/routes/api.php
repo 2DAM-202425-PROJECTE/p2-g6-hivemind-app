@@ -9,11 +9,13 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\StoryController;
+use App\Models\Story;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
 
-Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
-Route::post('/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
 
 Route::middleware('auth:sanctum')->group(function ()
 {
@@ -41,7 +43,7 @@ Route::middleware('auth:sanctum')->group(function ()
     // comments routes
     Route::post('/posts/{post}/comments', [CommentController::class, 'store']);
     Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
-    Route::delete('/posts/{post}/comments/{comment}', [CommentController::class, 'destroy']);
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
 
     // chats routes
     Route::get('/chats/private', [ChatController::class, 'getPrivateChat']);
@@ -50,8 +52,9 @@ Route::middleware('auth:sanctum')->group(function ()
     // messages routes
     Route::post('/chats/{chatName}/messages', [MessageController::class, 'postMessages']);
     Route::get('/chats/{chatName}/messages', [MessageController::class, 'getMessages']);
-    // Route::patch('/messages/{message}', [MessageController::class, 'update']);
-    // Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
+
+    Route::patch('/messages/{message}', [MessageController::class, 'updateMessages']);
+    Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
 
     Route::post('/contact/submit', [ContactController::class, 'submit']);
 });
@@ -60,3 +63,4 @@ Route::get('/api/random-users', function (Request $request) {
     $users = User::inRandomOrder()->limit(4)->get(['id', 'name', 'profile_photo_url']);
     return response()->json($users);
 });
+

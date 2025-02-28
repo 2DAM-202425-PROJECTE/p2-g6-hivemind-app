@@ -46,7 +46,7 @@ export default {
     }
   },
   created() {
-    const itemId = this.$route.params.id;
+    const itemId = parseInt(this.$route.params.id, 10);
     if (itemId) {
       this.item = this.getItemById(itemId);
     }
@@ -54,9 +54,9 @@ export default {
   methods: {
     getItemById(id) {
       const allItems = [
-        ...this.subscriptionTiers,
-        ...this.creditPacks,
-        ...this.cosmeticCategories.flatMap(category => category.items)
+        ...(this.subscriptionTiers || []),
+        ...(this.creditPacks || []),
+        ...(this.cosmeticCategories ? this.cosmeticCategories.flatMap(category => category.items) : [])
       ];
       return allItems.find(item => item.id === id);
     },

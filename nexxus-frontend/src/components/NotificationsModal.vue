@@ -17,8 +17,6 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-
 const props = defineProps({
   visible: Boolean,
   notifications: {
@@ -46,7 +44,6 @@ const clearAll = () => {
   emit('update:notifications', []);
 };
 </script>
-
 
 <style scoped>
 .modal-overlay {
@@ -91,7 +88,9 @@ const clearAll = () => {
   justify-content: space-between;
   align-items: center;
 }
-
+.notification p {
+  color: black;
+}
 .clear-all {
   background: #000000;
   color: white;
