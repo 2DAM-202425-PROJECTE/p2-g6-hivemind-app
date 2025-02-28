@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center justify-center mb-5">
+  <div class="flex items-center justify-center mb-5 bg-white text-black p-6 rounded-lg shadow-lg">
     <button @click="prevStory" class="text-2xl">&lt;</button>
     <div class="flex gap-3">
       <div v-for="(story, index) in visibleStories" :key="index" class="text-center">

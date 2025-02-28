@@ -22,7 +22,7 @@ import AccountSettingsPage from "./pages/AccountSettingsPage.vue";
 const routes = [
   {
     path: "/",
-    redirect: () => {
+    redirect: (to) => {
       const isAuthenticated = !!localStorage.getItem("token");
       return isAuthenticated ? "/home" : "/login";
     },

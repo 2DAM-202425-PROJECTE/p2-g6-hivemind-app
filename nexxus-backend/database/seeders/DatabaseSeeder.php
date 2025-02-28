@@ -34,7 +34,6 @@ class DatabaseSeeder extends Seeder
             'name' => 'Admin',
             'email' => 'admin@example.com',
             'password' => bcrypt('admin'),
-            'profile_photo_path' => 'https://www.mskcc.org/sites/default/files/styles/large/public/node/226378/3x2/gettyimages-508687706_1200x800-tight.jpg'
         ]);
 
         User::factory()->withPersonalTeam()->create([

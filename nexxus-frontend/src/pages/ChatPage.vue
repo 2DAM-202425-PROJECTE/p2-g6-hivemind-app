@@ -22,7 +22,7 @@ import Footer from '@/components/AppFooter.vue';
 import ChatList from '@/components/Chat/ChatList.vue';
 import ChatArea from '@/components/Chat/ChatArea.vue';
 import {useChat} from '@/composables/Chat/useChat';
-import {useUser} from '@/composables/useUser';
+import {useUser} from '@/composables/Chat/useUser';
 
 const {
   chats,

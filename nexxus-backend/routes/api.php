@@ -25,6 +25,10 @@ Route::middleware('auth:sanctum')->group(function ()
         return $request->user();
     });
 
+    // Profile routes
+    Route::get('/user/profile', [UserController::class, 'profile']);
+    Route::post('/user/profile/update', [UserController::class, 'updateProfile']);
+
     // return all users
     Route::get('/users', [UserController::class, 'index']);
     // retun posts of a user
