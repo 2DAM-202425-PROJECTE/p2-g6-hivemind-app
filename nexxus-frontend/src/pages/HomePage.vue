@@ -100,6 +100,7 @@ const postMenuVisible = ref(null);
 const editPostPopup = ref(false);
 const editPostDescription = ref('');
 const editPostFile = ref(null);
+const stories = ref([]);
 
 const currentUser = ref({
   name: 'Current User', // Replace with actual user data
