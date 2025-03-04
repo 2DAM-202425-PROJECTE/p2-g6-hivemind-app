@@ -8,6 +8,7 @@
         <li :class="{ active: selectedTab === 'notifications' }" @click="selectedTab = 'notifications'">Notifications</li>
         <li :class="{ active: selectedTab === 'voice' }" @click="selectedTab = 'voice'">Voice & Video</li>
         <li :class="{ active: selectedTab === 'text' }" @click="selectedTab = 'text'">Text & Images</li>
+        <li :class="{ active: selectedTab === 'security' }" @click="selectedTab = 'security'">Security</li>
       </ul>
     </div>
     <div class="settings-content container">
@@ -44,6 +45,12 @@
           <input type="checkbox" v-model="showEmbeds"> Show Embeds
         </label>
       </section>
+      <section v-if="selectedTab === 'security'" class="settings-section">
+        <h1 class="section-title">Security</h1>
+        <label>
+          <input type="checkbox" v-model="twoFactorAuth"> Enable Two-Factor Authentication
+        </label>
+      </section>
     </div>
     <AppFooter />
   </div>
@@ -64,6 +71,7 @@ export default {
       notificationsEnabled: false,
       micVolume: 50,
       showEmbeds: true,
+      twoFactorAuth: false,
     }
   }
 }
@@ -120,7 +128,6 @@ export default {
   padding: 1.5rem;
   margin-bottom: 1rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  color: black; /* Add this line */
-
+  color: black;
 }
 </style>
