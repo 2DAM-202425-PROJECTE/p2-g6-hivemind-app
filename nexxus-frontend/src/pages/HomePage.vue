@@ -3,7 +3,7 @@
     <Navbar />
     <h1>Home</h1>
     <StoriesBar :stories="stories.data"/> <!-- Añade el componente StoriesBar -->
-
+ 
     <div class="post-card" v-for="post in posts.data" :key="post.id">
       <div class="post-header">
         <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
@@ -37,11 +37,11 @@
             <div v-if="selectedPost && selectedPost.image_url" class="current-image">
               <p>Current Image:</p>
               <img :src="'http://localhost:8000/' + selectedPost.image_url" alt="Current post image"
-                   style="max-width: 100%; max-height: 200px; margin-bottom: 10px;">
+                style="max-width: 100%; max-height: 200px; margin-bottom: 10px;">
             </div>
 
             <v-file-input label="Replace Image/Video (.png, .jpg, .jpeg, .mp4)" accept=".png, .jpg, .jpeg, .mp4"
-                          @update:modelValue="handleEditFileUpload" outlined></v-file-input>
+              @update:modelValue="handleEditFileUpload" outlined></v-file-input>
 
             <v-text-field v-model="editPostDescription" label="Description" outlined>
             </v-text-field>
@@ -72,7 +72,7 @@
     </div>
 
     <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal"
-                  @add-comment="addComment" :post="selectedPost" />
+      @add-comment="addComment" :post="selectedPost" />
 
     <UserRecommendation />
     <Footer />
