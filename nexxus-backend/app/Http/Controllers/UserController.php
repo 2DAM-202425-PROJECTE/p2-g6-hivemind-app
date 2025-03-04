@@ -18,13 +18,14 @@ class UserController extends Controller
         ], 200);
     }
 
-    public function profile(Request $request)
+    public function getUserByUsername($username)
     {
-        $user = $request->user();
+        $user = User::where('username', $username)->firstOrFail();
         $posts = $user->posts;
 
         return response()->json([
             'user' => $user,
+            'posts' => $posts,
         ], 200);
     }
 

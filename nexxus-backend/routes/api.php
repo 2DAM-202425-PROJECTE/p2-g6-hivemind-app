@@ -26,7 +26,7 @@ Route::middleware('auth:sanctum')->group(function ()
     });
 
     // Profile routes
-    Route::get('/user/profile', [UserController::class, 'profile']);
+    Route::get('/user/{username}', [UserController::class, 'getUserByUsername']);
     Route::post('/user/profile/update', [UserController::class, 'updateProfile']);
 
     // return all users

@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
 
          User::factory()->withPersonalTeam()->create([
             'name' => 'Test User',
+            'username' => 'test',
             'email' => 'test@example.com',
             'password' => bcrypt('password'),
             'profile_photo_path' => 'https://c.files.bbci.co.uk/assets/4da9473d-2f23-4b23-aac5-32c728a4da8f'
@@ -32,12 +33,14 @@ class DatabaseSeeder extends Seeder
 
         User::factory()->withPersonalTeam()->create([
             'name' => 'Admin',
+            'username' => 'admin',
             'email' => 'admin@example.com',
             'password' => bcrypt('admin'),
         ]);
 
         User::factory()->withPersonalTeam()->create([
             'name' => 'User',
+            'username' => 'user',
             'email' => 'user@example.com',
             'password' => bcrypt('user'),
 

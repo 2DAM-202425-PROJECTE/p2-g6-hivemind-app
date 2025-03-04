@@ -17,42 +17,40 @@
 </template>
 
 <script setup>
-import {ref} from 'vue'
-import {useProfile} from '@/composables/profile/useProfile'
-import Navbar from '@/components/NavBar.vue'
-import Footer from '@/components/AppFooter.vue'
-import ShareModal from '@/components/ShareModal.vue'
-import ProfileHeader from '@/components/Profile/ProfileHeader.vue'
-import ProfileStories from '@/components/Profile/ProfileStories.vue'
-import ProfilePosts from '@/components/Profile/ProfilePosts.vue'
-import ProfileEditModal from '@/components/Profile/ProfileEditModal.vue'
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { useProfile } from '@/composables/profile/useProfile';
+import Navbar from '@/components/NavBar.vue';
+import Footer from '@/components/AppFooter.vue';
+import ShareModal from '@/components/ShareModal.vue';
+import ProfileHeader from '@/components/Profile/ProfileHeader.vue';
+import ProfileStories from '@/components/Profile/ProfileStories.vue';
+import ProfilePosts from '@/components/Profile/ProfilePosts.vue';
+import ProfileEditModal from '@/components/Profile/ProfileEditModal.vue';
 
-const {
-  user,
-  userPosts,
-  visibleStories,
-  nextStory,
-  prevStory,
-  isModalVisible,
-  shareUrl
-} = useProfile()
-  
-const isEditModalVisible = ref(false)
+const route = useRoute();
+const { user, userPosts, fetchUserProfileByUsername } = useProfile();
+
+const isEditModalVisible = ref(false);
 
 const editProfile = () => {
-  isEditModalVisible.value = true
-}
+  isEditModalVisible.value = true;
+};
 
 const updateUserProfile = (updatedUser) => {
-  user.value = updatedUser
-}
+  user.value = updatedUser;
+};
 
 const shareProfile = () => {
-  const url = `${window.location.origin}/profile/${user.value.id}`
+  const url = `${window.location.origin}/profile/${user.value.username}`;
   navigator.clipboard.writeText(url).then(() => {
-    alert('Profile URL copied to clipboard!')
+    alert('Profile URL copied to clipboard!');
   }).catch(err => {
-    console.error('Failed to copy: ', err)
-  })
-}
+    console.error('Failed to copy: ', err);
+  });
+};
+
+onMounted(() => {
+  fetchUserProfileByUsername(route.params.username);
+});
 </script>

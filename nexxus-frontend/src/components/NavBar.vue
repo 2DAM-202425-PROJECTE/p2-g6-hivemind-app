@@ -1,49 +1,54 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import axios from '../axios'
-import { clearAuthToken } from '../auth'
-import NotificationsModal from './NotificationsModal.vue' // Import the NotificationsModal component
+import { ref, onMounted, watch, computed } from 'vue';
+import axios from '../axios';
+import { clearAuthToken } from '../auth';
+import NotificationsModal from './NotificationsModal.vue';
+import { routes } from '../router';
 
-const menu = ref(false)
-const searchQuery = ref('')
-const user = ref(null)
-const popup = ref(false)
-const postPopup = ref(false)
-const postContent = ref('')
-const postDescription = ref('')
-const postFile = ref(null)
-const showLogoutConfirm = ref(false) // Add this line
-const showNotifications = ref(false) // Add this line
-const notifications = ref([   // Add notifications here
+const menu = ref(false);
+const searchQuery = ref('');
+const user = ref(null);
+const popup = ref(false);
+const postPopup = ref(false);
+const postContent = ref('');
+const postDescription = ref('');
+const postFile = ref(null);
+const showLogoutConfirm = ref(false);
+const showNotifications = ref(false);
+const notifications = ref([
   { id: 1, message: 'New notification' },
   { id: 2, message: 'Another notification' }
-])
+]);
+
 const menuItems = ref([
   { text: 'Chat', to: '/chat', icon: 'mdi-chat' },
   { text: 'Servers', to: '/servers', icon: 'mdi-server' },
   { text: 'Live Now', to: '/live', icon: 'mdi-video' },
   { text: 'Videos', to: '/videos', icon: 'mdi-video-outline' },
   { text: 'Shop', to: '/shop', icon: 'mdi-cart' },
-  { text: 'My Profile', to: '/profile', icon: 'mdi-account' },
-  { text: 'Account Settings', to: '/account-settings', icon: 'mdi-account-cog' }, // Add account settings
-  { text: 'App Settings', to: '/settings', icon: 'mdi-cog' } // Add app settings
-
-])
+  { text: 'My Profile', to: '#', icon: 'mdi-account' },
+  { text: 'Account Settings', to: '/account-settings', icon: 'mdi-account-cog' },
+  { text: 'App Settings', to: '/settings', icon: 'mdi-cog' }
+]);
 
 const fetchUser = async () => {
   try {
-    const response = await axios.get('/api/user')
-    user.value = response.data
-    if (!user.value) {
-      menuItems.value.push(
-        { text: 'Login', to: '/login', icon: 'mdi-login' },
-        { text: 'Register', to: '/register', icon: 'mdi-account-plus' }
-      )
-    }
+    const response = await axios.get('/api/user');
+    user.value = response.data;
+    updateMenuItems();
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
-}
+};
+
+const updateMenuItems = () => {
+  menuItems.value = menuItems.value.map(item => {
+    if (item.text === 'My Profile') {
+      return { ...item, to: user.value && user.value.username ? `/profile/${user.value.username}` : '#' };
+    }
+    return item;
+  });
+};
 
 const logout = async () => {
   try {
@@ -61,34 +66,33 @@ const logout = async () => {
 
     localStorage.removeItem("token");
     clearAuthToken();
-    user.value = null;
     window.location.href = "/";
   } catch (err) {
-    console.error(err)
-    alert('Logout failed.')
+    console.error(err);
+    alert('Logout failed.');
   }
-}
+};
 
 const handleFileUpload = (event) => {
-  postFile.value = event.target.files[0]
-}
+  postFile.value = event.target.files[0];
+};
 
 const submitPost = async () => {
-  localStorage.setItem('postContent', postContent.value)
+  localStorage.setItem('postContent', postContent.value);
 
   if (!postContent.value && !postFile.value) {
-    alert('Please enter content or upload a file!')
-    return
+    alert('Please enter content or upload a file!');
+    return;
   }
 
-  const formData = new FormData()
-  formData.append('content', postContent.value)
-  formData.append('description', postDescription.value)
-  formData.append('id_user', user.value.id) // Assuming user is logged in
-  formData.append('publish_date', new Date().toISOString()) // Add publish_date
+  const formData = new FormData();
+  formData.append('content', postContent.value);
+  formData.append('description', postDescription.value);
+  formData.append('id_user', user.value.id);
+  formData.append('publish_date', new Date().toISOString());
 
   if (postFile.value) {
-    formData.append('file', postFile.value)
+    formData.append('file', postFile.value);
   }
 
   try {
@@ -98,53 +102,52 @@ const submitPost = async () => {
         Accept: 'application/json',
         'Content-Type': 'multipart/form-data'
       }
-    })
-    alert('Post created successfully!')
-    postPopup.value = false
-    postContent.value = ''
-    postDescription.value = ''
-    postFile.value = null
+    });
+    alert('Post created successfully!');
+    postPopup.value = false;
+    postContent.value = '';
+    postDescription.value = '';
+    postFile.value = null;
 
-    // Update the home page with the new post
-    window.location.href = "/home"
+    window.location.href = "/home";
   } catch (error) {
-    console.error(error)
-    alert('Failed to create post.')
+    console.error(error);
+    alert('Failed to create post.');
   }
-}
+};
 
 const confirmLogout = () => {
-  showLogoutConfirm.value = true
-}
+  showLogoutConfirm.value = true;
+};
 
 const handleLogoutConfirm = (confirm) => {
   if (confirm) {
-    logout()
+    logout();
   }
-  showLogoutConfirm.value = false
-}
+  showLogoutConfirm.value = false;
+};
 
 const updateNotifications = (updatedNotifications) => {
-  notifications.value = updatedNotifications
-}
+  notifications.value = updatedNotifications;
+};
 
 onMounted(() => {
-  fetchUser()
-})
+  fetchUser();
+});
 
 watch([menu, showNotifications], ([newMenu, newShowNotifications]) => {
   if (newMenu && newShowNotifications) {
-    showNotifications.value = false
+    showNotifications.value = false;
   }
-})
-const hasNotifications = computed(() => notifications.value.length > 0);
+});
 
+const hasNotifications = computed(() => notifications.value.length > 0);
 </script>
 
 <template>
   <v-app-bar app flat class="fixed top-0 w-full bg-black shadow-md flex justify-between px-4">
     <div class="left-section flex items-center">
-      <img src="/logo.png" alt="Logo" class="logo" />
+      <img src="/logo.png" alt="Logo" class="logo"/>
       <v-btn text :to="'/home'" class="title-btn text-white flex items-center">
         Hivemind
       </v-btn>
@@ -155,9 +158,9 @@ const hasNotifications = computed(() => notifications.value.length > 0);
 
     <div class="right-section flex items-center">
       <template v-if="user">
-        <v-btn icon class="text-white ml-2" :to="'/profile'">
+        <v-btn icon class="text-white ml-2" :to="`/profile/${user.username}`">
           <v-avatar size="32">
-            <img :src="user.profilePic" alt="Profile Picture" />
+            <img :src="user.profile_photo_url" alt="Profile Picture"/>
           </v-avatar>
         </v-btn>
         <span class="user-greeting text-white ml-2">{{ user.name }}</span>
@@ -176,11 +179,10 @@ const hasNotifications = computed(() => notifications.value.length > 0);
     </div>
   </v-app-bar>
 
-  <!-- Pop-out Menu -->
   <v-navigation-drawer v-model="menu" temporary location="right" class="bg-black d-flex flex-column justify-between">
     <div>
       <div class="menu-header flex justify-center items-center py-4">
-        <img src="/logo.png" alt="Logo" class="menu-logo" />
+        <img src="/logo.png" alt="Logo" class="menu-logo"/>
       </div>
       <v-divider></v-divider>
       <v-list class="menu-list flex flex-col items-center justify-center gap-4">
@@ -211,7 +213,6 @@ const hasNotifications = computed(() => notifications.value.length > 0);
     </div>
   </v-navigation-drawer>
 
-  <!-- Create Post Options Popup -->
   <v-dialog v-model="popup" max-width="400">
     <v-card>
       <v-card-title>Select an option</v-card-title>
@@ -226,7 +227,6 @@ const hasNotifications = computed(() => notifications.value.length > 0);
     </v-card>
   </v-dialog>
 
-  <!-- Create a Post Popup -->
   <v-dialog v-model="postPopup" max-width="500">
     <v-card>
       <v-card-title>Create a Post</v-card-title>
@@ -245,21 +245,17 @@ const hasNotifications = computed(() => notifications.value.length > 0);
     </v-card>
   </v-dialog>
 
-  <!-- Logout Confirmation Dialog -->
   <v-dialog v-model="showLogoutConfirm" max-width="400">
     <v-card>
       <v-card-title>Confirm Logout</v-card-title>
       <v-card-text>Are you sure you want to logout?</v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" @click="handleLogoutConfirm(true)">Yes</v-btn>
         <v-btn color="primary" @click="handleLogoutConfirm(false)">No</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 
-
-  <!-- Notifications Modal -->
   <NotificationsModal
     :visible="showNotifications"
     :notifications="notifications"
@@ -312,8 +308,7 @@ const hasNotifications = computed(() => notifications.value.length > 0);
   margin: 0 auto;
   flex-grow: 1;
   text-align: center;
-  margin-left: 650px; /* Adjust this value to move the search bar to the right */
-
+  margin-left: 650px;
 }
 
 .credits-display {
@@ -332,6 +327,7 @@ const hasNotifications = computed(() => notifications.value.length > 0);
     max-width: 200px;
   }
 }
+
 .has-notifications::after {
   content: '';
   position: absolute;
