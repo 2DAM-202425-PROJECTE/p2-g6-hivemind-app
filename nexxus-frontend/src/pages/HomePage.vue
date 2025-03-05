@@ -72,7 +72,7 @@
     </div>
 
     <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal"
-      @add-comment="addComment" :post="selectedPost" />
+    :currentUser="currentUser"    @add-comment="addComment" :post="selectedPost" />
 
     <UserRecommendation />
     <Footer />
