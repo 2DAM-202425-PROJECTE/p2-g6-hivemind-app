@@ -45,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function ()
     Route::delete('/posts/{post}/comments/{comment}', [CommentController::class, 'destroy']);
 
     Route::get('/stories', [StoryController::class, 'index']);
+    Route::post('/stories', [StoryController::class, 'store']);
 
     // Chats routes
     Route::get('/chats/private', [ChatController::class, 'getPrivateChat']);

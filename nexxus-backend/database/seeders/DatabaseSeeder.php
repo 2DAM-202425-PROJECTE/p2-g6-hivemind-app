@@ -17,13 +17,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // //delete all data from the tables
-        // User::truncate();
-        // Post::truncate();
-
-        // User::factory(10)->withPersonalTeam()->create();
-
-         User::factory()->withPersonalTeam()->create([
+        User::factory()->withPersonalTeam()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => bcrypt('password'),
@@ -41,7 +35,6 @@ class DatabaseSeeder extends Seeder
             'name' => 'User',
             'email' => 'user@example.com',
             'password' => bcrypt('user'),
-
         ]);
 
         Post::factory()->create([

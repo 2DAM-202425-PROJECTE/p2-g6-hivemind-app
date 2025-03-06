@@ -9,6 +9,10 @@ const searchQuery = ref('')
 const user = ref(null)
 const popup = ref(false)
 const postPopup = ref(false)
+const storyPopup = ref(false)
+const storyContent = ref('')
+const storyDescription = ref('')
+const storyFile = ref(null)
 const postContent = ref('')
 const postDescription = ref('')
 const postFile = ref(null)
@@ -73,8 +77,46 @@ const handleFileUpload = (event) => {
   postFile.value = event.target.files[0]
 }
 
+const submitStory = async () => {
+    if (!storyDescription.value && !storyFile.value) {
+        alert('Please enter a description or upload a file!')
+        return
+    }
+
+    const formData = new FormData()
+    formData.append('description', storyDescription.value)
+    formData.append('id_user', user.value.id) // Assuming user is logged in
+    formData.append('publish_date', new Date().toISOString()) // Add publish_date
+
+    if (storyFile.value) {
+        formData.append('file', storyFile.value)
+    }
+    //console.log(storyFile.value)
+    //console.log(formData)
+    try {
+        const response = await axios.post('http://localhost:8000/api/stories', formData, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem('token')}`,
+                Accept: 'application/json',
+                'Content-Type': 'multipart/form-data'
+            }
+        })
+        alert('Story created successfully!')
+        storyPopup.value = false
+        storyDescription.value = ''
+        storyFile.value = null
+
+        // Update the home page with the new story
+        window.location.href = "/home"
+    } catch (error) {
+        console.error(error)
+        alert('Failed to create story.')
+    }
+}
+
 const submitPost = async () => {
   localStorage.setItem('postContent', postContent.value)
+  
 
   if (!postContent.value && !postFile.value) {
     alert('Please enter content or upload a file!')
@@ -216,7 +258,7 @@ const hasNotifications = computed(() => notifications.value.length > 0);
     <v-card>
       <v-card-title>Select an option</v-card-title>
       <v-card-text>
-        <v-btn block class="mb-2" @click="popup = false">Create a Story</v-btn>
+        <v-btn block class="mb-2" @click="storyPopup = true; popup = false">Create a Story</v-btn>
         <v-btn block @click="postPopup = true; popup = false">Create a Post (Image/Video)</v-btn>
       </v-card-text>
       <v-card-actions>
@@ -241,6 +283,25 @@ const hasNotifications = computed(() => notifications.value.length > 0);
         <v-spacer></v-spacer>
         <v-btn text @click="postPopup = false">Cancel</v-btn>
         <v-btn color="primary" @click="submitPost">Post</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- Create a Story Popup -->
+  <v-dialog v-model="storyPopup" max-width="500">
+    <v-card>
+      <v-card-title>Create a Story</v-card-title>
+      <v-card-text>
+        <v-file-input v-model="storyFile" label="Upload Image/Video (.png, .mp4)" accept=".png, .mp4" @change="handleFileUpload"
+                      outlined></v-file-input>
+
+        <v-text-field v-model="storyDescription" label="Description" outlined></v-text-field>
+      </v-card-text>
+
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn text @click="storyPopup = false">Cancel</v-btn>
+        <v-btn color="primary" @click="submitStory">Story</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
