@@ -55,7 +55,7 @@
 import { ref } from 'vue';
 import axios from '../axios';
 
-
+const isDeleting = ref(false);
 const newComment = ref('');
 const commentMenuVisible = ref(null);
 const editCommentPopup = ref(false);
@@ -78,7 +78,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close', 'add-comment', 'update-comment']);
+const emit = defineEmits(['close', 'add-comment', 'update-comment', 'delete-comments']);
 
 const close = () => {
   emit('close');
@@ -169,8 +169,27 @@ const saveEditComment = async () => {
   }
 };
 
-const deleteComment = (comment) => {
-  // Implement delete comment logic
+const deleteComment = async (comment) => {
+  isDeleting.value = true;
+  try{
+    const response = await axios.delete(`http://localhost:8000/api/comments/${comment.id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (Array.isArray(props.comments)) {
+      const deletedComments = props.comments.filter(c => c.id !== comment.id);
+      emit('delete-comments', deletedComments);
+    }
+
+    location.reload();
+  } catch (error) {
+    console.error('Failed to delete comment:', error.responde?.data || error.message);
+    alert('Failed to delete comment.' + error.response?.data?.message || error.message);
+  } finally {
+    isDeleting.value = false;
+  }
 };
 
 const reportComment = (comment) => {

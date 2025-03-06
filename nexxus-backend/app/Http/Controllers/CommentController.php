@@ -28,12 +28,21 @@ class CommentController extends Controller
         return response()->json($post->comments()->with('user')->get());
     }
 
-    public function destroy(Comment $comment)
+    public function destroy($id)
     {
-        $this->authorize('delete', $comment);
+        $comment = Comment::find($id);
+
+        if (!$comment) {
+            return response()->json(['message' => 'Comment not found'], 404);
+        }
+
+        if ($comment->user_id != auth()->id()) {
+            return response()->json(['message' => 'Unauthorized: You cannot delete this comment'], 401);
+        }
+
         $comment->delete();
 
-        return response()->json(null, 204);
+        return response()->json(['message' => 'Comment deleted successfully'], 200);
     }
 
 
