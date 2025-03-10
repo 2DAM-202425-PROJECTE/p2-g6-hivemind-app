@@ -157,7 +157,7 @@ const hasNotifications = computed(() => notifications.value.length > 0);
       <template v-if="user">
         <v-btn icon class="text-white ml-2" :to="'/profile'">
           <v-avatar size="32">
-            <img :src="user.profilePic" alt="Profile Picture" />
+            <img :src="user.profile_photo_path" alt="Profile Picture" />
           </v-avatar>
         </v-btn>
         <span class="user-greeting text-white ml-2">{{ user.name }}</span>

@@ -48,7 +48,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import axios from '@/axios'
+import { ref, onMounted } from 'vue'
 import Navbar from '@/components/NavBar.vue'
 import Footer from '@/components/AppFooter.vue'
 import { useRouter } from 'vue-router'
@@ -57,15 +58,27 @@ const router = useRouter()
 
 // Load user data from ProfilePage
 const user = ref({
-  name: 'name',
-  profilePic: 'https://via.placeholder.com/80',
+  profile_photo_path: '',
+  name: '',
   level: 0,
-  description: 'description',
-  stories: [
-    { name: 'Story 1', image: 'https://via.placeholder.com/80' },
-    { name: 'Story 2', image: 'https://via.placeholder.com/80' },
-  ],
+  description: '',
+  stories: [],
   posts: 0,
+})
+
+// Fetch user data from the server
+const fetchUser = async () => {
+  try {
+    const response = await axios.get('/api/user')
+    user.value = response.data
+    editableUser.value = { ...user.value } 
+  } catch (error) {
+    console.error('Failed to fetch user data:', error)
+  }
+}
+
+onMounted(() => {
+  fetchUser()
 })
 
 // Clone the user object for editing

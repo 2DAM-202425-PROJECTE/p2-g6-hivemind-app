@@ -11,7 +11,7 @@
 
     <div class="profile-card">
       <div class="profile-header">
-        <img class="profile-pic" src="https://via.placeholder.com/80" alt="Profile Pic" />
+        <img class="profile-pic" :src="user.profile_photo_path" alt="Profile Pic" />
         <div class="profile-info">
           <h3>{{ user.name }}</h3>
           <p>Level {{ user.level }}</p>
@@ -63,7 +63,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import axios from '@/axios'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Navbar from '@/components/NavBar.vue'
 import Footer from '@/components/AppFooter.vue'
@@ -72,53 +73,58 @@ import ShareModal from '@/components/ShareModal.vue'
 const router = useRouter()
 
 const user = ref({
-  name: 'name',
+  profile_photo_path: '',
+  name: '',
   level: 0,
-  description: 'description',
-  stories: [
-    { name: "Story 1", image: "https://via.placeholder.com/80" },
-    { name: "Story 2", image: "https://via.placeholder.com/80" },
-    { name: "Story 3", image: "https://via.placeholder.com/80" },
-    { name: "Story 4", image: "https://via.placeholder.com/80" },
-    { name: "Story 5", image: "https://via.placeholder.com/80" },
-    { name: "Story 6", image: "https://via.placeholder.com/80" },
-    { name: "Story 7", image: "https://via.placeholder.com/80" },
-    { name: "Story 8", image: "https://via.placeholder.com/80" },
-    { name: "Story 9", image: "https://via.placeholder.com/80" },
-  ],
+  description: '',
+  stories: [],
   posts: 0,
   followers: 0,
   following: 0,
 })
 
 const userPosts = ref([
-  { image: '', title: 'Post 1' },
-  { image: '', title: 'Post 2' },
-  { image: '', title: 'Post 3' },
-  { image: '', title: 'Post 4' },
-  { image: '', title: 'Post 5' },
-  { image: '', title: 'Post 6' },
-  { image: '', title: 'Post 7' },
-  { image: '', title: 'Post 8' },
-  { image: '', title: 'Post 9' },
+  // { image: '', title: 'Post 1' },
+  // { image: '', title: 'Post 2' },
+  // { image: '', title: 'Post 3' },
+  // { image: '', title: 'Post 4' },
+  // { image: '', title: 'Post 5' },
+  // { image: '', title: 'Post 6' },
+  // { image: '', title: 'Post 7' },
+  // { image: '', title: 'Post 8' },
+  // { image: '', title: 'Post 9' },
 ])
 
-const currentIndex = ref(0)
-const visibleStories = computed(() => {
-  return user.value.stories.slice(currentIndex.value, currentIndex.value + 3)
+const fetchUser = async () => {
+  try {
+    const response = await axios.get('/api/user')
+    user.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch user data:', error)
+  }
+}
+
+onMounted(() => {
+  fetchUser()
 })
 
-const nextStory = () => {
-  if (currentIndex.value + 3 < user.value.stories.length) {
-    currentIndex.value++
-  }
-}
+// const currentIndex = ref(0)
 
-const prevStory = () => {
-  if (currentIndex.value > 0) {
-    currentIndex.value--
-  }
-}
+// const visibleStories = computed(() => {
+//   return user.value.stories.slice(currentIndex.value, currentIndex.value + 3)
+// })
+
+// const nextStory = () => {
+//   if (currentIndex.value + 3 < user.value.stories.length) {
+//     currentIndex.value++
+//   }
+// }
+
+// const prevStory = () => {
+//   if (currentIndex.value > 0) {
+//     currentIndex.value--
+//   }
+// }
 
 const editProfile = () => {
   router.push('/edit-profile')
