@@ -9,15 +9,15 @@
         <li :class="{ active: activeTab === 'privacy' }" @click="activeTab = 'privacy'">Privacy & Safety</li>
         <li :class="{ active: activeTab === 'connections' }" @click="activeTab = 'connections'">Connections</li>
         <li :class="{ active: activeTab === 'billing' }" @click="activeTab = 'billing'">Billing</li>
-        <li :class="{ active: activeTab === 'hypesquad' }" @click="activeTab = 'hypesquad'">HypeSquad</li>
-        <li :class="{ active: activeTab === 'logout' }" @click="logout">Log Out</li>
+        <li :class="{ active: activeTab === 'logout' }" @click="showLogoutModal = true">Log Out</li>
       </ul>
     </div>
     <div class="account-settings-content container">
       <section v-if="activeTab === 'myAccount'" class="account-info-section">
         <h1 class="section-title">My Account</h1>
-        <p>Username: {{ username }}</p>
+        <p>Name: {{ name }}</p>
         <p>Email: {{ email }}</p>
+        <v-img :src="profilePicture" class="profile-picture"></v-img>
         <v-btn color="primary" @click="changePassword">Change Password</v-btn>
       </section>
       <section v-if="activeTab === 'profiles'" class="profile-section">
@@ -31,6 +31,9 @@
         <ul>
           <li v-for="device in devices" :key="device.id">{{ device.name }} - {{ device.lastActive }}</li>
         </ul>
+        <v-btn icon @click="showAddSocialMediaModal = true">
+          <v-icon>mdi-plus</v-icon>
+        </v-btn>
       </section>
       <section v-if="activeTab === 'privacy'" class="privacy-section">
         <h1 class="section-title">Privacy & Safety</h1>
@@ -50,19 +53,42 @@
         <p>Subscription Plan: {{ subscriptionPlan }}</p>
         <v-btn color="primary" @click="manageSubscription">Manage Subscription</v-btn>
       </section>
-      <section v-if="activeTab === 'hypesquad'" class="hypesquad-section">
-        <h1 class="section-title">HypeSquad</h1>
-        <p>Current House: {{ hypesquadHouse }}</p>
-        <v-btn color="primary" @click="changeHouse">Change House</v-btn>
-      </section>
     </div>
     <AppFooter />
+    <!-- Logout Confirmation Modal -->
+    <v-dialog v-model="showLogoutModal" max-width="500">
+      <v-card>
+        <v-card-title class="headline">Confirm Logout</v-card-title>
+        <v-card-text>Are you sure you want to log out?</v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="red darken-1" text @click="showLogoutModal = false">No</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <!-- Add Social Media Modal -->
+    <v-dialog v-model="showAddSocialMediaModal" max-width="500">
+      <v-card>
+        <v-card-title class="headline">Add Social Media</v-card-title>
+        <v-card-text>
+          <v-form @submit.prevent="addSocialMedia">
+            <v-text-field v-model="newSocialMedia.username" label="Username" required></v-text-field>
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue darken-1" text @click="showAddSocialMediaModal = false">Cancel</v-btn>
+          <v-btn color="blue darken-1" text @click="addSocialMedia">Add</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script>
 import NavBar from '../components/NavBar.vue';
 import AppFooter from '../components/AppFooter.vue';
+import apiClient from "@/axios.js";
 
 export default {
   name: 'AccountSettingsPage',
@@ -73,23 +99,38 @@ export default {
   data() {
     return {
       activeTab: 'myAccount', // Default to My Account tab
-      username: 'JohnDoe',
-      email: 'john.doe@example.com',
-      profilePicture: 'path/to/profile-picture.jpg',
-      devices: [
-        { id: 1, name: 'Laptop', lastActive: '2023-10-01' },
-        { id: 2, name: 'Phone', lastActive: '2023-10-02' },
-      ],
+      name: '',
+      email: '',
+      profilePicture: '',
+      devices: [],
       twoFactorAuth: false,
-      linkedAccounts: [
-        { id: 1, platform: 'GitHub', username: 'john_doe' },
-        { id: 2, platform: 'Twitter', username: 'johndoe' },
-      ],
-      subscriptionPlan: 'Pro',
-      hypesquadHouse: 'Bravery',
+      linkedAccounts: [],
+      subscriptionPlan: '',
+      showLogoutModal: false,
+      showAddSocialMediaModal: false,
+      newSocialMedia: {
+        platform: '',
+        username: ''
+      }
     };
   },
   methods: {
+    fetchUserDetails() {
+      apiClient.get('/api/user')
+        .then(response => {
+          const user = response.data;
+          this.name = user.name;
+          this.email = user.email;
+          this.profilePicture = user.profilePicture;
+          this.devices = user.devices;
+          this.twoFactorAuth = user.twoFactorAuth;
+          this.linkedAccounts = user.linkedAccounts;
+          this.subscriptionPlan = user.subscriptionPlan;
+        })
+        .catch(error => {
+          console.error('Error fetching user details:', error);
+        });
+    },
     changePassword() {
       // Implement change password logic here
     },
@@ -99,12 +140,24 @@ export default {
     manageSubscription() {
       // Implement manage subscription logic here
     },
-    changeHouse() {
-      // Implement change house logic here
-    },
     logout() {
-      // Implement logout logic here
+      apiClient.post('/api/logout')
+        .then(() => {
+          window.location.href = '/login'; // Redirect to login page after logout
+        })
+        .catch(error => {
+          console.error('Error logging out:', error);
+        });
     },
+    addSocialMedia() {
+      this.linkedAccounts.push({ ...this.newSocialMedia });
+      this.newSocialMedia.platform = '';
+      this.newSocialMedia.username = '';
+      this.showAddSocialMediaModal = false;
+    }
+  },
+  mounted() {
+    this.fetchUserDetails();
   },
 };
 </script>
@@ -123,6 +176,9 @@ export default {
   padding: 20px;
   color: white;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .settings-sidebar ul {
@@ -142,6 +198,15 @@ export default {
   background: #4f545c;
 }
 
+.logout {
+  background: #ff4d4d;
+  color: white;
+}
+
+.logout:hover {
+  background: #ff3333;
+}
+
 .account-settings-content {
   flex: 1;
   padding: 2rem;
@@ -154,7 +219,7 @@ export default {
   color: #000;
 }
 
-.account-info-section, .profile-section, .devices-section, .privacy-section, .connections-section, .billing-section, .hypesquad-section {
+.account-info-section, .profile-section, .devices-section, .privacy-section, .connections-section, .billing-section {
   background: white;
   border-radius: 8px;
   padding: 1.5rem;

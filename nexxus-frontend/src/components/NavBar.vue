@@ -18,18 +18,18 @@ const showNotifications = ref(false);
 const notifications = ref([
   { id: 1, message: 'New notification' },
   { id: 2, message: 'Another notification' }
-]);
-
+])
 const menuItems = ref([
   { text: 'Chat', to: '/chat', icon: 'mdi-chat' },
   { text: 'Servers', to: '/servers', icon: 'mdi-server' },
   { text: 'Live Now', to: '/live', icon: 'mdi-video' },
   { text: 'Videos', to: '/videos', icon: 'mdi-video-outline' },
   { text: 'Shop', to: '/shop', icon: 'mdi-cart' },
-  { text: 'My Profile', to: '#', icon: 'mdi-account' },
-  { text: 'Account Settings', to: '/account-settings', icon: 'mdi-account-cog' },
-  { text: 'App Settings', to: '/settings', icon: 'mdi-cog' }
-]);
+  { text: 'My Profile', to: '/profile', icon: 'mdi-account' },
+  { text: 'Account Settings', to: '/account-settings', icon: 'mdi-account-cog' }, // Add account settings
+  { text: 'App Settings', to: '/settings', icon: 'mdi-cog' } // Add app settings
+
+])
 
 const fetchUser = async () => {
   try {
@@ -66,33 +66,34 @@ const logout = async () => {
 
     localStorage.removeItem("token");
     clearAuthToken();
+    user.value = null;
     window.location.href = "/";
   } catch (err) {
-    console.error(err);
-    alert('Logout failed.');
+    console.error(err)
+    alert('Logout failed.')
   }
-};
+}
 
 const handleFileUpload = (event) => {
-  postFile.value = event.target.files[0];
-};
+  postFile.value = event.target.files[0]
+}
 
 const submitPost = async () => {
-  localStorage.setItem('postContent', postContent.value);
+  localStorage.setItem('postContent', postContent.value)
 
   if (!postContent.value && !postFile.value) {
-    alert('Please enter content or upload a file!');
-    return;
+    alert('Please enter content or upload a file!')
+    return
   }
 
-  const formData = new FormData();
-  formData.append('content', postContent.value);
-  formData.append('description', postDescription.value);
-  formData.append('id_user', user.value.id);
-  formData.append('publish_date', new Date().toISOString());
+  const formData = new FormData()
+  formData.append('content', postContent.value)
+  formData.append('description', postDescription.value)
+  formData.append('id_user', user.value.id) // Assuming user is logged in
+  formData.append('publish_date', new Date().toISOString()) // Add publish_date
 
   if (postFile.value) {
-    formData.append('file', postFile.value);
+    formData.append('file', postFile.value)
   }
 
   try {
@@ -102,46 +103,47 @@ const submitPost = async () => {
         Accept: 'application/json',
         'Content-Type': 'multipart/form-data'
       }
-    });
-    alert('Post created successfully!');
-    postPopup.value = false;
-    postContent.value = '';
-    postDescription.value = '';
-    postFile.value = null;
+    })
+    alert('Post created successfully!')
+    postPopup.value = false
+    postContent.value = ''
+    postDescription.value = ''
+    postFile.value = null
 
-    window.location.href = "/home";
+    // Update the home page with the new post
+    window.location.href = "/home"
   } catch (error) {
-    console.error(error);
-    alert('Failed to create post.');
+    console.error(error)
+    alert('Failed to create post.')
   }
-};
+}
 
 const confirmLogout = () => {
-  showLogoutConfirm.value = true;
-};
+  showLogoutConfirm.value = true
+}
 
 const handleLogoutConfirm = (confirm) => {
   if (confirm) {
-    logout();
+    logout()
   }
-  showLogoutConfirm.value = false;
-};
+  showLogoutConfirm.value = false
+}
 
 const updateNotifications = (updatedNotifications) => {
-  notifications.value = updatedNotifications;
-};
+  notifications.value = updatedNotifications
+}
 
 onMounted(() => {
-  fetchUser();
-});
+  fetchUser()
+})
 
 watch([menu, showNotifications], ([newMenu, newShowNotifications]) => {
   if (newMenu && newShowNotifications) {
-    showNotifications.value = false;
+    showNotifications.value = false
   }
-});
-
+})
 const hasNotifications = computed(() => notifications.value.length > 0);
+
 </script>
 
 <template>
@@ -160,7 +162,7 @@ const hasNotifications = computed(() => notifications.value.length > 0);
       <template v-if="user">
         <v-btn icon class="text-white ml-2" :to="`/profile/${user.username}`">
           <v-avatar size="32">
-            <img :src="user.profile_photo_url" alt="Profile Picture"/>
+            <img :src="user.profile_photo_path" alt="Profile Picture" />
           </v-avatar>
         </v-btn>
         <span class="user-greeting text-white ml-2">{{ user.name }}</span>
@@ -179,10 +181,11 @@ const hasNotifications = computed(() => notifications.value.length > 0);
     </div>
   </v-app-bar>
 
+  <!-- Pop-out Menu -->
   <v-navigation-drawer v-model="menu" temporary location="right" class="bg-black d-flex flex-column justify-between">
     <div>
       <div class="menu-header flex justify-center items-center py-4">
-        <img src="/logo.png" alt="Logo" class="menu-logo"/>
+        <img src="/logo.png" alt="Logo" class="menu-logo" />
       </div>
       <v-divider></v-divider>
       <v-list class="menu-list flex flex-col items-center justify-center gap-4">
@@ -213,6 +216,7 @@ const hasNotifications = computed(() => notifications.value.length > 0);
     </div>
   </v-navigation-drawer>
 
+  <!-- Create Post Options Popup -->
   <v-dialog v-model="popup" max-width="400">
     <v-card>
       <v-card-title>Select an option</v-card-title>
@@ -227,6 +231,7 @@ const hasNotifications = computed(() => notifications.value.length > 0);
     </v-card>
   </v-dialog>
 
+  <!-- Create a Post Popup -->
   <v-dialog v-model="postPopup" max-width="500">
     <v-card>
       <v-card-title>Create a Post</v-card-title>
@@ -245,17 +250,21 @@ const hasNotifications = computed(() => notifications.value.length > 0);
     </v-card>
   </v-dialog>
 
+  <!-- Logout Confirmation Dialog -->
   <v-dialog v-model="showLogoutConfirm" max-width="400">
     <v-card>
       <v-card-title>Confirm Logout</v-card-title>
       <v-card-text>Are you sure you want to logout?</v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
+        <v-btn color="primary" @click="handleLogoutConfirm(true)">Yes</v-btn>
         <v-btn color="primary" @click="handleLogoutConfirm(false)">No</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 
+
+  <!-- Notifications Modal -->
   <NotificationsModal
     :visible="showNotifications"
     :notifications="notifications"

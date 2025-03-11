@@ -43,7 +43,7 @@ class DatabaseSeeder extends Seeder
             'username' => 'user',
             'email' => 'user@example.com',
             'password' => bcrypt('user'),
-
+            'profile_photo_path' => 'https://img.freepik.com/foto-gratis/retrato-hombre-blanco-aislado_53876-40306.jpg?size=626&ext=jpg'
         ]);
 
         Post::factory()->create([

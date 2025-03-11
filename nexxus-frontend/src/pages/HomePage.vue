@@ -3,7 +3,7 @@
     <Navbar />
     <h1>Home</h1>
     <StoriesBar :stories="stories.data"/> <!-- Añade el componente StoriesBar -->
- 
+
     <div class="post-card" v-for="post in posts.data" :key="post.id">
       <div class="post-header">
         <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
@@ -72,7 +72,7 @@
     </div>
 
     <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal"
-      @add-comment="addComment" :post="selectedPost" />
+    :currentUser="currentUser"    @add-comment="addComment" :post="selectedPost" />
 
     <UserRecommendation />
     <Footer />
@@ -347,7 +347,7 @@ const sharePost = (post) => {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
-  background-color: white;
+  background-color: #f0f2f5;
   min-height: 100vh;
   color: black;
 }
@@ -380,8 +380,8 @@ h1 {
 }
 
 .post-card {
-  background: #f0f0f0;
-  border: 1px solid #d3d3d3;
+  background: #ffffff;
+  border: 1px solid #ffffff;
   border-radius: 24px;
   padding: 20px;
   max-width: 800px;
