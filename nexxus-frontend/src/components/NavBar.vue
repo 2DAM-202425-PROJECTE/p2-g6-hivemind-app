@@ -44,6 +44,7 @@ const fetchUser = async () => {
 const updateMenuItems = () => {
   menuItems.value = menuItems.value.map(item => {
     if (item.text === 'My Profile') {
+      console.log("user value:",user.value)
       return { ...item, to: user.value && user.value.username ? `/profile/${user.value.username}` : '#' };
     }
     return item;
