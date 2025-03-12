@@ -33,9 +33,7 @@ class StoryController extends Controller
             $validatedData['file_path'] = $filePath;
         }
 
-        $story = Story::create(array_merge($validatedData, [
-            'file_path' => $validatedData['file_path'] ?? null
-        ]));
+        $story = Story::create($validatedData);
 
         return response()->json([
             'message' => 'Story created successfully',
