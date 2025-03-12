@@ -85,8 +85,7 @@ import Footer from '@/components/AppFooter.vue';
 import UserRecommendation from '@/components/UserRecommendation.vue';
 import CommentModal from '@/components/CommentModal.vue';
 import StoriesBar from '@/components/StoriesBar.vue'; // Importa el componente StoriesBar
-import { ref } from 'vue';
-import { onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 
 const posts = ref([]);
@@ -106,6 +105,8 @@ const currentUser = ref({
   name: 'Current User', // Replace with actual user data
   profile_photo_path: 'https://via.placeholder.com/50' // Replace with actual user profile photo URL
 });
+
+let socket;
 
 onMounted(async () => {
   try {
@@ -164,8 +165,43 @@ onMounted(async () => {
     });
     stories.value = storiesResult.data;
 
+    // Connect to the WebSocket server
+    socket = new WebSocket('wss://dasrado.com:8080');
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('WebSocket message:', data);
+
+      if (data.type === 'like') {
+        const post = posts.value.data.find(p => p.id === data.post_id);
+        if (post) {
+          post.likes_count = data.likes_count;
+          post.liked_by_user = data.liked_by_user;
+        }
+      } else if (data.type === 'comment') {
+        const post = posts.value.data.find(p => p.id === data.post_id);
+        if (post) {
+          post.comments = data.comments;
+        }
+      }
+    };
+
+    socket.onclose = () => {
+      console.log('WebSocket connection closed');
+    };
+
+    socket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
   } catch (error) {
     console.error('Error al obtener datos', error);
+  }
+});
+
+onUnmounted(() => {
+  if (socket) {
+    socket.close();
   }
 });
 
@@ -206,6 +242,14 @@ const toggleLike = async (post) => {
 
     post.liked_by_user = !post.liked_by_user;
     post.likes_count += post.liked_by_user ? 1 : -1;
+
+    // Send WebSocket message
+    socket.send(JSON.stringify({
+      type: 'like',
+      post_id: post.id,
+      likes_count: post.likes_count,
+      liked_by_user: post.liked_by_user
+    }));
   } catch (error) {
     console.error('Error toggling like for post:', error.response?.data || error.message);
   }
@@ -243,6 +287,13 @@ const addComment = async (comment) => {
     });
 
     selectedPostComments.value.push(response.data);
+
+    // Send WebSocket message
+    socket.send(JSON.stringify({
+      type: 'comment',
+      post_id: selectedPostId.value,
+      comments: selectedPostComments.value
+    }));
   } catch (error) {
     console.error('Error adding comment:', error.response?.data || error.message);
   }
