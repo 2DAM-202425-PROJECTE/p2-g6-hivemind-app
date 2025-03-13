@@ -8,7 +8,7 @@
         class="relative bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:shadow-lg hover:-translate-y-1"
       >
         <!-- Imagen del post -->
-        <div class="w-full">
+        <div class="w-full h-48">
           <img
             :src="getImageUrl(post.file_path)"
             :alt="`Post ${post.id}`"
