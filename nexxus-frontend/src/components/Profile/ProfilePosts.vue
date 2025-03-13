@@ -108,12 +108,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, watch } from 'vue';
-
-// Asumiendo que getImageUrl está en un composable o helper, impórtalo aquí
-// Si está en un archivo como '@/utils/helpers.js', usa:
-// import { getImageUrl } from '@/utils/helpers';
-// Si no, descomenta la implementación temporal abajo
+import { ref, defineProps, watch, onMounted, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
   userPosts: {
@@ -133,9 +128,22 @@ const toggleMenu = (postId) => {
   activeMenu.value = activeMenu.value === postId ? null : postId;
 };
 
+const handleClickOutside = (event) => {
+  if (!event.target.closest('.mdi-dots-vertical') && !event.target.closest('.absolute.right-0.mt-2')) {
+    activeMenu.value = null;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+
 // Implementación temporal de getImageUrl (ajústala según tu código real)
 const getImageUrl = (filePath) => {
-  // Esto es una suposición basada en Laravel Storage
   const baseUrl = 'http://localhost:8000'; // Cambia esto por tu dominio real
   if (filePath.startsWith('/')) {
     return `${baseUrl}${filePath}`; // Ej: "http://localhost:8000/uploads/1.png"

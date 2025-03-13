@@ -28,9 +28,9 @@
       </div>
 
       <!-- Información y botones -->
-      <div class="pt-20 flex flex-col md:flex-row md:items-start md:justify-between">
+      <div class="pt-20 flex flex-col md:flex-row md:items-start">
         <!-- Información del usuario -->
-        <div class="ml-0 md:ml-40">
+        <div class="flex-1">
           <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ user.name }}</h3>
           <div class="text-sm text-gray-500 dark:text-gray-400">@{{ user.username }}</div>
           <div v-if="user.description" class="mt-2 text-sm text-gray-600 dark:text-gray-300">
@@ -46,28 +46,33 @@
           </div>
         </div>
 
-        <!-- Botones -->
-        <div class="mt-6 md:mt-0 flex flex-col sm:flex-row gap-3">
-          <button
-            v-if="isCurrentUser"
-            @click="editProfile"
-            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-200"
-          >
-            Edit Profile
-          </button>
-          <button
-            v-if="isCurrentUser"
-            @click="connectSocial"
-            class="px-4 py-2 bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-200"
-          >
-            Connect Social Accounts
-          </button>
-          <button
-            @click="shareProfile"
-            class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-200 flex items-center justify-center"
-          >
-            <i class="fas fa-share-alt mr-2"></i> Share Profile
-          </button>
+        <!-- Botones verticales -->
+        <div class="absolute right-6 h-32 flex flex-col justify-between">
+          <div class="flex flex-col">
+            <button
+              v-if="isCurrentUser"
+              @click="editProfile"
+              class="p-2 text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition duration-200 transform hover:scale-110"
+              title="Edit Profile"
+            >
+              <i class="fas fa-edit"></i>
+            </button>
+            <button
+              v-if="isCurrentUser"
+              @click="connectSocial"
+              class="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-500 dark:hover:text-gray-400 transition duration-200 transform hover:scale-110"
+              title="Connect Social Accounts"
+            >
+              <i class="fas fa-link"></i>
+            </button>
+            <button
+              @click="shareProfile"
+              class="p-2 text-gray-600 dark:text-gray-300 hover:text-green-500 dark:hover:text-green-400 transition duration-200 transform hover:scale-110"
+              title="Share Profile"
+            >
+              <i class="fas fa-share-alt"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -100,7 +105,6 @@ const props = defineProps({
   },
 });
 
-// Reutilizamos getImageUrl (ajústalo si está en otro archivo)
 const getImageUrl = (filePath) => {
   const baseUrl = 'http://localhost:8000'; // Cambia según tu servidor
   if (filePath && filePath.startsWith('/')) return `${baseUrl}${filePath}`;
