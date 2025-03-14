@@ -1,5 +1,5 @@
 <template>
-  <div class="account-settings-container">
+  <div :class="{ 'dark-mode': darkMode }" class="account-settings-container">
     <NavBar />
     <div class="settings-sidebar">
       <ul>
@@ -7,16 +7,18 @@
         <li :class="{ active: activeTab === 'profiles' }" @click="activeTab = 'profiles'">Profiles</li>
         <li :class="{ active: activeTab === 'devices' }" @click="activeTab = 'devices'">Devices</li>
         <li :class="{ active: activeTab === 'privacy' }" @click="activeTab = 'privacy'">Privacy & Safety</li>
+        <li :class="{ active: activeTab === 'notifications' }" @click="activeTab = 'notifications'">Notifications</li>
         <li :class="{ active: activeTab === 'connections' }" @click="activeTab = 'connections'">Connections</li>
         <li :class="{ active: activeTab === 'billing' }" @click="activeTab = 'billing'">Billing</li>
         <li :class="{ active: activeTab === 'logout' }" @click="showLogoutModal = true">Log Out</li>
       </ul>
+      <v-btn @click="toggleDarkMode">Toggle Dark Mode</v-btn>
     </div>
     <div class="account-settings-content container">
       <section v-if="activeTab === 'myAccount'" class="account-info-section">
         <h1 class="section-title">My Account</h1>
-        <p>Name: {{ name }}</p>
-        <p>Email: {{ email }}</p>
+        <v-text-field v-model="name" label="Name" @blur="updateUserInfo" />
+        <v-text-field v-model="email" label="Email" @blur="updateUserInfo" />
         <v-img :src="profilePicture" class="profile-picture"></v-img>
         <v-btn color="primary" @click="changePassword">Change Password</v-btn>
       </section>
@@ -29,24 +31,41 @@
       <section v-if="activeTab === 'devices'" class="devices-section">
         <h1 class="section-title">Devices</h1>
         <ul>
-          <li v-for="device in devices" :key="device.id">{{ device.name }} - {{ device.lastActive }}</li>
+          <li v-for="device in devices" :key="device.id">
+            {{ device.name }} - Last active: {{ device.lastActive }}
+            <v-btn color="red" small @click="removeDevice(device.id)">Remove</v-btn>
+          </li>
         </ul>
-        <v-btn icon @click="showAddSocialMediaModal = true">
-          <v-icon>mdi-plus</v-icon>
-        </v-btn>
       </section>
       <section v-if="activeTab === 'privacy'" class="privacy-section">
         <h1 class="section-title">Privacy & Safety</h1>
+        <p>Last Login: {{ lastLoginIP }} on {{ lastLoginDate }}</p>
         <label>
           <input type="checkbox" v-model="twoFactorAuth"> Enable Two-Factor Authentication
         </label>
+      </section>
+      <section v-if="activeTab === 'notifications'" class="notifications-section">
+        <h1 class="section-title">Notification Preferences</h1>
+        <div class="notifications-container">
+          <v-checkbox v-model="emailNotifications" label="Email Notifications" />
+          <v-checkbox v-model="pushNotifications" label="Push Notifications" />
+        </div>
       </section>
       <section v-if="activeTab === 'connections'" class="connections-section">
         <h1 class="section-title">Connections</h1>
         <p>Linked Accounts:</p>
         <ul>
-          <li v-for="account in linkedAccounts" :key="account.id">{{ account.platform }} - {{ account.username }}</li>
+          <li v-for="(account, index) in linkedAccounts" :key="account.id">
+            <v-img :src="account.logo" class="social-media-logo"></v-img>
+            {{ account.username }}
+            <v-btn icon @click="editConnection(account, index)">
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
+          </li>
         </ul>
+        <v-btn icon @click="showAddSocialMediaModal = true" style="margin-top: 20px;">
+          <v-icon>mdi-plus</v-icon>
+        </v-btn>
       </section>
       <section v-if="activeTab === 'billing'" class="billing-section">
         <h1 class="section-title">Billing</h1>
@@ -63,22 +82,29 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="red darken-1" text @click="showLogoutModal = false">No</v-btn>
+          <v-btn color="blue darken-1" text @click="logout">Yes</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
     <!-- Add Social Media Modal -->
     <v-dialog v-model="showAddSocialMediaModal" max-width="500">
       <v-card>
-        <v-card-title class="headline">Add Social Media</v-card-title>
+        <v-card-title class="headline">{{ editMode ? 'Edit' : 'Add' }} Social Media</v-card-title>
         <v-card-text>
-          <v-form @submit.prevent="addSocialMedia">
+          <v-form @submit.prevent="editMode ? updateSocialMedia() : addSocialMedia">
+            <v-select
+              v-model="newSocialMedia.platform"
+              :items="socialMediaPlatforms"
+              label="Select Platform"
+              required
+            ></v-select>
             <v-text-field v-model="newSocialMedia.username" label="Username" required></v-text-field>
           </v-form>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="blue darken-1" text @click="showAddSocialMediaModal = false">Cancel</v-btn>
-          <v-btn color="blue darken-1" text @click="addSocialMedia">Add</v-btn>
+          <v-btn color="blue darken-1" text @click="editMode ? updateSocialMedia() : addSocialMedia">Save</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -98,12 +124,16 @@ export default {
   },
   data() {
     return {
-      activeTab: 'myAccount', // Default to My Account tab
+      activeTab: 'myAccount',
       name: '',
       email: '',
       profilePicture: '',
       devices: [],
       twoFactorAuth: false,
+      lastLoginIP: '',
+      lastLoginDate: '',
+      emailNotifications: true,
+      pushNotifications: true,
       linkedAccounts: [],
       subscriptionPlan: '',
       showLogoutModal: false,
@@ -111,7 +141,17 @@ export default {
       newSocialMedia: {
         platform: '',
         username: ''
-      }
+      },
+      socialMediaPlatforms: ['Facebook', 'Instagram', 'Twitter', 'Discord'],
+      socialMediaLogos: {
+        Facebook: 'path/to/facebook-logo.png',
+        Instagram: 'path/to/instagram-logo.png',
+        Twitter: 'path/to/twitter-logo.png',
+        Discord: 'path/to/discord-logo.png'
+      },
+      editMode: false,
+      currentEditingIndex: null,
+      darkMode: localStorage.getItem('darkMode') === 'true'
     };
   },
   methods: {
@@ -126,10 +166,22 @@ export default {
           this.twoFactorAuth = user.twoFactorAuth;
           this.linkedAccounts = user.linkedAccounts;
           this.subscriptionPlan = user.subscriptionPlan;
+          this.lastLoginIP = user.lastLoginIP;
+          this.lastLoginDate = user.lastLoginDate;
         })
         .catch(error => {
           console.error('Error fetching user details:', error);
         });
+    },
+    updateUserInfo() {
+      // Call API to update user info
+    },
+    removeDevice(deviceId) {
+      this.devices = this.devices.filter(device => device.id !== deviceId);
+    },
+    toggleDarkMode() {
+      this.darkMode = !this.darkMode;
+      localStorage.setItem('darkMode', this.darkMode);
     },
     changePassword() {
       // Implement change password logic here
@@ -143,17 +195,38 @@ export default {
     logout() {
       apiClient.post('/api/logout')
         .then(() => {
-          window.location.href = '/login'; // Redirect to login page after logout
+          window.location.href = '/login';
         })
         .catch(error => {
           console.error('Error logging out:', error);
         });
     },
     addSocialMedia() {
-      this.linkedAccounts.push({ ...this.newSocialMedia });
+      const logo = this.socialMediaLogos[this.newSocialMedia.platform];
+      this.linkedAccounts.push({ ...this.newSocialMedia, logo, id: Date.now() });
+      this.resetForm();
+      this.showAddSocialMediaModal = false;
+    },
+    updateSocialMedia() {
+      const logo = this.socialMediaLogos[this.newSocialMedia.platform];
+      const updatedAccount = { ...this.newSocialMedia, logo, id: this.linkedAccounts[this.currentEditingIndex].id };
+
+      this.linkedAccounts.splice(this.currentEditingIndex, 1, updatedAccount);
+
+      this.resetForm();
+      this.showAddSocialMediaModal = false;
+    },
+    resetForm() {
       this.newSocialMedia.platform = '';
       this.newSocialMedia.username = '';
-      this.showAddSocialMediaModal = false;
+      this.editMode = false;
+      this.currentEditingIndex = null;
+    },
+    editConnection(account, index) {
+      this.newSocialMedia = { ...account };
+      this.editMode = true;
+      this.currentEditingIndex = index;
+      this.showAddSocialMediaModal = true;
     }
   },
   mounted() {
@@ -169,7 +242,14 @@ export default {
   background-color: #f0f2f5;
   padding-top: 60px;
 }
-
+.notifications-container {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: black;
+}
 .settings-sidebar {
   width: 250px;
   background: #2c2f33;
@@ -233,5 +313,17 @@ export default {
   height: 100px;
   border-radius: 50%;
   margin-bottom: 1rem;
+}
+
+.social-media-logo {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.dark-mode {
+  background-color: #121212;
+  color: white;
 }
 </style>

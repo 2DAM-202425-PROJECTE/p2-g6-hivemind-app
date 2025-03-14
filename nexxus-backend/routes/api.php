@@ -66,8 +66,4 @@ Route::middleware('auth:sanctum')->group(function ()
     Route::post('/contact/submit', [ContactController::class, 'submit']);
 });
 
-Route::get('/api/random-users', function (Request $request) {
-    $users = User::inRandomOrder()->limit(4)->get(['id', 'name', 'profile_photo_url']);
-    return response()->json($users);
-});
 

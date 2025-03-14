@@ -21,11 +21,18 @@
           <input type="radio" id="dark-mode" value="dark" v-model="selectedTheme">
           <label for="dark-mode">Dark Mode</label>
         </div>
+        <div class="font-size-selection">
+          <label>Font Size:</label>
+          <input type="range" v-model="fontSize" min="12" max="24">
+        </div>
       </section>
       <section v-if="selectedTab === 'accessibility'" class="settings-section">
         <h1 class="section-title">Accessibility</h1>
         <label>
           <input type="checkbox" v-model="reducedMotion"> Reduce Motion
+        </label>
+        <label>
+          <input type="checkbox" v-model="highContrast"> High Contrast Mode
         </label>
       </section>
       <section v-if="selectedTab === 'notifications'" class="settings-section">
@@ -33,22 +40,33 @@
         <label>
           <input type="checkbox" v-model="notificationsEnabled"> Enable Notifications
         </label>
+        <label>
+          <input type="checkbox" v-model="emailNotifications"> Email Notifications
+        </label>
       </section>
       <section v-if="selectedTab === 'voice'" class="settings-section">
         <h1 class="section-title">Voice & Video</h1>
         <label>Microphone Volume:</label>
         <input type="range" v-model="micVolume" min="0" max="100">
+        <label>Speaker Volume:</label>
+        <input type="range" v-model="speakerVolume" min="0" max="100">
       </section>
       <section v-if="selectedTab === 'text'" class="settings-section">
         <h1 class="section-title">Text & Images</h1>
         <label>
           <input type="checkbox" v-model="showEmbeds"> Show Embeds
         </label>
+        <label>
+          <input type="checkbox" v-model="autoPlayGifs"> Auto-play GIFs
+        </label>
       </section>
       <section v-if="selectedTab === 'security'" class="settings-section">
         <h1 class="section-title">Security</h1>
         <label>
           <input type="checkbox" v-model="twoFactorAuth"> Enable Two-Factor Authentication
+        </label>
+        <label>
+          <input type="checkbox" v-model="loginAlerts"> Login Alerts
         </label>
       </section>
     </div>
@@ -86,10 +104,16 @@ export default {
       selectedTab: 'appearance',
       selectedTheme: 'light',
       reducedMotion: false,
+      highContrast: false,
       notificationsEnabled: false,
+      emailNotifications: false,
       micVolume: 50,
+      speakerVolume: 50,
       showEmbeds: true,
+      autoPlayGifs: false,
       twoFactorAuth: false,
+      loginAlerts: false,
+      fontSize: 16,
     }
   }
 }
