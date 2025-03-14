@@ -32,7 +32,7 @@ class PostController extends Controller
             'description' => 'nullable|string',
             'publish_date' => 'required|date',
             'id_user' => 'required|integer|exists:users,id',
-            'file' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:20480',
+            'file' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,mp4|max:500000',
         ]);
 
         if ($request->hasFile('file')) {
@@ -74,7 +74,7 @@ class PostController extends Controller
 
         $request->validate([
             'description' => 'nullable|string|max:1000',
-            'file' => 'nullable|file|mimes:png,jpg,jpeg,mp4|max:10240',
+            'file' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,mp4|max:500000',
         ]);
 
         if ($request->has('description')) {
