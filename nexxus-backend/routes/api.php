@@ -31,6 +31,10 @@ Route::middleware('auth:sanctum')->group(function ()
 
     // return all users
     Route::get('/users', [UserController::class, 'index']);
+
+    // search users by username
+    Route::get('/search/users', [UserController::class, 'searchUsers']);
+
     // retun posts of a user
     Route::get('/users/{id}/posts', [UserController::class, 'posts']);
 

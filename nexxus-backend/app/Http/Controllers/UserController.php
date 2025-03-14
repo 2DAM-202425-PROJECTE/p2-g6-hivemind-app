@@ -38,6 +38,21 @@ class UserController extends Controller
         return response()->json($users);
     }
 
+    // search users by username
+    public function searchUsers(Request $request)
+    {
+        $validatedData = $request->validate([
+            'username' => 'required|string|max:32',
+        ]);
+
+        $users = User::where('username', 'like', '%' . $validatedData['username'] . '%')->get();
+
+        return response()->json([
+            'message' => 'Users retrieved successfully',
+            'data' => $users,
+        ], 200);
+    }
+
 
     public function getUserByUsername($username)
     {
