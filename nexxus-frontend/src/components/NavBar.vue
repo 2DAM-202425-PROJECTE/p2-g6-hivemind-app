@@ -1,20 +1,21 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import axios from '../axios'
-import { clearAuthToken } from '../auth'
-import NotificationsModal from './NotificationsModal.vue' // Import the NotificationsModal component
+import { ref, onMounted, watch, computed } from 'vue';
+import axios from '../axios';
+import { clearAuthToken } from '../auth';
+import NotificationsModal from './NotificationsModal.vue';
+import { routes } from '../router';
 
-const menu = ref(false)
-const searchQuery = ref('')
-const user = ref(null)
-const popup = ref(false)
-const postPopup = ref(false)
-const postContent = ref('')
-const postDescription = ref('')
-const postFile = ref(null)
-const showLogoutConfirm = ref(false) // Add this line
-const showNotifications = ref(false) // Add this line
-const notifications = ref([   // Add notifications here
+const menu = ref(false);
+const searchQuery = ref('');
+const user = ref(null);
+const popup = ref(false);
+const postPopup = ref(false);
+const postContent = ref('');
+const postDescription = ref('');
+const postFile = ref(null);
+const showLogoutConfirm = ref(false);
+const showNotifications = ref(false);
+const notifications = ref([
   { id: 1, message: 'New notification' },
   { id: 2, message: 'Another notification' }
 ])
@@ -32,18 +33,22 @@ const menuItems = ref([
 
 const fetchUser = async () => {
   try {
-    const response = await axios.get('/api/user')
-    user.value = response.data
-    if (!user.value) {
-      menuItems.value.push(
-        { text: 'Login', to: '/login', icon: 'mdi-login' },
-        { text: 'Register', to: '/register', icon: 'mdi-account-plus' }
-      )
-    }
+    const response = await axios.get('/api/user');
+    user.value = response.data;
+    updateMenuItems();
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
-}
+};
+
+const updateMenuItems = () => {
+  menuItems.value = menuItems.value.map(item => {
+    if (item.text === 'My Profile') {
+      return { ...item, to: user.value && user.value.username ? `/profile/${user.value.username}` : '#' };
+    }
+    return item;
+  });
+};
 
 const logout = async () => {
   try {
@@ -144,7 +149,7 @@ const hasNotifications = computed(() => notifications.value.length > 0);
 <template>
   <v-app-bar app flat class="fixed top-0 w-full bg-black shadow-md flex justify-between px-4">
     <div class="left-section flex items-center">
-      <img src="/logo.png" alt="Logo" class="logo" />
+      <img src="/logo.png" alt="Logo" class="logo"/>
       <v-btn text :to="'/home'" class="title-btn text-white flex items-center">
         Hivemind
       </v-btn>
@@ -155,7 +160,7 @@ const hasNotifications = computed(() => notifications.value.length > 0);
 
     <div class="right-section flex items-center">
       <template v-if="user">
-        <v-btn icon class="text-white ml-2" :to="'/profile'">
+        <v-btn icon class="text-white ml-2" :to="`/profile/${user.username}`">
           <v-avatar size="32">
             <img :src="user.profile_photo_path" alt="Profile Picture" />
           </v-avatar>
@@ -312,8 +317,7 @@ const hasNotifications = computed(() => notifications.value.length > 0);
   margin: 0 auto;
   flex-grow: 1;
   text-align: center;
-  margin-left: 650px; /* Adjust this value to move the search bar to the right */
-
+  margin-left: 650px;
 }
 
 .credits-display {
@@ -332,6 +336,7 @@ const hasNotifications = computed(() => notifications.value.length > 0);
     max-width: 200px;
   }
 }
+
 .has-notifications::after {
   content: '';
   position: absolute;

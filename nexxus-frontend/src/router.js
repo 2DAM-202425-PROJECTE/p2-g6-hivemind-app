@@ -6,7 +6,6 @@ import HomePage from "./pages/HomePage.vue";
 import Login from "./pages/Login.vue";
 import Register from "./pages/Register.vue";
 import ProfilePage from "./pages/ProfilePage.vue";
-import EditProfilePage from "./pages/EditProfilePage.vue";
 import About from "./pages/About.vue";
 import PrivacyPolicy from "./pages/PrivacyPolicyPage.vue";
 import TermsOfService from "./pages/TermsOfServicePage.vue";
@@ -19,10 +18,10 @@ import AppSettingsPage from "./pages/AppSettingsPage.vue";
 import AccountSettingsPage from "./pages/AccountSettingsPage.vue";
 
 // Definición de rutas
-const routes = [
+export const routes = [
   {
     path: "/",
-    redirect: () => {
+    redirect: (to) => {
       const isAuthenticated = !!localStorage.getItem("token");
       return isAuthenticated ? "/home" : "/login";
     },
@@ -30,8 +29,7 @@ const routes = [
   { path: "/home", name: "Home", component: HomePage },
   { path: "/login", name: "Login", component: Login },
   { path: "/register", name: "Register", component: Register },
-  { path: "/profile", name: "Profile", component: ProfilePage },
-  { path: "/edit-profile", name: "EditProfile", component: EditProfilePage },
+  { path: "/profile/:username", name: "Profile", component: ProfilePage, props: true },
   { path: "/about", name: "About", component: About },
   { path: "/privacy-policy", name: "PrivacyPolicy", component: PrivacyPolicy },
   { path: "/terms-of-service", name: "TermsOfService", component: TermsOfService },

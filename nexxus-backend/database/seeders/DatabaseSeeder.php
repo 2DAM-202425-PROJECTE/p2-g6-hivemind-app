@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
 
          User::factory()->withPersonalTeam()->create([
             'name' => 'Test User',
+            'username' => 'test',
             'email' => 'test@example.com',
             'password' => bcrypt('password'),
             'profile_photo_path' => 'https://c.files.bbci.co.uk/assets/4da9473d-2f23-4b23-aac5-32c728a4da8f'
@@ -32,13 +33,14 @@ class DatabaseSeeder extends Seeder
 
         User::factory()->withPersonalTeam()->create([
             'name' => 'Admin',
+            'username' => 'admin',
             'email' => 'admin@example.com',
             'password' => bcrypt('admin'),
-            'profile_photo_path' => 'https://www.mskcc.org/sites/default/files/styles/large/public/node/226378/3x2/gettyimages-508687706_1200x800-tight.jpg'
         ]);
 
         User::factory()->withPersonalTeam()->create([
             'name' => 'User',
+            'username' => 'user',
             'email' => 'user@example.com',
             'password' => bcrypt('user'),
             'profile_photo_path' => 'https://img.freepik.com/foto-gratis/retrato-hombre-blanco-aislado_53876-40306.jpg?size=626&ext=jpg'
