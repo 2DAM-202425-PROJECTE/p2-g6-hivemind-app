@@ -36,6 +36,8 @@ class UserController extends Controller
         $validatedData = $request->validate([
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:20480',
             'banner_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:20480',
+            'name' => 'required|string|max:32',
+            'description' => 'nullable|string|max:150',
         ]);
 
         if ($request->hasFile('profile_photo')) {
@@ -47,6 +49,9 @@ class UserController extends Controller
             $bannerPhotoPath = $request->file('banner_photo')->store('banner_photos', 'public');
             $user->banner_photo_path = $bannerPhotoPath;
         }
+
+        $user->name = $validatedData['name'];
+        $user->description = $validatedData['description'];
 
         $user->save();
 
