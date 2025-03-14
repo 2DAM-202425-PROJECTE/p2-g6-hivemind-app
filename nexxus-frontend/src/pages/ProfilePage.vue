@@ -5,7 +5,6 @@
 
     <div class="dark:bg-gray-700 rounded-lg p-5 max-w-5xl mx-auto">
       <ProfileHeader :user="user" :is-current-user="isCurrentUser" :edit-profile="editProfile" :share-profile="shareProfile" />
-      <p class="text-sm mb-5">{{ user.description }}</p>
       <ProfileStories :visible-stories="visibleStories" :prev-story="prevStory" :next-story="nextStory" />
       <ProfilePosts :user-posts="userPosts" :is-current-user="isCurrentUser" />
     </div>
