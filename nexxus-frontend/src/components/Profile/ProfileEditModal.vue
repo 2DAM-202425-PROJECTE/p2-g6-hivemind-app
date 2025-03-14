@@ -4,12 +4,12 @@
       <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Profile</h2>
 
       <!-- Banner -->
-      <div class="relative w-full h-40 bg-gray-200 rounded-lg mb-6 overflow-hidden">
+      <div class="relative w-full h-40 bg-gray-200 rounded-lg mb-6 overflow-hidden group">
         <img
-          v-if="bannerPreview || editedUser.banner_photo_url"
-          :src="bannerPreview || getImageUrl(editedUser.banner_photo_url)"
+          v-if="bannerPreview || editedUser.banner_photo_path"
+          :src="bannerPreview || getImageUrl(editedUser.banner_photo_path)"
           alt="Profile Banner"
-          class="w-full h-full object-cover"
+          class="w-full h-full object-cover transition duration-300 group-hover:brightness-50"
         />
         <div v-else class="absolute inset-0 flex items-center justify-center text-gray-500">
           Upload a profile banner
@@ -53,14 +53,14 @@
           <input
             v-model="editedUser.name"
             type="text"
-            class="w-full p-2 border border-gray-300 rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="mt-1 w-full p-2 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
           />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
           <textarea
             v-model="editedUser.description"
-            class="w-full p-2 border border-gray-300 rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="mt-1 w-full p-2 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
             rows="3"
           ></textarea>
         </div>
@@ -104,23 +104,21 @@ const bannerPreview = ref(null);
 const errorMessage = ref('');
 const successMessage = ref('');
 
-// Sincronizar editedUser cuando cambie props.user
 watch(() => props.user, (newUser) => {
   editedUser.value = { ...newUser };
 }, { deep: true });
 
-// Reutilizamos getImageUrl de ProfilePosts (ajústalo si está en otro lugar)
 const getImageUrl = (filePath) => {
   const baseUrl = 'http://localhost:8000'; // Ajusta según tu servidor
   if (filePath && filePath.startsWith('/')) return `${baseUrl}${filePath}`;
-  return filePath ? `${baseUrl}/storage/${filePath}` : '/default-profile.jpg'; // Imagen por defecto si no hay
+  return filePath ? `${baseUrl}/storage/${filePath}` : '/default-profile.jpg';
 };
 
 const uploadBanner = (event) => {
   const file = event.target.files[0];
   if (file) {
     bannerPhoto.value = file;
-    bannerPreview.value = URL.createObjectURL(file); // Previsualización local
+    bannerPreview.value = URL.createObjectURL(file);
   }
 };
 
@@ -128,7 +126,7 @@ const uploadProfilePic = (event) => {
   const file = event.target.files[0];
   if (file) {
     profilePhoto.value = file;
-    profilePreview.value = URL.createObjectURL(file); // Previsualización local
+    profilePreview.value = URL.createObjectURL(file);
   }
 };
 
@@ -141,12 +139,12 @@ const saveProfile = async () => {
 
   try {
     const response = await apiClient.post('/api/user/profile/update', formData, {
-      headers: {'Content-Type': 'multipart/form-data'},
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
     emit('save', response.data.user);
     successMessage.value = 'Profile updated successfully!';
     errorMessage.value = '';
-    setTimeout(closeModal, 1500); // Cierra tras 1.5s
+    setTimeout(closeModal, 1500);
   } catch (error) {
     errorMessage.value = error.response?.data?.message || 'Error updating profile';
     successMessage.value = '';

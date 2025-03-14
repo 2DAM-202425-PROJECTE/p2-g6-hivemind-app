@@ -3,8 +3,8 @@
     <!-- Banner -->
     <div class="relative w-full h-48 bg-gray-200 dark:bg-gray-700">
       <img
-        v-if="user.banner_photo_url"
-        :src="getImageUrl(user.banner_photo_url)"
+        v-if="user.banner_photo_path"
+        :src="getImageUrl(user.banner_photo_path)"
         alt="Profile Banner"
         class="w-full h-full object-cover"
       />
@@ -106,12 +106,12 @@ const props = defineProps({
 });
 
 const getImageUrl = (filePath) => {
-  const baseUrl = 'http://localhost:8000'; // Cambia según tu servidor
+  const baseUrl = 'http://localhost:8000'; // Adjust according to your server
   if (filePath && filePath.startsWith('/')) return `${baseUrl}${filePath}`;
   return filePath ? `${baseUrl}/storage/${filePath}` : '/default-profile.jpg';
 };
 
 onMounted(() => {
-  console.log('isCurrentUser en ProfileHeader:', props.isCurrentUser);
+  console.log('isCurrentUser in ProfileHeader:', props.isCurrentUser);
 });
 </script>
