@@ -79,6 +79,14 @@ Si s'han executat els seeders, es poden utilitzar els següents usuaris per acce
 | Admin	        | admin@example.com	| admin           |
 | User	        | user@example.com	| user            |
 
+## Arreglar la mida per els fitxers de video en PHP
+Anem a  ```/etc/php/8.3/cli/php.ini```
+
+Modifiquem:
+- ``` upload_max_filesize = 100M ```
+- ``` post_max_size = 100M ``` 
+
+
 ## Autors
 
 - **Radostin Valeriev Ivanov** - Backend Developer

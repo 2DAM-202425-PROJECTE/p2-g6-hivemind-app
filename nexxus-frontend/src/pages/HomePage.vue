@@ -12,7 +12,12 @@
             <li>
               <strong>{{ getUserNameById(post.id_user) }}</strong>
               <h5>{{ post.description }}</h5>
-              <img :src="getImageUrl(post.file_path)" alt="file Image" class="post-content" />
+              <template v-if="post.file_path.includes('.mp4')">
+                <video :src="getImageUrl(post.file_path)" alt="file Video" class="post-content" controls />
+              </template>
+              <template v-else>
+                <img :src="getImageUrl(post.file_path)" alt="file Image" class="post-content" />
+              </template>
             </li>
           </ul>
         </div>
