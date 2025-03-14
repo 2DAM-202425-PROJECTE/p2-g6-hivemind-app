@@ -7,6 +7,9 @@
         <label for="name">Name:</label>
         <input id="name" type="text" v-model="name" placeholder="Enter your name" required />
 
+        <label for="username">Username:</label>
+        <input id="username" type="text" v-model="username" placeholder="Enter your username" required />
+
         <label for="email">Email:</label>
         <input id="email" type="text" v-model="email" placeholder="Enter your email" required />
 
@@ -35,6 +38,7 @@ export default {
   data() {
     return {
       name: '',
+      username: '',
       email: '',
       password: '',
       error: null,
@@ -45,6 +49,7 @@ export default {
       try {
         const response = await apiClient.post('/api/register', {
           name: this.name,
+          username: this.username,
           email: this.email,
           password: this.password,
         });

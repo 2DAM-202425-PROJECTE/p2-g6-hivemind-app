@@ -13,12 +13,14 @@ final class AuthController extends Controller
     {
         request()->validate([
             'name' => 'required|string|max:255',
+            'username' => 'required|string|max:15|unique:users',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
         ]);
 
         $user = User::create([
             'name' => request()->name,
+            'username' => request()->username,
             'email' => request()->email,
             'password' => Hash::make(request()->password),
         ]);
@@ -28,7 +30,7 @@ final class AuthController extends Controller
             'user' => $user,
         ], 201);
     }
-    
+
     final public function login(): JsonResponse
     {
         request()->validate([
