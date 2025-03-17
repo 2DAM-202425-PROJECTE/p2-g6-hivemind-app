@@ -130,7 +130,7 @@
     <v-card>
       <v-card-title>Select an option</v-card-title>
       <v-card-text>
-        <v-btn block class="mb-2" @click="popup = false">Create a Story</v-btn>
+        <v-btn block class="mb-2" @click="storyPopup = true; popup = false">Create a Story</v-btn>
         <v-btn block @click="postPopup = true; popup = false">Create a Post (Image/Video)</v-btn>
       </v-card-text>
       <v-card-actions>
@@ -159,6 +159,29 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+
+  <!-- Create a Story Popup -->
+  <v-dialog v-model="storyPopup" max-width="500">
+    <v-card>
+      <v-card-title>Create a Story</v-card-title>
+      <v-card-text>
+        <v-file-input v-model="storyFile" label="Upload Image/Video (.png, .mp4)" accept=".png, .mp4" @change="handleFileUpload"
+                      outlined></v-file-input>
+
+        <v-text-field v-model="storyDescription" label="Description" outlined></v-text-field>
+      </v-card-text>
+
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn text @click="storyPopup = false">Cancel</v-btn>
+        <v-btn color="primary" @click="submitStory">Submit</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- Logout Confirmation Dialog -->
+
 
   <v-dialog v-model="showLogoutConfirm" max-width="400">
     <v-card>

@@ -11,7 +11,7 @@ final class AuthController extends Controller
 {
     final public function register(): JsonResponse
     {
-        request()->validate([
+        \Illuminate\Support\Facades\Request::validate([
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:15|unique:users',
             'email' => 'required|string|email|max:255|unique:users',
@@ -39,7 +39,7 @@ final class AuthController extends Controller
             'device_name' => 'required'
         ]);
 
-        $user = User::where('email', request()->email)->first();
+        $user = User::where('email', \Illuminate\Support\Facades\Request::input('email'))->first();
 
         if (! $user || ! Hash::check(request()->password, $user->password)) {
             throw ValidationException::withMessages([
@@ -48,13 +48,13 @@ final class AuthController extends Controller
         }
 
         return response()->json([
-            'token' => $user->createToken(request()->device_name)->plainTextToken
+            'token' => $user->createToken(\Illuminate\Support\Facades\Request::input('device_name'))->plainTextToken
         ]);
     }
 
     final public function logout(): JsonResponse
     {
-        auth()->user()->tokens()->delete();
+        \Illuminate\Support\Facades\Auth::user()->tokens()->delete();
 
         return response()->json([
             'message' => 'Logged out'

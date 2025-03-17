@@ -8,10 +8,10 @@
       <div class="post-header">
         <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
         <div class="post-info">
+          <strong>{{ getUserNameById(post.id_user) }}</strong>
+          <h5>{{ post.description }}</h5>
           <ul>
             <li>
-              <strong>{{ getUserNameById(post.id_user) }}</strong>
-              <h5>{{ post.description }}</h5>
               <template v-if="post.file_path.includes('.mp4')">
                 <video :src="getImageUrl(post.file_path)" alt="file Video" class="post-content" controls />
               </template>
@@ -22,15 +22,8 @@
           </ul>
         </div>
         <div class="post-menu">
-          <button @click="togglePostMenu(post.id)">
-            <i class="mdi mdi-dots-vertical"></i>
-          </button>
           <div v-if="postMenuVisible === post.id" class="dropdown-menu">
-            <ul>
-              <li v-show="isPostFromUser(post)" @click="editPost(post)">Edit</li>
-              <li v-show="isPostFromUser(post)" @click="deletePost(post.id)" :disabled="isDeleting">Delete</li>
-              <li @click="reportPost(post)">Report</li>
-            </ul>
+            <!-- Menu items here -->
           </div>
         </div>
       </div>
@@ -170,7 +163,7 @@ onMounted(async () => {
     stories.value = storiesResult.data;
 
   } catch (error) {
-    console.error('Error al obtener datos', error);
+    console.error('Error al obtener datos', error.response?.data || error.message);
   }
 });
 

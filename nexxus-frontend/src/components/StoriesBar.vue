@@ -1,10 +1,25 @@
 <template>
     <div class="stories-bar">
-            <div class="story-item" v-for="story in stories" :key="index" @click="viewStory(story)">
+        <div class="story-item" v-for="(story, index) in stories" :key="index" @click="viewStory(story)">
             <img :src="getProfilePhotoById(story.id_user)" alt="Story" class="story-image" />
             <p>{{ getUserNameById(story.id_user) }}</p>
         </div>
     </div>
+
+    <!-- Modal para mostrar la historia -->
+    <v-dialog v-model="showStoryModal" max-width="500">
+        <v-card>
+            <v-card-title>{{ getUserNameById(selectedStory?.id_user) }}</v-card-title>
+            <v-card-text>
+                <img :src="getStoryImagePath(selectedStory.file_path)" alt="Story Image" class="story-modal-image" />
+                <p>{{ selectedStory?.description }}</p>
+            </v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn text @click="showStoryModal = false">Close</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
 </template>
 
 <script setup>
@@ -12,6 +27,10 @@ import { onMounted, ref } from 'vue';
 import axios from 'axios';
 
 const users = ref([]);
+const showStoryModal = ref(false);
+const selectedStory = ref(null);
+const story = ref([]);
+
 const props = defineProps({
     stories: {
         type: Array,
@@ -28,10 +47,26 @@ onMounted(async () => {
         }
     });
     users.value = usersResult.data.data;
+
+    // Fetch stories data
+    const storiesResult = await axios.get('http://localhost:8000/api/stories', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json'
+      }
+    });
+    story.value = storiesResult.data;
 })
 
 const viewStory = (story) => {
-    alert(`Viewing story: ${getUserNameById(story.id_user)}`);
+    // Mostrar imagen de la historia
+
+    getStoryImagePath(story.file_path);
+    
+
+    selectedStory.value = story;
+    showStoryModal.value = true;
+
 }
 
 const getProfilePhotoById = (id) => {
@@ -45,6 +80,13 @@ const getUserNameById = (id) => {
   const user = users.value[position];
   return user && user.name ? user.name : 'usuario desconocido';
 };
+
+const getStoryImagePath = (path) => {
+    if (!path) return 'https://via.placeholder.com/150';
+    console.log(`http://localhost:8000/storage/${path}`);
+    return `http://localhost:8000/storage/${path}`;
+};
+
 </script>
 
 <style scoped>
@@ -77,5 +119,12 @@ const getUserNameById = (id) => {
     margin: 5px 0 0;
     font-size: 12px;
     text-align: center;
+}
+
+.story-modal-image {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin-bottom: 10px;
 }
 </style>
