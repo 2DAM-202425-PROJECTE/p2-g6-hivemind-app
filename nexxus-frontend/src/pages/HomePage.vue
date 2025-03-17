@@ -98,7 +98,6 @@ const selectedPostId = ref(null);
 const selectedPost = ref(null);
 const isDeleting = ref(false);
 const postMenuVisible = ref(null);
-const stories = ref([]); // Añade el array de historias
 const editPostPopup = ref(false);
 const editPostDescription = ref('');
 const editPostFile = ref(null);
