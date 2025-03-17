@@ -159,6 +159,30 @@
       </div>
     </div>
     <AppFooter />
+
+    <!-- Success Dialog -->
+    <v-dialog v-model="showSuccessDialog" max-width="500px">
+      <v-card class="success-dialog">
+        <v-card-title class="headline">
+          <v-icon color="green" large left>mdi-check-circle</v-icon>
+          Purchase Successful!
+        </v-card-title>
+        <v-card-text class="dialog-text">
+          <p>Thank you for your purchase!</p>
+          <p v-if="item && item.amount">
+            You've successfully added <strong>{{ item.amount }} credits</strong> to your account using <strong>{{ selectedPaymentMethod }}</strong>.
+          </p>
+          <p v-else-if="item && item.price.includes('Credits')">
+            You've successfully purchased <strong>{{ item.name || item.title }}</strong> using <strong>{{ selectedPaymentMethod }}</strong>.
+          </p>
+          <p>Your current credit balance is: <strong>{{ userCredits }} credits</strong>.</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="closeSuccessDialog">Continue Shopping</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -188,6 +212,7 @@ export default {
       googlePayCountryCode: '+34',
       selectedPaymentMethod: null,
       userCredits: 1000,
+      showSuccessDialog: false,
       countryCodes: [
         { name: 'Spain', code: '+34', digits: 9, displayText: 'Spain (+34)' },
         { name: 'United States', code: '+1', digits: 10, displayText: 'United States (+1)' },
@@ -263,9 +288,8 @@ export default {
               console.log('Card Number:', this.cardNumber);
               console.log('Expiry Date:', this.expiryDate);
               console.log('CVV:', this.cvv);
-              alert(`Purchase Successful! Added ${this.item.amount} credits via ${method}.`);
               this.userCredits += parseInt(this.item.amount);
-              this.$router.push('/shop');
+              this.showSuccessDialog = true;
             } else {
               alert('Invalid card details. Please check: 16-digit card number, MM/YY expiry, 3-digit CVV.');
             }
@@ -274,9 +298,8 @@ export default {
             if (/.+@.+\..+/.test(this.paypalEmail) && this.paypalPassword) {
               console.log('PayPal Email:', this.paypalEmail);
               console.log('PayPal Password:', this.paypalPassword);
-              alert(`Purchase Successful! Added ${this.item.amount} credits via ${method}.`);
               this.userCredits += parseInt(this.item.amount);
-              this.$router.push('/shop');
+              this.showSuccessDialog = true;
             } else {
               alert('Invalid PayPal details. Email must contain @ and password is required.');
             }
@@ -285,9 +308,8 @@ export default {
             if (this.phoneRules.every(rule => rule(this.bizumPhone) === true) && this.bizumPin) {
               console.log('Bizum Phone:', `${this.bizumCountryCode}${this.bizumPhone}`);
               console.log('Bizum PIN:', this.bizumPin);
-              alert(`Purchase Successful! Added ${this.item.amount} credits via ${method}.`);
               this.userCredits += parseInt(this.item.amount);
-              this.$router.push('/shop');
+              this.showSuccessDialog = true;
             } else {
               alert(`Invalid Bizum details. Phone must be ${this.bizumDigitLength} digits and PIN is required.`);
             }
@@ -297,9 +319,8 @@ export default {
               this.phoneRules.every(rule => rule(this.googlePayPhone) === true)) {
               console.log('Google Pay Email:', this.googlePayEmail);
               console.log('Google Pay Phone:', `${this.googlePayCountryCode}${this.googlePayPhone}`);
-              alert(`Purchase Successful! Added ${this.item.amount} credits via ${method}.`);
               this.userCredits += parseInt(this.item.amount);
-              this.$router.push('/shop');
+              this.showSuccessDialog = true;
             } else {
               alert(`Invalid Google Pay details. Email must contain @ and phone must be ${this.googlePayDigitLength} digits.`);
             }
@@ -344,12 +365,15 @@ export default {
     processCreditPurchase(itemPrice) {
       if (this.userCredits >= itemPrice) {
         this.userCredits -= itemPrice;
-        alert('Purchase Successful! Item added to your account.');
-        this.$router.push('/shop');
+        this.showSuccessDialog = true;
       } else {
         alert('Purchase Failed! Insufficient credits.');
       }
     },
+    closeSuccessDialog() {
+      this.showSuccessDialog = false;
+      this.$router.push('/shop');
+    }
   },
 };
 </script>
@@ -618,6 +642,40 @@ export default {
   opacity: 0;
 }
 
+/* Success Dialog Styles */
+.success-dialog {
+  background: #000000;
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.headline {
+  display: flex;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #ffffff;
+  padding-bottom: 1rem;
+}
+
+.dialog-text {
+  font-size: 1rem;
+  color: #ffffff;
+  line-height: 1.6;
+}
+
+.dialog-text p {
+  margin-bottom: 1rem;
+}
+
+.dialog-text strong {
+  color: #0000ff;
+}
+
+.v-card-actions {
+  padding-top: 1rem;
+}
+
 @media (max-width: 768px) {
   .purchase-content {
     padding: 2rem 1rem;
@@ -650,21 +708,12 @@ export default {
   }
 
   .phone-input {
-    display: flex;
-    gap: 1rem;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
-
-  @media (max-width: 768px) {
-    .phone-input {
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .country-code-select {
-      width: 100%;
-    }
+  .country-code-select {
+    width: 100%;
   }
 }
 </style>
