@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useProfile } from '@/composables/profile/useProfile';
 import Navbar from '@/components/NavBar.vue';
@@ -55,5 +55,11 @@ onMounted(async () => {
   await fetchUserProfileByUsername(route.params.username);
   console.log('Profile loaded, isCurrentUser:', isCurrentUser.value);
   console.log('userPosts en Profile.vue:', userPosts.value);
+});
+
+watch(() => route.params.username, (newUsername, oldUsername) => {
+  if (newUsername !== oldUsername) {
+    fetchUserProfileByUsername(newUsername);
+  }
 });
 </script>
