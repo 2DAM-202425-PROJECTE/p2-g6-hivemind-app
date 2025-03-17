@@ -99,29 +99,31 @@
     </ul>
   </div>
 
-  <!-- Resto del template sin cambios -->
+  <!-- Updated Navigation Drawer -->
   <v-navigation-drawer v-model="menu" temporary location="right" class="bg-black flex flex-col h-full">
-    <div class="py-4 flex justify-center">
-      <img src="/logo.png" alt="Logo" class="h-12 w-12"/>
-    </div>
-    <v-divider class="bg-gray-700"></v-divider>
-    <v-list class="flex-1">
-      <v-list-item
-        v-for="item in menuItems"
-        :key="item.text"
-        :to="item.to"
-        class="text-white"
-        @click="item.action && item.action()"
-      >
-        <v-icon class="mr-4">{{ item.icon }}</v-icon>
-        <v-list-item-title>{{ item.text }}</v-list-item-title>
+    <div class="flex flex-col h-full">
+      <div class="py-4 flex justify-center">
+        <img src="/logo.png" alt="Logo" class="h-12 w-12"/>
+      </div>
+      <v-divider class="bg-gray-700"></v-divider>
+      <v-list class="flex-1 py-4">
+        <v-list-item
+          v-for="item in menuItems"
+          :key="item.text"
+          :to="item.to"
+          class="text-white py-4 px-6 flex items-center"
+          @click="item.action && item.action()"
+        >
+          <v-icon class="mr-4 text-xl flex-shrink-0">{{ item.icon }}</v-icon>
+          <v-list-item-title class="text-lg font-medium flex-grow">{{ item.text }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+      <v-divider class="bg-gray-700"></v-divider>
+      <v-list-item v-if="user" @click="confirmLogout" class="text-white py-4 px-6 flex items-center mt-auto">
+        <v-icon class="mr-4 text-xl flex-shrink-0">mdi-logout</v-icon>
+        <v-list-item-title class="text-lg font-medium flex-grow">Logout</v-list-item-title>
       </v-list-item>
-    </v-list>
-    <v-divider class="bg-gray-700"></v-divider>
-    <v-list-item v-if="user" @click="confirmLogout" class="text-white">
-      <v-icon class="mr-4">mdi-logout</v-icon>
-      <v-list-item-title>Logout</v-list-item-title>
-    </v-list-item>
+    </div>
   </v-navigation-drawer>
 
   <v-dialog v-model="popup" max-width="400">
@@ -209,14 +211,14 @@ const notifications = ref([
 ]);
 
 const menuItems = ref([
-  {text: 'Chat', to: '/chat', icon: 'mdi-chat'},
-  {text: 'Servers', to: '/servers', icon: 'mdi-server'},
-  {text: 'Live Now', to: '/live', icon: 'mdi-video'},
-  {text: 'Videos', to: '/videos', icon: 'mdi-video-outline'},
-  {text: 'Shop', to: '/shop', icon: 'mdi-cart'},
-  {text: 'My Profile', to: '/profile', icon: 'mdi-account'},
-  {text: 'Account Settings', to: '/account-settings', icon: 'mdi-account-cog'},
-  {text: 'App Settings', to: '/settings', icon: 'mdi-cog'},
+  { text: 'Messages', to: '/chat', icon: 'mdi-message-text' },
+  { text: 'Communities', to: '/servers', icon: 'mdi-account-group' }, // Fixed typo
+  { text: 'Live Streams', to: '/live', icon: 'mdi-video' },
+  { text: 'Video Content', to: '/videos', icon: 'mdi-play-circle' },
+  { text: 'Store', to: '/shop', icon: 'mdi-store' },
+  { text: 'My Profile', to: '/profile', icon: 'mdi-account-circle' },
+  { text: 'Account Settings', to: '/account-settings', icon: 'mdi-account-cog' },
+  { text: 'App Settings', to: '/settings', icon: 'mdi-cog' },
 ]);
 
 const fetchUser = async () => {
@@ -233,7 +235,7 @@ const fetchUser = async () => {
 const updateMenuItems = () => {
   menuItems.value = menuItems.value.map(item => {
     if (item.text === 'My Profile' && user.value?.username) {
-      return {...item, to: `/profile/${user.value.username}`};
+      return { ...item, to: `/profile/${user.value.username}` };
     }
     return item;
   });
@@ -294,11 +296,11 @@ const searchUsers = async () => {
   try {
     const response = await axios.get('/api/search/users', { params: { username: searchQuery.value } });
     searchResults.value = response.data.data || [];
-    showSearchResults.value = true; // Mostrar siempre la lista si hay búsqueda
+    showSearchResults.value = true;
   } catch (error) {
     console.error('Error searching users:', error);
     searchResults.value = [];
-    showSearchResults.value = true; // Mostrar "No users found" inmediatamente
+    showSearchResults.value = true;
   }
 };
 
