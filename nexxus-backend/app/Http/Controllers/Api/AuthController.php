@@ -13,14 +13,16 @@ final class AuthController extends Controller
     {
         \Illuminate\Support\Facades\Request::validate([
             'name' => 'required|string|max:255',
+            'username' => 'required|string|max:15|unique:users',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
         ]);
 
         $user = User::create([
-            'name' => \Illuminate\Support\Facades\Request::input('name'),
-            'email' => \Illuminate\Support\Facades\Request::input('email'),
-            'password' => Hash::make(\Illuminate\Support\Facades\Request::input('password')),
+            'name' => request()->name,
+            'username' => request()->username,
+            'email' => request()->email,
+            'password' => Hash::make(request()->password),
         ]);
 
         return response()->json([
@@ -28,7 +30,7 @@ final class AuthController extends Controller
             'user' => $user,
         ], 201);
     }
-    
+
     final public function login(): JsonResponse
     {
         request()->validate([

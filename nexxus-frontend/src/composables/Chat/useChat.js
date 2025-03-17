@@ -16,7 +16,6 @@ export function useChat() {
   const messageToDelete = ref(null);
   const showEditModal = ref(false);
   const showDeleteModal = ref(false);
-  const messageToEdit = ref(null);
 
   const fetchUserId = async () => {
     try {

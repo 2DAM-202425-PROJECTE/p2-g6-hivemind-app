@@ -11,6 +11,18 @@
           <strong>{{ getUserNameById(post.id_user) }}</strong>
           <h5>{{ post.description }}</h5>
           <img :src="getImageUrl(post.file_path)" alt="file Image" class="post-content" />
+          <ul>
+            <li>
+              <strong>{{ getUserNameById(post.id_user) }}</strong>
+              <h5>{{ post.description }}</h5>
+              <template v-if="post.file_path.includes('.mp4')">
+                <video :src="getImageUrl(post.file_path)" alt="file Video" class="post-content" controls />
+              </template>
+              <template v-else>
+                <img :src="getImageUrl(post.file_path)" alt="file Image" class="post-content" />
+              </template>
+            </li>
+          </ul>
         </div>
         <div class="post-menu">
           <div v-if="postMenuVisible === post.id" class="dropdown-menu">
@@ -18,6 +30,31 @@
           </div>
         </div>
       </div>
+
+      <v-dialog v-model="editPostPopup" max-width="500">
+        <v-card>
+          <v-card-title>Edit Post</v-card-title>
+          <v-card-text>
+            <div v-if="selectedPost && selectedPost.image_url" class="current-image">
+              <p>Current Image:</p>
+              <img :src="'http://localhost:8000/' + selectedPost.image_url" alt="Current post image"
+                style="max-width: 100%; max-height: 200px; margin-bottom: 10px;">
+            </div>
+
+            <v-file-input label="Replace Image/Video (.png, .jpg, .jpeg, .mp4)" accept=".png, .jpg, .jpeg, .mp4"
+              @update:modelValue="handleEditFileUpload" outlined></v-file-input>
+
+            <v-text-field v-model="editPostDescription" label="Description" outlined>
+            </v-text-field>
+          </v-card-text>
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn text @click="cancelEditPost">Cancel</v-btn>
+            <v-btn color="primary" @click="saveEditPost">Update Post</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
       <div class="post-actions">
         <div class="action-item" @click="toggleLike(post)">
@@ -36,7 +73,7 @@
     </div>
 
     <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal"
-      @add-comment="addComment" :post="selectedPost" />
+    :currentUser="currentUser"    @add-comment="addComment" :post="selectedPost" />
 
     <UserRecommendation />
     <Footer />
@@ -62,6 +99,10 @@ const selectedPost = ref(null);
 const isDeleting = ref(false);
 const postMenuVisible = ref(null);
 const stories = ref([]); // Añade el array de historias
+const editPostPopup = ref(false);
+const editPostDescription = ref('');
+const editPostFile = ref(null);
+const stories = ref([]);
 
 const currentUser = ref({
   name: 'Current User', // Replace with actual user data
@@ -214,12 +255,58 @@ const togglePostMenu = (postId) => {
 };
 
 const editPost = async (post) => {
-  // Implement edit post logic
-
-  location.reload();
-
+  selectedPost.value = post;
+  editPostDescription.value = post.description || '';
+  editPostFile.value = null;
+  editPostPopup.value = true;
 };
 
+const handleEditFileUpload = (files) => {
+  editPostFile.value = files ? files[0] : null; // Handle single file upload
+};
+
+const cancelEditPost = () => {
+  editPostPopup.value = false;
+  editPostDescription.value = '';
+  editPostFile.value = null;
+};
+
+const saveEditPost = async () => {
+  if (!selectedPost.value) return;
+
+  try {
+    const formData = new FormData();
+    formData.append('description', editPostDescription.value);
+    formData.append('_method', 'PUT'); // Add method override
+
+    if (editPostFile.value) {
+      formData.append('file', editPostFile.value);
+    }
+
+    const response = await axios.post( // Use POST instead of PUT
+      `http://localhost:8000/api/posts/${selectedPost.value.id}`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'multipart/form-data',
+        }
+      }
+    );
+
+    // Update frontend data with response
+    const updatedPost = response.data.post; // Access nested post data
+    const index = posts.value.data.findIndex(p => p.id === selectedPost.value.id);
+    if (index !== -1) {
+      posts.value.data.splice(index, 1, updatedPost); // Ensure reactivity
+    }
+
+    editPostPopup.value = false;
+  } catch (error) {
+    console.error('Error updating post:', error);
+    alert('Error: ' + (error.response?.data?.message || error.message));
+  }
+};
 const isPostFromUser = (post) => {
   return post.id_user === currentUser.value.id;
 };
@@ -241,6 +328,7 @@ const deletePost = async (postId) => {
 
   } catch (error) {
     console.error('Error deleting post:', error.response?.data || error.message);
+    alert('Failed to delete post. ' + (error.response?.data?.message || error.message));
   } finally {
     isDeleting.value = false;
   }
@@ -261,7 +349,7 @@ const sharePost = (post) => {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
-  background-color: white;
+  background-color: #f0f2f5;
   min-height: 100vh;
   color: black;
 }
@@ -294,8 +382,8 @@ h1 {
 }
 
 .post-card {
-  background: #f0f0f0;
-  border: 1px solid #d3d3d3;
+  background: #ffffff;
+  border: 1px solid #ffffff;
   border-radius: 24px;
   padding: 20px;
   max-width: 800px;

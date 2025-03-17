@@ -19,13 +19,20 @@
 </script>
 
 <style scoped>
+.v-footer {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  background-color: #000; /* Black background */
+}
+
 .footer-content {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
-  padding: 0 16px;
-  background-color: #000; /* Black background */
+  padding: 0; /* Remove padding */
+  margin: 0; /* Remove margin */
   color: rgba(255, 255, 255, 0.7); /* Light text color */
 }
 

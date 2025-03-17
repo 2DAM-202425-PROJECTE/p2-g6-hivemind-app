@@ -25,15 +25,24 @@ Route::middleware('auth:sanctum')->group(function ()
         return $request->user();
     });
 
+    // Profile routes
+    Route::get('/user/{username}', [UserController::class, 'getUserByUsername']);
+    Route::post('/user/profile/update', [UserController::class, 'updateProfile']);
+
     // return all users
     Route::get('/users', [UserController::class, 'index']);
+
+    // search users by username
+    Route::get('/search/users', [UserController::class, 'searchUsers']);
+
     // retun posts of a user
     Route::get('/users/{id}/posts', [UserController::class, 'posts']);
 
     // posts routes
-    Route::get('/posts', [App\Http\Controllers\PostController::class, 'index']);
-    Route::post('/posts', [App\Http\Controllers\PostController::class, 'store']);
-    Route::delete('/posts/{id}', [App\Http\Controllers\PostController::class, 'destroy']);
+    Route::get('/posts', [PostController::class, 'index']);
+    Route::post('/posts', [PostController::class, 'store']);
+    Route::put('/posts/{post}', [PostController::class, 'update']);
+    Route::delete('/posts/{id}', [PostController::class, 'destroy']);
 
     // posts likes routes
     Route::post('/posts/{id}/like', [LikeController::class, 'store']);
@@ -42,7 +51,12 @@ Route::middleware('auth:sanctum')->group(function ()
     // comments routes
     Route::post('/posts/{post}/comments', [CommentController::class, 'store']);
     Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
+
     Route::delete('/posts/{post}/comments/{comment}', [CommentController::class, 'destroy']);
+    Route::delete('/comments/{id}', [CommentController::class, 'destroy']);
+    Route::put('/comments/{id}', [CommentController::class, 'update']);
+
+    Route::get('/stories', [StoryController::class, 'index']);
 
     Route::get('/stories', [StoryController::class, 'index']);
     Route::post('/stories', [StoryController::class, 'store']);
@@ -61,8 +75,4 @@ Route::middleware('auth:sanctum')->group(function ()
     Route::post('/contact/submit', [ContactController::class, 'submit']);
 });
 
-Route::get('/api/random-users', function (Request $request) {
-    $users = User::inRandomOrder()->limit(4)->get(['id', 'name', 'profile_photo_url']);
-    return response()->json($users);
-});
 

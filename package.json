@@ -3,6 +3,7 @@
     "@mdi/js": "^7.4.47",
     "@vue-hero-icons/outline": "^1.7.2",
     "vue-draggable-next": "^2.2.1",
+    "vue-flag-icon": "^2.1.0",
     "vuedraggable": "^2.24.3",
     "vuetify": "^3.7.0-beta.1",
     "vuex": "^4.0.2"

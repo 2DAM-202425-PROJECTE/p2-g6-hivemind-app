@@ -31,8 +31,12 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'username',
+        'description',
         'email',
         'password',
+        'profile_photo_path',
+        'banner_photo_path',
     ];
 
     /**
@@ -72,5 +76,10 @@ class User extends Authenticatable
     public function likes()
     {
         return $this->hasMany(Like::class);
+    }
+
+    public function posts()
+    {
+        return $this->hasMany(Post::class, 'id_user');
     }
 }

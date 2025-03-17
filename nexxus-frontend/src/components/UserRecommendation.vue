@@ -26,14 +26,10 @@ export default {
       addedUser: '',
     };
   },
+  mounted() {
+    this.fetchRandomUsers();
+  },
   methods: {
-    addFriend(userName) {
-      this.addedUser = userName;
-      this.showPopup = true;
-      setTimeout(() => {
-        this.showPopup = false;
-      }, 2000);
-    },
     fetchRandomUsers() {
       axios.get('/api/random-users')
         .then(response => {
@@ -43,9 +39,6 @@ export default {
           console.error('Error fetching random users:', error);
         });
     },
-  },
-  mounted() {
-    this.fetchRandomUsers();
   },
 };
 </script>

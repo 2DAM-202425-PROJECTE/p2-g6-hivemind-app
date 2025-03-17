@@ -21,8 +21,8 @@
               <ul>
                 <li v-if="isCommentAuthor(comment)" @click="editComment(comment)">Edit</li>
                 <li v-if="isCommentAuthor(comment)" @click="deleteComment(comment)">Delete</li>
-                <li v-else @click="reportComment(comment)">Report</li>
-                <li v-else @click="respondToComment(comment)">Respond</li>
+                <li v-if="!isCommentAuthor(comment)" @click="reportComment(comment)">Report</li>
+                <li v-if="!isCommentAuthor(comment)" @click="respondToComment(comment)">Respond</li>
               </ul>
             </div>
           </div>
@@ -33,24 +33,52 @@
         </div>
       </div>
     </div>
+    <v-dialog v-model="editCommentPopup" max-width="500">
+      <v-card>
+        <v-card-title>Edit Comment</v-card-title>
+        <v-card-text>
+          <v-text-field v-model="editCommentContent" label="Comment" outlined>
+          </v-text-field>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="cancelEditComment">Cancel</v-btn>
+          <v-btn color="primary" @click="saveEditComment">Update Comment</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import axios from '../axios';
+
+const isDeleting = ref(false);
+const newComment = ref('');
+const commentMenuVisible = ref(null);
+const editCommentPopup = ref(false);
+const selectedComment = ref(null);
+const editCommentContent = ref('');
 
 const props = defineProps({
   visible: Boolean,
-  comments: Array,
-  post: Object,
-  currentUser: Object
+  comments: {
+    type: Array,
+    default: () => [],
+  },
+  post: {
+    type: Object,
+    default: () => ({}),
+  },
+  currentUser: {
+    type: Object,
+    default: () => ({})
+  }
 });
 
-const emit = defineEmits(['close', 'add-comment']);
-
-const newComment = ref('');
-const commentMenuVisible = ref(null);
+const emit = defineEmits(['close', 'add-comment', 'update-comment', 'delete-comments']);
 
 const close = () => {
   emit('close');
@@ -87,15 +115,81 @@ const addComment = async (post) => {
 };
 
 const isCommentAuthor = (comment) => {
+  if (!comment.user || !props.currentUser) {
+    console.log('Comment user or current user is undefined');
+    console.log('Comment:', comment);
+    console.log('Current User:', props.currentUser);
+    return false;
+  }
+  // console.log('Comment User ID:', comment.user.id);
+  // console.log('Current User ID:', props.currentUser.id);
   return comment.user.id === props.currentUser.id;
 };
 
-const editComment = (comment) => {
-  // Implement edit comment logic
+const editComment = async (comment) => {
+  selectedComment.value = comment;
+  editCommentContent.value = comment.content || '';
+  editCommentPopup.value = true;
 };
 
-const deleteComment = (comment) => {
-  // Implement delete comment logic
+const cancelEditComment = () => {
+  editCommentPopup.value = false;
+  selectedComment.value = null;
+  editCommentContent.value = '';
+};
+
+const saveEditComment = async () => {
+  if (!editCommentContent.value) {
+    alert('Please enter a comment!');
+    return;
+  }
+
+  try {
+    const response = await axios.put(`http://localhost:8000/api/comments/${selectedComment.value.id}`, {
+      content: editCommentContent.value
+    }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const updatedComment = response.data.comment;
+    emit('update-comment', updatedComment);
+
+    alert('Comment updated successfully!');
+    editCommentPopup.value = false;
+    selectedComment.value = null;
+    editCommentContent.value = '';
+    window.location.href = '/home';
+  } catch (error) {
+    console.error(error);
+    alert('Failed to update comment.');
+  }
+};
+
+const deleteComment = async (comment) => {
+  isDeleting.value = true;
+  try{
+    const response = await axios.delete(`http://localhost:8000/api/comments/${comment.id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (Array.isArray(props.comments)) {
+      const deletedComments = props.comments.filter(c => c.id !== comment.id);
+      emit('delete-comments', deletedComments);
+    }
+
+    location.reload();
+  } catch (error) {
+    console.error('Failed to delete comment:', error.responde?.data || error.message);
+    alert('Failed to delete comment.' + error.response?.data?.message || error.message);
+  } finally {
+    isDeleting.value = false;
+  }
 };
 
 const reportComment = (comment) => {

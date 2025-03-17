@@ -10,9 +10,7 @@
     <div class="shop-content container">
       <!-- Welcome Section -->
       <section class="welcome-section">
-        <h1 class="text-center title">
-          Welcome to our product page!
-        </h1>
+        <h1 class="text-center title">Welcome to our product page!</h1>
         <p class="text-center subtitle">
           Here you will find a wide range of subscriptions and credits to customize your profile.
           Explore our options and choose the one that best suits your needs.
@@ -21,140 +19,61 @@
 
       <!-- Trending Items Section -->
       <section class="trending-section">
-        <h2 class="section-title">
-          Trending Items
-        </h2>
+        <h2 class="section-title">Trending Items</h2>
         <div class="trending-grid">
-          <div
-            v-for="(item, index) in trendingItems"
-            :key="index"
-            class="trending-item"
-          >
+          <div v-for="(item, index) in trendingItems" :key="index" class="trending-item">
             <div class="item-icon">
-              <img
-                :src="item.iconUrl"
-                :alt="item.name"
-                class="cosmetic-icon"
-              >
+              <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" />
             </div>
-            <h3 class="item-name">
-              {{ item.name }}
-            </h3>
-            <p class="item-price">
-              {{ item.price }}
-            </p>
-            <a
-              :href="`/purchase/${item.id}`"
-              class="buy-button"
-            >Purchase</a>
+            <h3 class="item-name">{{ item.name }}</h3>
+            <p class="item-price">{{ item.price }}</p>
+            <button @click="goToPurchase(item.id)" class="buy-button">Purchase</button>
           </div>
         </div>
       </section>
 
       <!-- Subscriptions Section -->
       <section class="subscriptions-section">
-        <h2 class="section-title">
-          Subscriptions
-        </h2>
+        <h2 class="section-title">Subscriptions</h2>
         <div class="subscription-grid">
-          <div
-            v-for="tier in subscriptionTiers"
-            :key="tier.title"
-            class="subscription-card"
-          >
-            <h3 class="tier-title">
-              {{ tier.title }}
-            </h3>
-            <p class="tier-price">
-              {{ tier.price }}
-            </p>
+          <div v-for="tier in subscriptionTiers" :key="tier.id" class="subscription-card">
+            <img :src="tier.iconUrl" :alt="tier.title" class="cosmetic-icon" />
+            <h3 class="tier-title">{{ tier.title }}</h3>
+            <p class="tier-price">{{ tier.price }}</p>
             <ul class="tier-features">
-              <li
-                v-for="(feature, index) in tier.features"
-                :key="index"
-              >
-                {{ feature }}
-              </li>
+              <li v-for="(feature, index) in tier.features" :key="index">{{ feature }}</li>
             </ul>
-            <a
-              :href="`/purchase/${tier.id}`"
-              class="buy-button"
-            >Purchase</a>
+            <button @click="goToPurchase(tier.id)" class="buy-button">Purchase</button>
           </div>
         </div>
       </section>
 
       <!-- Credits Section -->
-      <section
-        id="buy-credits"
-        class="credits-section"
-      >
-        <h2 class="section-title">
-          Buy Credits
-        </h2>
+      <section id="buy-credits" class="credits-section">
+        <h2 class="section-title">Buy Credits</h2>
         <div class="credits-grid">
-          <div
-            v-for="(credit, index) in creditPacks"
-            :key="index"
-            class="credit-card"
-          >
-            <img
-              :src="credit.iconUrl"
-              :alt="credit.amount"
-              class="credit-icon"
-            >
-            <h3 class="credit-amount">
-              {{ credit.amount }} Credits
-            </h3>
-            <p class="credit-price">
-              {{ credit.price }}
-            </p>
-            <a
-              :href="`/purchase/${credit.id}`"
-              class="buy-button"
-            >Purchase</a>
+          <div v-for="(credit, index) in creditPacks" :key="index" class="credit-card">
+            <img :src="credit.iconUrl" :alt="credit.amount" class="credit-icon" />
+            <h3 class="credit-amount">{{ credit.amount }} Credits</h3>
+            <p class="credit-price">{{ credit.price }}</p>
+            <button @click="goToPurchase(credit.id)" class="buy-button">Purchase</button>
           </div>
         </div>
       </section>
 
       <!-- Cosmetics Section -->
       <section class="cosmetics-section">
-        <h2 class="section-title">
-          Cosmetics
-        </h2>
+        <h2 class="section-title">Cosmetics</h2>
         <div class="cosmetics-grid">
-          <div
-            v-for="category in cosmeticCategories"
-            :key="category.title"
-            class="category-card"
-          >
-            <h3 class="category-title">
-              {{ category.title }}
-            </h3>
-            <p class="category-description">
-              {{ category.description }}
-            </p>
+          <div v-for="category in cosmeticCategories" :key="category.title" class="category-card">
+            <h3 class="category-title">{{ category.title }}</h3>
+            <p class="category-description">{{ category.description }}</p>
             <div class="items-grid">
-              <div
-                v-for="item in category.items"
-                :key="item.name"
-                class="cosmetic-item"
-              >
-                <img
-                  :src="item.iconUrl"
-                  :alt="item.name"
-                  class="cosmetic-icon"
-                >
-                <h4 class="item-name">
-                  {{ item.name }}
-                </h4>
-                <p class="item-price">
-                  {{ item.price }}
-                </p>
-                <a
-                  :href="`/purchase/${item.id}`"
-                  class="buy-button"
-                >Purchase</a>
+              <div v-for="item in category.items" :key="item.id" class="cosmetic-item">
+                <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" />
+                <h4 class="item-name">{{ item.name }}</h4>
+                <p class="item-price">{{ item.price }}</p>
+                <button @click="goToPurchase(item.id)" class="buy-button">Purchase</button>
               </div>
             </div>
           </div>
@@ -167,54 +86,46 @@
 </template>
 
 <script>
-import NavBar from '../components/NavBar.vue'
-import AppFooter from '../components/AppFooter.vue'
+import NavBar from '../components/NavBar.vue';
+import AppFooter from '../components/AppFooter.vue';
 
 export default {
   name: 'ShopPage',
   components: {
     NavBar,
-    AppFooter
+    AppFooter,
   },
   data() {
     return {
       subscriptionTiers: [
         {
+
           id: 1,
           title: 'Basic',
           price: 'Free',
-          features: [
-            'Access to basic features',
-            '1 exclusive profile icon',
-            '100 monthly credits'
-          ]
+          features: ['Access to basic features', '1 exclusive profile icon', '100 monthly credits'],
+          iconUrl: 'https://api.iconify.design/lucide/sprout.svg' // Simple, fresh start
         },
         {
           id: 2,
           title: 'Standard Premium',
           price: '10€/month',
-          features: [
-            'Advanced features',
-            '3 exclusive icons',
-            '500 monthly credits'
-          ]
+          features: ['Advanced features', '3 exclusive icons', '500 monthly credits'],
+          iconUrl: 'https://api.iconify.design/lucide/shield.svg' // Protection, solid mid-tier
         },
         {
           id: 3,
           title: 'Ultimate Premium',
           price: '20€/month',
-          features: [
-            'Full access to all features',
-            '10 exclusive icons',
-            '1000 monthly credits + bonuses'
-          ]
-        }
+          features: ['Full access to all features', '10 exclusive icons', '1000 monthly credits + bonuses'],
+          iconUrl: 'https://api.iconify.design/lucide/trophy.svg' // Victory, top-tier achievement
+        },
       ],
       creditPacks: [
         { id: 4, amount: '100', price: '2€', iconUrl: 'https://api.iconify.design/lucide/coins.svg' },
         { id: 5, amount: '500', price: '8€', iconUrl: 'https://api.iconify.design/lucide/coins.svg' },
         { id: 6, amount: '1000', price: '15€', iconUrl: 'https://api.iconify.design/lucide/coins.svg' },
-        { id: 7, amount: '5000', price: '60€', iconUrl: 'https://api.iconify.design/lucide/coins.svg' }
+        { id: 7, amount: '5000', price: '60€', iconUrl: 'https://api.iconify.design/lucide/coins.svg' },
       ],
       cosmeticCategories: [
         {
@@ -228,8 +139,8 @@ export default {
             { id: 12, name: 'Diamond Icon', price: '300 Credits', iconUrl: 'https://api.iconify.design/lucide/diamond.svg' },
             { id: 13, name: 'Lightning Icon', price: '200 Credits', iconUrl: 'https://api.iconify.design/lucide/zap.svg' },
             { id: 14, name: 'Fire Icon', price: '200 Credits', iconUrl: 'https://api.iconify.design/lucide/flame.svg' },
-            { id: 15, name: 'Music Icon', price: '150 Credits', iconUrl: 'https://api.iconify.design/lucide/music.svg' }
-          ]
+            { id: 15, name: 'Music Icon', price: '150 Credits', iconUrl: 'https://api.iconify.design/lucide/music.svg' },
+          ],
         },
         {
           title: 'Backgrounds',
@@ -242,8 +153,8 @@ export default {
             { id: 20, name: 'Ocean', price: '450 Credits', iconUrl: 'https://api.iconify.design/lucide/waves.svg' },
             { id: 21, name: 'Forest', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/trees.svg' },
             { id: 22, name: 'Desert', price: '350 Credits', iconUrl: 'https://api.iconify.design/lucide/sun.svg' },
-            { id: 23, name: 'Space', price: '550 Credits', iconUrl: 'https://api.iconify.design/lucide/moon.svg' }
-          ]
+            { id: 23, name: 'Space', price: '550 Credits', iconUrl: 'https://api.iconify.design/lucide/moon.svg' },
+          ],
         },
         {
           title: 'Animations',
@@ -256,8 +167,8 @@ export default {
             { id: 28, name: 'Rainbow', price: '900 Credits', iconUrl: 'https://api.iconify.design/lucide/palette.svg' },
             { id: 29, name: 'Glitch', price: '850 Credits', iconUrl: 'https://api.iconify.design/lucide/scan-line.svg' },
             { id: 30, name: 'Pulse', price: '700 Credits', iconUrl: 'https://api.iconify.design/lucide/activity.svg' },
-            { id: 31, name: 'Orbit', price: '800 Credits', iconUrl: 'https://api.iconify.design/lucide/orbit.svg' }
-          ]
+            { id: 31, name: 'Orbit', price: '800 Credits', iconUrl: 'https://api.iconify.design/lucide/orbit.svg' },
+          ],
         },
         {
           title: 'Emojis',
@@ -270,22 +181,22 @@ export default {
             { id: 36, name: 'Party Emoji', price: '75 Credits', iconUrl: 'https://api.iconify.design/lucide/party-popper.svg' },
             { id: 37, name: 'Love Emoji', price: '75 Credits', iconUrl: 'https://api.iconify.design/lucide/heart-handshake.svg' },
             { id: 38, name: 'Surprised Emoji', price: '50 Credits', iconUrl: 'https://api.iconify.design/lucide/circle-dot.svg' },
-            { id: 39, name: 'Star Eyes Emoji', price: '75 Credits', iconUrl: 'https://api.iconify.design/lucide/star.svg' }
-          ]
+            { id: 39, name: 'Star Eyes Emoji', price: '75 Credits', iconUrl: 'https://api.iconify.design/lucide/star.svg' },
+          ],
         },
         {
           title: 'Name Effects',
           description: 'Make your username stand out with eye-catching effects',
           items: [
-            { id: 40, name: 'Gradient', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/gradient.svg' },
+            { id: 40, name: 'Gradient', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/blend.svg' },
             { id: 41, name: 'Neon', price: '450 Credits', iconUrl: 'https://api.iconify.design/lucide/lamp.svg' },
             { id: 42, name: 'Gold', price: '500 Credits', iconUrl: 'https://api.iconify.design/lucide/badge.svg' },
             { id: 43, name: 'Rainbow', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/palette.svg' },
             { id: 44, name: 'Glitter', price: '450 Credits', iconUrl: 'https://api.iconify.design/lucide/sparkles.svg' },
             { id: 45, name: 'Shadow', price: '350 Credits', iconUrl: 'https://api.iconify.design/lucide/box.svg' },
             { id: 46, name: 'Pixel', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/square.svg' },
-            { id: 47, name: 'Cosmic', price: '500 Credits', iconUrl: 'https://api.iconify.design/lucide/stars.svg' }
-          ]
+            { id: 47, name: 'Cosmic', price: '500 Credits', iconUrl: 'https://api.iconify.design/lucide/stars.svg' },
+          ],
         },
         {
           title: 'Profile Frames',
@@ -298,28 +209,37 @@ export default {
             { id: 52, name: 'Tech Frame', price: '350 Credits', iconUrl: 'https://api.iconify.design/lucide/cpu.svg' },
             { id: 53, name: 'Star Frame', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/star.svg' },
             { id: 54, name: 'Cloud Frame', price: '300 Credits', iconUrl: 'https://api.iconify.design/lucide/cloud.svg' },
-            { id: 55, name: 'Royal Frame', price: '450 Credits', iconUrl: 'https://api.iconify.design/lucide/crown.svg' }
-          ]
-        }
-      ]
-    }
+            { id: 55, name: 'Royal Frame', price: '450 Credits', iconUrl: 'https://api.iconify.design/lucide/crown.svg' },
+          ],
+        },
+      ],
+    };
   },
   computed: {
     trendingItems() {
       const allItems = this.cosmeticCategories.flatMap(category => category.items);
-      return this.shuffleArray(allItems).slice(0, 5);
-    }
+      return this.shuffleArray([...allItems]).slice(0, 5); // Use spread to avoid mutating original array
+    },
   },
   methods: {
     shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];  // Fix the unused variable issue
+        [array[i], array[j]] = [array[j], array[i]];
       }
       return array;
-    }
-  }
-}
+    },
+    goToPurchase(itemId) {
+      const shopData = {
+        subscriptionTiers: this.subscriptionTiers,
+        creditPacks: this.creditPacks,
+        cosmeticCategories: this.cosmeticCategories,
+      };
+      localStorage.setItem('shopData', JSON.stringify(shopData));
+      this.$router.push({ path: `/purchase/${itemId}` });
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -344,28 +264,29 @@ export default {
 
 .items-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 4 columns for all screen sizes */
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   max-width: 100%;
 }
 
 @media (min-width: 768px) {
   .items-grid {
-    grid-template-columns: repeat(4, 1fr); /* Exactly 4 columns on desktop */
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
 @media (min-width: 480px) and (max-width: 767px) {
   .items-grid {
-    grid-template-columns: repeat(3, 1fr); /* 3 columns on tablets */
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media (max-width: 479px) {
   .items-grid {
-    grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
+    grid-template-columns: repeat(2, 1fr);
   }
 }
+
 .shop-content {
   padding: 2rem 1rem;
 }
@@ -497,8 +418,6 @@ section {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-
-
 .cosmetic-item {
   padding: 1rem;
   background: #f8f9fa;
@@ -521,7 +440,6 @@ section {
   color: #000;
 }
 
-
 /* Responsive Design */
 @media (max-width: 768px) {
   .shop-content {
@@ -542,6 +460,7 @@ section {
     grid-template-columns: 1fr;
   }
 }
+
 .credit-icon {
   width: 2.5rem;
   height: 2.5rem;
@@ -550,17 +469,19 @@ section {
   margin-left: auto;
   margin-right: auto;
 }
+
 .buy-button {
   background-color: grey;
-  color: white; /* Ensure the text is readable */
-  border: none; /* Remove any default borders */
-  padding: 0.25rem 0.5rem; /* Add some padding */
-  border-radius: 4px; /* Optional: Add rounded corners */
-  cursor: pointer; /* Change cursor to pointer */
-  margin-top: 50px; /* Add a bigger margin to create more space above the button */
+  color: white;
+  border: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 0.5rem; /* Adjusted margin for better spacing */
+  transition: background-color 0.3s;
 }
 
 .buy-button:hover {
-  background-color: darkgrey; /* Optional: Change color on hover */
+  background-color: darkgrey;
 }
 </style>
