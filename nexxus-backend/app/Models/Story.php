@@ -11,6 +11,9 @@ class Story extends Model
 
     use HasFactory;
 
+    protected $table = 'stories';
+    protected $primaryKey = 'id';
+
     protected $fillable = [
         'description',
         'publish_date',

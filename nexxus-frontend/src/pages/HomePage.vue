@@ -8,6 +8,9 @@
       <div class="post-header">
         <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
         <div class="post-info">
+          <strong>{{ getUserNameById(post.id_user) }}</strong>
+          <h5>{{ post.description }}</h5>
+          <img :src="getImageUrl(post.file_path)" alt="file Image" class="post-content" />
           <ul>
             <li>
               <strong>{{ getUserNameById(post.id_user) }}</strong>
@@ -22,15 +25,8 @@
           </ul>
         </div>
         <div class="post-menu">
-          <button @click="togglePostMenu(post.id)">
-            <i class="mdi mdi-dots-vertical"></i>
-          </button>
           <div v-if="postMenuVisible === post.id" class="dropdown-menu">
-            <ul>
-              <li v-show="isPostFromUser(post)" @click="editPost(post)">Edit</li>
-              <li v-show="isPostFromUser(post)" @click="deletePost(post.id)" :disabled="isDeleting">Delete</li>
-              <li @click="reportPost(post)">Report</li>
-            </ul>
+            <!-- Menu items here -->
           </div>
         </div>
       </div>
@@ -102,6 +98,7 @@ const selectedPostId = ref(null);
 const selectedPost = ref(null);
 const isDeleting = ref(false);
 const postMenuVisible = ref(null);
+const stories = ref([]); // Añade el array de historias
 const editPostPopup = ref(false);
 const editPostDescription = ref('');
 const editPostFile = ref(null);
@@ -170,7 +167,7 @@ onMounted(async () => {
     stories.value = storiesResult.data;
 
   } catch (error) {
-    console.error('Error al obtener datos', error);
+    console.error('Error al obtener datos', error.response?.data || error.message);
   }
 });
 
