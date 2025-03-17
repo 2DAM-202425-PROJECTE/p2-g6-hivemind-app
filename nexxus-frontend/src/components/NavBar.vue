@@ -172,6 +172,32 @@
     </v-card>
   </v-dialog>
 
+  <!-- Post Success Snackbar -->
+  <v-snackbar
+    v-model="showPostSuccessSnackbar"
+    :timeout="3000"
+    color="black"
+    class="white--text custom-snackbar"
+    bottom
+    right
+  >
+    <v-icon color="green" class="mr-2">mdi-check-circle</v-icon>
+    Post Created Successfully!
+  </v-snackbar>
+
+  <!-- Post Failed Snackbar -->
+  <v-snackbar
+    v-model="showPostFailedSnackbar"
+    :timeout="3000"
+    color="black"
+    class="white--text custom-snackbar"
+    bottom
+    right
+  >
+    <v-icon color="red" class="mr-2">mdi-alert-circle</v-icon>
+    Post Creation Failed - Retrying in a moment...
+  </v-snackbar>
+
   <NotificationsModal
     :visible="showNotifications"
     :notifications="notifications"
@@ -204,6 +230,8 @@ const showSearchResults = ref(false);
 const searchContainer = ref(null);
 const searchResultsContainer = ref(null);
 const searchResultsStyle = ref({});
+const showPostSuccessSnackbar = ref(false); // State for post success snackbar
+const showPostFailedSnackbar = ref(false); // State for post failed snackbar
 
 const notifications = ref([
   {id: 1, message: 'New notification'},
@@ -212,7 +240,7 @@ const notifications = ref([
 
 const menuItems = ref([
   { text: 'Messages', to: '/chat', icon: 'mdi-message-text' },
-  { text: 'Communities', to: '/servers', icon: 'mdi-account-group' }, // Fixed typo
+  { text: 'Communities', to: '/servers', icon: 'mdi-account-group' },
   { text: 'Live Streams', to: '/live', icon: 'mdi-video' },
   { text: 'Video Content', to: '/videos', icon: 'mdi-play-circle' },
   { text: 'Store', to: '/shop', icon: 'mdi-store' },
@@ -257,7 +285,7 @@ const logout = async () => {
 };
 
 const handleFileUpload = (event) => {
-  postFile.value = event.target.files[0];
+  postFile.value = event?.target?.files?.[0] || null; // Handle file input correctly
 };
 
 const submitPost = async () => {
@@ -275,15 +303,25 @@ const submitPost = async () => {
     await axios.post('/api/posts', formData, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' },
     });
-    alert('Post created successfully!');
     postPopup.value = false;
-    postContent.value = '';
-    postDescription.value = '';
-    postFile.value = null;
-    router.push('/home');
+    showPostSuccessSnackbar.value = true; // Show the success snackbar
+    await nextTick();
+    setTimeout(async () => {
+      showPostSuccessSnackbar.value = false; // Close the snackbar
+      postContent.value = '';
+      postDescription.value = '';
+      postFile.value = null;
+      await router.push('/home'); // Redirect after snackbar closes
+    }, 3000); // Close after 3 seconds
   } catch (error) {
     console.error('Failed to create post:', error);
-    alert('Failed to create post.');
+    postPopup.value = false;
+    showPostFailedSnackbar.value = true; // Show the failed snackbar
+    await nextTick();
+    setTimeout(() => {
+      showPostFailedSnackbar.value = false; // Close the snackbar
+      postPopup.value = true; // Reopen post creation dialog
+    }, 3000); // Close after 3 seconds
   }
 };
 
@@ -389,6 +427,8 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', updateSearchResultsPosition);
   window.removeEventListener('scroll', updateSearchResultsPosition);
+  showPostSuccessSnackbar.value = false; // Ensure success snackbar is closed on unmount
+  showPostFailedSnackbar.value = false; // Ensure failed snackbar is closed on unmount
 });
 
 watch([menu, showNotifications], ([newMenu, newShowNotifications]) => {
@@ -396,4 +436,41 @@ watch([menu, showNotifications], ([newMenu, newShowNotifications]) => {
     showNotifications.value = false;
   }
 });
+
+// Watch route changes to ensure success snackbar closes
+watch(() => router.currentRoute.value.path, (newPath) => {
+  if (showPostSuccessSnackbar.value && newPath === '/home') {
+    showPostSuccessSnackbar.value = false;
+  }
+});
 </script>
+
+
+<style scoped>
+
+.dialog-text p {
+  margin-bottom: 1rem;
+}
+
+.dialog-text strong {
+  color: #2563eb;
+}
+
+.custom-snackbar {
+  z-index: 10000; /* Ensure it appears above the navbar */
+  margin-bottom: 16px; /* Reduced offset from the bottom for better visibility */
+  margin-right: 200px; /* Offset from the right edge to prevent clipping */
+  position: fixed; /* Ensure fixed positioning */
+  bottom: 0; /* Stick to the bottom */
+  right: 0; /* Stick to the right */
+  left: auto; /* Prevent centering */
+  transform: none; /* Override any default transform that centers it */
+  max-width: calc(100% - 32px); /* Ensure it doesn't exceed viewport width minus margins */
+}
+
+/* Ensure white text for snackbars */
+.white--text {
+  color: white !important;
+}
+
+</style>
