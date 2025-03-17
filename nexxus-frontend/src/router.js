@@ -16,6 +16,8 @@ import ShopPage from "./pages/ShopPage.vue";
 import PurchasePage from "./pages/PurchasePage.vue";
 import AppSettingsPage from "./pages/AppSettingsPage.vue";
 import AccountSettingsPage from "./pages/AccountSettingsPage.vue";
+import CompleteProfilePage from "./pages/CompleteProfilePage.vue";
+
 
 // Definición de rutas
 export const routes = [
@@ -40,6 +42,8 @@ export const routes = [
   { path: "/purchase/:id", name: "Purchase", component: PurchasePage, props: true },
   { path: "/settings", name: "Settings", component: AppSettingsPage },
   { path: "/account-settings", name: "AccountSettings", component: AccountSettingsPage },
+  { path: "/complete-profile", name: "CompleteProfile", component: CompleteProfilePage },
+
 ];
 
 // Creación del router

@@ -46,6 +46,17 @@
       {{ error }}
     </v-snackbar>
 
+    <!-- Password Length Snackbar -->
+    <v-snackbar
+      v-model="showPasswordErrorSnackbar"
+      :timeout="3000"
+      color="black"
+      class="white--text custom-snackbar"
+    >
+      <v-icon color="red" class="mr-2">mdi-alert-circle</v-icon>
+      Password must be at least 8 characters long
+    </v-snackbar>
+
     <div class="icons">
       <i class="icon network-icon"></i>
       <i class="icon profile-icon"></i>
@@ -64,13 +75,25 @@ export default {
       email: '',
       password: '',
       error: null,
-      showSuccessSnackbar: false, // Controls success snackbar visibility
-      showErrorSnackbar: false,   // Controls error snackbar visibility
+      showSuccessSnackbar: false,
+      showErrorSnackbar: false,
+      showPasswordErrorSnackbar: false,
     };
   },
   methods: {
     async register() {
+      // Check password length first
+      if (this.password.length < 8) {
+        this.showPasswordErrorSnackbar = true;
+        // Hide the snackbar after 3 seconds
+        setTimeout(() => {
+          this.showPasswordErrorSnackbar = false;
+        }, 3000);
+        return; // Exit the function if password is too short
+      }
+
       try {
+        // Register the user
         const response = await apiClient.post('/api/register', {
           name: this.name,
           username: this.username,
@@ -78,17 +101,27 @@ export default {
           password: this.password,
         });
 
-        this.error = null;
-        this.showSuccessSnackbar = true; // Show success snackbar
+        // Automatically log in the user
+        const loginResponse = await apiClient.post('/api/login', {
+          email: this.email,
+          password: this.password,
+          device_name: 'web',
+        });
 
-        // Automatically redirect to login after 3 seconds
+        // Store the token
+        localStorage.setItem('token', loginResponse.data.token);
+
+        this.error = null;
+        this.showSuccessSnackbar = true;
+
+        // Automatically redirect to profile completion page after 3 seconds
         setTimeout(() => {
           this.showSuccessSnackbar = false;
-          this.$router.push('/login');
+          this.$router.push('/complete-profile');
         }, 3000);
       } catch (err) {
         this.error = 'Registration failed. Please check your details.';
-        this.showErrorSnackbar = true; // Show error snackbar
+        this.showErrorSnackbar = true;
 
         // Automatically hide error snackbar after 3 seconds
         setTimeout(() => {
@@ -107,7 +140,7 @@ export default {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #f0f2f5; /* Updated background color */
+  background-color: #f0f2f5;
   border: 5px solid #ccc;
   border-radius: 10px;
   position: relative;
@@ -116,16 +149,16 @@ export default {
 
 .login-box {
   text-align: center;
-  background: #ffffff; /* Updated container background color */
+  background: #ffffff;
   padding: 3rem;
-  border-radius: 24px; /* Updated border radius */
+  border-radius: 24px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 800px; /* Updated max-width */
+  max-width: 800px;
 }
 
 .logo {
-  width: 60px; /* Slightly larger logo */
+  width: 60px;
   height: 60px;
   margin-bottom: 1.5rem;
   display: block;
@@ -134,7 +167,7 @@ export default {
 }
 
 h1 {
-  font-size: 2rem; /* Larger font size for the heading */
+  font-size: 2rem;
   font-weight: bold;
   margin-bottom: 2rem;
   color: black;
@@ -147,31 +180,31 @@ form {
 
 label {
   font-weight: bold;
-  margin-top: 1.5rem; /* Increased spacing */
+  margin-top: 1.5rem;
   margin-bottom: 0.5rem;
 }
 
 input {
-  padding: 0.75rem; /* Increased padding for larger inputs */
+  padding: 0.75rem;
   border: 1px solid #ccc;
   border-radius: 5px;
-  font-size: 1.1rem; /* Slightly larger font size */
-  color: black; /* Text color when typing */
+  font-size: 1.1rem;
+  color: black;
 }
 
 input::placeholder {
-  color: black; /* Placeholder text color */
+  color: black;
 }
 
 button {
-  margin-top: 1.5rem; /* Increased spacing */
-  padding: 0.9rem; /* Larger button */
+  margin-top: 1.5rem;
+  padding: 0.9rem;
   background-color: #555;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 1.1rem; /* Slightly larger font size */
+  font-size: 1.1rem;
 }
 
 button:hover {
@@ -179,8 +212,8 @@ button:hover {
 }
 
 p {
-  margin-top: 1.5rem; /* Increased spacing */
-  font-size: 1rem; /* Slightly larger font size */
+  margin-top: 1.5rem;
+  font-size: 1rem;
 }
 
 a {
@@ -216,18 +249,17 @@ a:hover {
 }
 
 .custom-snackbar {
-  z-index: 10000; /* Ensure it appears above other elements */
-  margin-bottom: 16px; /* Offset from the bottom */
-  margin-right: 200px; /* Offset from the right edge */
-  position: fixed; /* Fixed positioning */
-  bottom: 0; /* Stick to the bottom */
-  right: 0; /* Stick to the right */
-  left: auto; /* Prevent centering */
-  transform: none; /* Override any default transform */
-  max-width: calc(100% - 32px); /* Ensure it doesn't exceed viewport width */
+  z-index: 10000;
+  margin-bottom: 16px;
+  margin-right: 200px;
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  left: auto;
+  transform: none;
+  max-width: calc(100% - 32px);
 }
 
-/* Ensure white text for snackbars */
 .white--text {
   color: white !important;
 }
