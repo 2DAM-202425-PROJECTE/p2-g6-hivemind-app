@@ -91,8 +91,7 @@ const submitStory = async () => {
     if (storyFile.value) {
         formData.append('file', storyFile.value)
     }
-    //console.log(storyFile.value)
-    //console.log(formData)
+
     try {
         const response = await axios.post('http://localhost:8000/api/stories', formData, {
             headers: {
@@ -301,7 +300,7 @@ const hasNotifications = computed(() => notifications.value.length > 0);
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn text @click="storyPopup = false">Cancel</v-btn>
-        <v-btn color="primary" @click="submitStory">Story</v-btn>
+        <v-btn color="primary" @click="submitStory">Submit</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
