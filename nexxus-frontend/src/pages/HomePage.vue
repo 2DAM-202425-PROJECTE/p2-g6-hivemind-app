@@ -10,11 +10,8 @@
         <div class="post-info">
           <strong>{{ getUserNameById(post.id_user) }}</strong>
           <h5>{{ post.description }}</h5>
-          <img :src="getImageUrl(post.file_path)" alt="file Image" class="post-content" />
           <ul>
             <li>
-              <strong>{{ getUserNameById(post.id_user) }}</strong>
-              <h5>{{ post.description }}</h5>
               <template v-if="post.file_path.includes('.mp4')">
                 <video :src="getImageUrl(post.file_path)" alt="file Video" class="post-content" controls />
               </template>
@@ -98,7 +95,6 @@ const selectedPostId = ref(null);
 const selectedPost = ref(null);
 const isDeleting = ref(false);
 const postMenuVisible = ref(null);
-const stories = ref([]); // Añade el array de historias
 const editPostPopup = ref(false);
 const editPostDescription = ref('');
 const editPostFile = ref(null);
