@@ -20,11 +20,18 @@
           accept=".png, .jpg, .jpeg"
           class="absolute inset-0 opacity-0 cursor-pointer"
         />
+        <button
+          v-if="bannerPreview || editedUser.banner_photo_path"
+          @click="removeBanner"
+          class="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <i class="fas fa-trash"></i>
+        </button>
       </div>
 
       <!-- Foto de perfil -->
       <div class="relative flex justify-center -mt-20 mb-6">
-        <div class="relative">
+        <div class="relative group">
           <img
             :src="profilePreview || editedUser.profile_photo_url"
             alt="Profile Pic"
@@ -43,6 +50,13 @@
             accept=".png, .jpg, .jpeg"
             class="hidden"
           />
+          <button
+            v-if="profilePreview || editedUser.profile_photo_url"
+            @click="removeProfilePic"
+            class="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <i class="fas fa-trash"></i>
+          </button>
         </div>
       </div>
 
@@ -60,8 +74,9 @@
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
           <textarea
             v-model="editedUser.description"
-            class="mt-1 w-full p-2 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+            class="mt-1 w-full p-2 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 resize-none"
             rows="3"
+            style="max-height: 120px;"
           ></textarea>
         </div>
       </div>
@@ -109,7 +124,7 @@ watch(() => props.user, (newUser) => {
 }, { deep: true });
 
 const getImageUrl = (filePath) => {
-  const baseUrl = 'http://localhost:8000'; // Ajusta según tu servidor
+  const baseUrl = 'http://localhost:8000';
   if (filePath && filePath.startsWith('/')) return `${baseUrl}${filePath}`;
   return filePath ? `${baseUrl}/storage/${filePath}` : '/default-profile.jpg';
 };
@@ -130,12 +145,32 @@ const uploadProfilePic = (event) => {
   }
 };
 
+const removeBanner = () => {
+  bannerPhoto.value = null;
+  bannerPreview.value = null;
+  editedUser.value.banner_photo_path = null;
+};
+
+const removeProfilePic = () => {
+  profilePhoto.value = null;
+  profilePreview.value = null;
+  editedUser.value.profile_photo_url = null;
+};
+
 const saveProfile = async () => {
   const formData = new FormData();
   formData.append('name', editedUser.value.name || '');
   formData.append('description', editedUser.value.description || '');
-  if (profilePhoto.value) formData.append('profile_photo', profilePhoto.value);
-  if (bannerPhoto.value) formData.append('banner_photo', bannerPhoto.value);
+  if (profilePhoto.value) {
+    formData.append('profile_photo', profilePhoto.value);
+  } else if (!profilePreview.value) {
+    formData.append('remove_profile_photo', '1');
+  }
+  if (bannerPhoto.value) {
+    formData.append('banner_photo', bannerPhoto.value);
+  } else if (!bannerPreview.value) {
+    formData.append('remove_banner_photo', '1');
+  }
 
   try {
     const response = await apiClient.post('/api/user/profile/update', formData, {
