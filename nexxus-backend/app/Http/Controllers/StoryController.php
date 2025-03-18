@@ -30,13 +30,10 @@ class StoryController extends Controller
 
         if ($request->hasFile('file')) {
             $filePath = $request->file('file')->store('uploads', 'public');
-            $validatedData['file_path'] = $filePath; // Agregar el campo manualmente
+            $validatedData['file_path'] = $filePath;
         }
 
-        // Asegurar que el modelo tenga el campo 'file_path'
-        $story = Story::create(array_merge($validatedData, [
-            'file_path' => $validatedData['file_path'] ?? null // Agregarlo si no existe
-        ]));
+        $story = Story::create($validatedData);
 
         return response()->json([
             'message' => 'Story created successfully',

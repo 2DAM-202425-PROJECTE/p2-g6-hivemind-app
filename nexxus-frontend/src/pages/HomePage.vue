@@ -42,11 +42,11 @@
             <div v-if="selectedPost && selectedPost.image_url" class="current-image">
               <p>Current Image:</p>
               <img :src="'http://localhost:8000/' + selectedPost.image_url" alt="Current post image"
-                style="max-width: 100%; max-height: 200px; margin-bottom: 10px;">
+                   style="max-width: 100%; max-height: 200px; margin-bottom: 10px;">
             </div>
 
             <v-file-input label="Replace Image/Video (.png, .jpg, .jpeg, .mp4)" accept=".png, .jpg, .jpeg, .mp4"
-              @update:modelValue="handleEditFileUpload" outlined></v-file-input>
+                          @update:modelValue="handleEditFileUpload" outlined></v-file-input>
 
             <v-text-field v-model="editPostDescription" label="Description" outlined>
             </v-text-field>
@@ -69,7 +69,7 @@
           <i class="mdi mdi-comment-outline"></i>
           <span>{{ post.comments ? post.comments.length : 0 }} Comments</span>
         </div>
-        <div class="action-item" @click="sharePost">
+        <div class="action-item" @click="sharePost(post)">
           <i class="mdi mdi-share-outline"></i>
           <span>{{ shares }} Shares</span>
         </div>
@@ -77,7 +77,7 @@
     </div>
 
     <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal"
-    :currentUser="currentUser"    @add-comment="addComment" :post="selectedPost" />
+                  :currentUser="currentUser" @add-comment="addComment" :post="selectedPost" />
 
     <UserRecommendation />
     <Footer />
@@ -170,7 +170,7 @@ onMounted(async () => {
     stories.value = storiesResult.data;
 
   } catch (error) {
-    console.error('Error al obtener datos', error);
+    console.error('Error al obtener datos', error.response?.data || error.message);
   }
 });
 

@@ -96,36 +96,38 @@
     </ul>
   </div>
 
-  <!-- Resto del template sin cambios -->
+  <!-- Updated Navigation Drawer -->
   <v-navigation-drawer v-model="menu" temporary location="right" class="bg-black flex flex-col h-full">
-    <div class="py-4 flex justify-center">
-      <img src="/logo.png" alt="Logo" class="h-12 w-12"/>
-    </div>
-    <v-divider class="bg-gray-700"></v-divider>
-    <v-list class="flex-1">
-      <v-list-item
-        v-for="item in menuItems"
-        :key="item.text"
-        :to="item.to"
-        class="text-white"
-        @click="item.action && item.action()"
-      >
-        <v-icon class="mr-4">{{ item.icon }}</v-icon>
-        <v-list-item-title>{{ item.text }}</v-list-item-title>
+    <div class="flex flex-col h-full">
+      <div class="py-4 flex justify-center">
+        <img src="/logo.png" alt="Logo" class="h-12 w-12"/>
+      </div>
+      <v-divider class="bg-gray-700"></v-divider>
+      <v-list class="flex-1 py-4">
+        <v-list-item
+          v-for="item in menuItems"
+          :key="item.text"
+          :to="item.to"
+          class="text-white py-4 px-6 flex items-center"
+          @click="item.action && item.action()"
+        >
+          <v-icon class="mr-4 text-xl flex-shrink-0">{{ item.icon }}</v-icon>
+          <v-list-item-title class="text-lg font-medium flex-grow">{{ item.text }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+      <v-divider class="bg-gray-700"></v-divider>
+      <v-list-item v-if="user" @click="confirmLogout" class="text-white py-4 px-6 flex items-center mt-auto">
+        <v-icon class="mr-4 text-xl flex-shrink-0">mdi-logout</v-icon>
+        <v-list-item-title class="text-lg font-medium flex-grow">Logout</v-list-item-title>
       </v-list-item>
-    </v-list>
-    <v-divider class="bg-gray-700"></v-divider>
-    <v-list-item v-if="user" @click="confirmLogout" class="text-white">
-      <v-icon class="mr-4">mdi-logout</v-icon>
-      <v-list-item-title>Logout</v-list-item-title>
-    </v-list-item>
+    </div>
   </v-navigation-drawer>
 
   <v-dialog v-model="popup" max-width="400">
     <v-card>
       <v-card-title>Select an option</v-card-title>
       <v-card-text>
-        <v-btn block class="mb-2" @click="popup = false">Create a Story</v-btn>
+        <v-btn block class="mb-2" @click="storyPopup = true; popup = false">Create a Story</v-btn>
         <v-btn block @click="postPopup = true; popup = false">Create a Post (Image/Video)</v-btn>
       </v-card-text>
       <v-card-actions>
@@ -155,6 +157,29 @@
     </v-card>
   </v-dialog>
 
+
+  <!-- Create a Story Popup -->
+  <v-dialog v-model="storyPopup" max-width="500">
+    <v-card>
+      <v-card-title>Create a Story</v-card-title>
+      <v-card-text>
+        <v-file-input v-model="storyFile" label="Upload Image/Video (.png, .mp4)" accept=".png, .mp4" @change="handleFileUpload"
+                      outlined></v-file-input>
+
+        <v-text-field v-model="storyDescription" label="Description" outlined></v-text-field>
+      </v-card-text>
+
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn text @click="storyPopup = false">Cancel</v-btn>
+        <v-btn color="primary" @click="submitStory">Submit</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- Logout Confirmation Dialog -->
+
+
   <v-dialog v-model="showLogoutConfirm" max-width="400">
     <v-card>
       <v-card-title>Confirm Logout</v-card-title>
@@ -166,6 +191,32 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <!-- Post Success Snackbar -->
+  <v-snackbar
+    v-model="showPostSuccessSnackbar"
+    :timeout="3000"
+    color="black"
+    class="white--text custom-snackbar"
+    bottom
+    right
+  >
+    <v-icon color="green" class="mr-2">mdi-check-circle</v-icon>
+    Post Created Successfully!
+  </v-snackbar>
+
+  <!-- Post Failed Snackbar -->
+  <v-snackbar
+    v-model="showPostFailedSnackbar"
+    :timeout="3000"
+    color="black"
+    class="white--text custom-snackbar"
+    bottom
+    right
+  >
+    <v-icon color="red" class="mr-2">mdi-alert-circle</v-icon>
+    Post Creation Failed - Retrying in a moment...
+  </v-snackbar>
 
   <NotificationsModal
     :visible="showNotifications"
@@ -199,6 +250,8 @@ const showSearchResults = ref(false);
 const searchContainer = ref(null);
 const searchResultsContainer = ref(null);
 const searchResultsStyle = ref({});
+const showPostSuccessSnackbar = ref(false); // State for post success snackbar
+const showPostFailedSnackbar = ref(false); // State for post failed snackbar
 
 const notifications = ref([
   {id: 1, message: 'New notification'},
@@ -206,14 +259,14 @@ const notifications = ref([
 ]);
 
 const menuItems = ref([
-  {text: 'Chat', to: '/chat', icon: 'mdi-chat'},
-  {text: 'Servers', to: '/servers', icon: 'mdi-server'},
-  {text: 'Live Now', to: '/live', icon: 'mdi-video'},
-  {text: 'Videos', to: '/videos', icon: 'mdi-video-outline'},
-  {text: 'Shop', to: '/shop', icon: 'mdi-cart'},
-  {text: 'My Profile', to: '/profile', icon: 'mdi-account'},
-  {text: 'Account Settings', to: '/account-settings', icon: 'mdi-account-cog'},
-  {text: 'App Settings', to: '/settings', icon: 'mdi-cog'},
+  { text: 'Messages', to: '/chat', icon: 'mdi-message-text' },
+  { text: 'Communities', to: '/servers', icon: 'mdi-account-group' },
+  { text: 'Live Streams', to: '/live', icon: 'mdi-video' },
+  { text: 'Video Content', to: '/videos', icon: 'mdi-play-circle' },
+  { text: 'Store', to: '/shop', icon: 'mdi-store' },
+  { text: 'My Profile', to: '/profile', icon: 'mdi-account-circle' },
+  { text: 'Account Settings', to: '/account-settings', icon: 'mdi-account-cog' },
+  { text: 'App Settings', to: '/settings', icon: 'mdi-cog' },
 ]);
 
 const fetchUser = async () => {
@@ -230,7 +283,7 @@ const fetchUser = async () => {
 const updateMenuItems = () => {
   menuItems.value = menuItems.value.map(item => {
     if (item.text === 'My Profile' && user.value?.username) {
-      return {...item, to: `/profile/${user.value.username}`};
+      return { ...item, to: `/profile/${user.value.username}` };
     }
     return item;
   });
@@ -252,7 +305,7 @@ const logout = async () => {
 };
 
 const handleFileUpload = (event) => {
-  postFile.value = event.target.files[0];
+  postFile.value = event?.target?.files?.[0] || null; // Handle file input correctly
 };
 
 const submitPost = async () => {
@@ -270,15 +323,25 @@ const submitPost = async () => {
     await axios.post('/api/posts', formData, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' },
     });
-    alert('Post created successfully!');
     postPopup.value = false;
-    postContent.value = '';
-    postDescription.value = '';
-    postFile.value = null;
-    router.push('/home');
+    showPostSuccessSnackbar.value = true; // Show the success snackbar
+    await nextTick();
+    setTimeout(async () => {
+      showPostSuccessSnackbar.value = false; // Close the snackbar
+      postContent.value = '';
+      postDescription.value = '';
+      postFile.value = null;
+      await router.push('/home'); // Redirect after snackbar closes
+    }, 3000); // Close after 3 seconds
   } catch (error) {
     console.error('Failed to create post:', error);
-    alert('Failed to create post.');
+    postPopup.value = false;
+    showPostFailedSnackbar.value = true; // Show the failed snackbar
+    await nextTick();
+    setTimeout(() => {
+      showPostFailedSnackbar.value = false; // Close the snackbar
+      postPopup.value = true; // Reopen post creation dialog
+    }, 3000); // Close after 3 seconds
   }
 };
 
@@ -291,11 +354,11 @@ const searchUsers = async () => {
   try {
     const response = await axios.get('/api/search/users', { params: { username: searchQuery.value } });
     searchResults.value = response.data.data || [];
-    showSearchResults.value = true; // Mostrar siempre la lista si hay búsqueda
+    showSearchResults.value = true;
   } catch (error) {
     console.error('Error searching users:', error);
     searchResults.value = [];
-    showSearchResults.value = true; // Mostrar "No users found" inmediatamente
+    showSearchResults.value = true;
   }
 };
 
@@ -395,6 +458,8 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', updateSearchResultsPosition);
   window.removeEventListener('scroll', updateSearchResultsPosition);
+  showPostSuccessSnackbar.value = false; // Ensure success snackbar is closed on unmount
+  showPostFailedSnackbar.value = false; // Ensure failed snackbar is closed on unmount
 });
 
 watch([menu, showNotifications], ([newMenu, newShowNotifications]) => {
@@ -402,4 +467,41 @@ watch([menu, showNotifications], ([newMenu, newShowNotifications]) => {
     showNotifications.value = false;
   }
 });
+
+// Watch route changes to ensure success snackbar closes
+watch(() => router.currentRoute.value.path, (newPath) => {
+  if (showPostSuccessSnackbar.value && newPath === '/home') {
+    showPostSuccessSnackbar.value = false;
+  }
+});
 </script>
+
+
+<style scoped>
+
+.dialog-text p {
+  margin-bottom: 1rem;
+}
+
+.dialog-text strong {
+  color: #2563eb;
+}
+
+.custom-snackbar {
+  z-index: 10000; /* Ensure it appears above the navbar */
+  margin-bottom: 16px; /* Reduced offset from the bottom for better visibility */
+  margin-right: 200px; /* Offset from the right edge to prevent clipping */
+  position: fixed; /* Ensure fixed positioning */
+  bottom: 0; /* Stick to the bottom */
+  right: 0; /* Stick to the right */
+  left: auto; /* Prevent centering */
+  transform: none; /* Override any default transform that centers it */
+  max-width: calc(100% - 32px); /* Ensure it doesn't exceed viewport width minus margins */
+}
+
+/* Ensure white text for snackbars */
+.white--text {
+  color: white !important;
+}
+
+</style>
