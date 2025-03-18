@@ -1,6 +1,6 @@
 <template>
-  <!-- v-app-bar sin cambios -->
-  <v-app-bar app flat class="bg-black shadow-md flex items-center justify-between px-4 md:px-6" style="z-index: 9999;">
+  <!-- v-app-bar -->
+  <v-app-bar app flat class="bg-black shadow-md flex items-center justify-between px-4 md:px-6 z-[9999]">
     <!-- Left Section -->
     <div class="flex items-center space-x-2">
       <v-btn icon :to="'/home'" class="text-white">
@@ -11,8 +11,8 @@
       </v-btn>
     </div>
 
-    <!-- Search Field -->
-    <div class="flex-1 mx-4" ref="searchContainer">
+    <!-- Search Field Container -->
+    <div class="flex-1 mx-4 relative" ref="searchContainer">
       <v-text-field
         v-model="searchQuery"
         placeholder="Search users..."
@@ -21,8 +21,8 @@
         flat
         prepend-inner-icon="mdi-magnify"
         class="bg-gray-800 text-white rounded-lg"
-        @focus="showSearchResults = true"
-        @input="searchUsers"
+        @focus="handleFocus"
+        @input="debouncedSearchUsers"
         @blur="handleBlur"
       ></v-text-field>
     </div>
@@ -48,8 +48,7 @@
           <v-icon>mdi-plus</v-icon>
         </v-btn>
         <v-btn icon @click="showNotifications = true" class="text-white relative">
-          <v-icon
-            :class="{ 'relative after:content-[\'\'] after:absolute after:top-0 after:right-0 after:w-2 after:h-2 after:bg-red-500 after:rounded-full': hasNotifications }">
+          <v-icon class="relative" :class="{ 'after:content-[\'\'] after:absolute after:top-0 after:right-0 after:w-2 after:h-2 after:bg-red-500 after:rounded-full': hasNotifications }">
             mdi-bell
           </v-icon>
         </v-btn>
@@ -58,45 +57,48 @@
     </div>
   </v-app-bar>
 
-  <!-- Lista con separadores y ajustes -->
+  <!-- Search Results Overlay -->
   <div
     v-if="showSearchResults && searchQuery"
-    class="search-results"
-    :style="searchResultsStyle"
-    ref="searchResultsContainer"
-    @mousedown="preventBlur"
+    class="fixed inset-0 z-[10000] pointer-events-none"
   >
-    <ul class="py-1">
-      <v-list-item
-        v-for="(result, index) in searchResults"
-        :key="result.id"
-        @click="goToUserProfile(result.username)"
-        class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center"
-        :class="{ 'border-b border-gray-700': index < searchResults.length - 1 && (searchResults.length > 0 || index === 0) }"
-      >
-        <!-- Contenedor de la imagen -->
-        <v-avatar size="32" class="mr-3 flex-shrink-0">
-          <img
-            :src="getSearchResultPhotoUrl(result)"
-            alt="User Avatar"
-            class="object-cover w-full h-full"
-            @error="e => e.target.src = generateAvatar(result.name || 'User')"
-          />
-        </v-avatar>
-
-        <!-- Contenedor del texto -->
-        <div class="flex flex-col justify-center flex-grow">
-          <span class="text-white font-medium text-base leading-tight">{{ result.name }}</span>
-          <span class="text-gray-400 text-sm leading-tight">@{{ result.username }}</span>
-        </div>
-      </v-list-item>
-      <li v-if="searchResults.length === 0" class="px-4 py-2 text-gray-400 text-sm">
-        No users found
-      </li>
-    </ul>
+    <div
+      class="absolute bg-gray-800 text-white rounded-b-lg shadow-lg max-h-60 overflow-y-auto pointer-events-auto"
+      :style="searchResultsStyle"
+      @mousedown.prevent
+    >
+      <ul v-if="isSearching" class="py-1">
+        <li class="px-4 py-2 text-gray-400 text-sm">Searching...</li>
+      </ul>
+      <ul v-else-if="searchResults.length > 0" class="py-1">
+        <v-list-item
+          v-for="(result, index) in searchResults"
+          :key="result.id"
+          @click="goToUserProfile(result.username)"
+          class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center"
+          :class="{ 'border-b border-gray-700': index < searchResults.length - 1 }"
+        >
+          <v-avatar size="32" class="mr-3 flex-shrink-0">
+            <img
+              :src="getSearchResultPhotoUrl(result)"
+              alt="User Avatar"
+              class="object-cover w-full h-full"
+              @error="e => e.target.src = generateAvatar(result.name || 'User')"
+            />
+          </v-avatar>
+          <div class="flex flex-col justify-center flex-grow">
+            <span class="text-white font-medium text-base leading-tight">{{ result.name }}</span>
+            <span class="text-gray-400 text-sm leading-tight">@{{ result.username }}</span>
+          </div>
+        </v-list-item>
+      </ul>
+      <ul v-else class="py-1">
+        <li class="px-4 py-2 text-gray-400 text-sm">No users found</li>
+      </ul>
+    </div>
   </div>
 
-  <!-- Updated Navigation Drawer -->
+  <!-- Navigation Drawer -->
   <v-navigation-drawer v-model="menu" temporary location="right" class="bg-black flex flex-col h-full">
     <div class="flex flex-col h-full">
       <div class="py-4 flex justify-center">
@@ -123,6 +125,7 @@
     </div>
   </v-navigation-drawer>
 
+  <!-- Dialogs -->
   <v-dialog v-model="popup" max-width="400">
     <v-card>
       <v-card-title>Select an option</v-card-title>
@@ -144,7 +147,7 @@
         <v-file-input
           label="Upload Image/Video (.png, .mp4)"
           accept=".png, .mp4"
-          @change="handleFileUpload"
+          v-model="postFile"
           outlined
         ></v-file-input>
         <v-text-field v-model="postDescription" label="Description" outlined></v-text-field>
@@ -157,18 +160,18 @@
     </v-card>
   </v-dialog>
 
-
-  <!-- Create a Story Popup -->
   <v-dialog v-model="storyPopup" max-width="500">
     <v-card>
       <v-card-title>Create a Story</v-card-title>
       <v-card-text>
-        <v-file-input v-model="storyFile" label="Upload Image/Video (.png, .mp4)" accept=".png, .mp4" @change="handleFileUpload"
-                      outlined></v-file-input>
-
+        <v-file-input
+          v-model="storyFile"
+          label="Upload Image/Video (.png, .mp4)"
+          accept=".png, .mp4"
+          outlined
+        ></v-file-input>
         <v-text-field v-model="storyDescription" label="Description" outlined></v-text-field>
       </v-card-text>
-
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn text @click="storyPopup = false">Cancel</v-btn>
@@ -176,9 +179,6 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
-
-  <!-- Logout Confirmation Dialog -->
-
 
   <v-dialog v-model="showLogoutConfirm" max-width="400">
     <v-card>
@@ -192,12 +192,12 @@
     </v-card>
   </v-dialog>
 
-  <!-- Post Success Snackbar -->
+  <!-- Snackbars -->
   <v-snackbar
     v-model="showPostSuccessSnackbar"
     :timeout="3000"
     color="black"
-    class="white--text custom-snackbar"
+    class="white--text"
     bottom
     right
   >
@@ -205,12 +205,11 @@
     Post Created Successfully!
   </v-snackbar>
 
-  <!-- Post Failed Snackbar -->
   <v-snackbar
     v-model="showPostFailedSnackbar"
     :timeout="3000"
     color="black"
-    class="white--text custom-snackbar"
+    class="white--text"
     bottom
     right
   >
@@ -240,22 +239,24 @@ const searchQuery = ref('');
 const user = ref(null);
 const popup = ref(false);
 const postPopup = ref(false);
-const postContent = ref('');
+const storyPopup = ref(false);
 const postDescription = ref('');
 const postFile = ref(null);
+const storyFile = ref(null);
+const storyDescription = ref('');
 const showLogoutConfirm = ref(false);
 const showNotifications = ref(false);
 const searchResults = ref([]);
 const showSearchResults = ref(false);
+const showPostSuccessSnackbar = ref(false);
+const showPostFailedSnackbar = ref(false);
 const searchContainer = ref(null);
-const searchResultsContainer = ref(null);
 const searchResultsStyle = ref({});
-const showPostSuccessSnackbar = ref(false); // State for post success snackbar
-const showPostFailedSnackbar = ref(false); // State for post failed snackbar
+const isSearching = ref(false); // State for "Searching..."
 
 const notifications = ref([
-  {id: 1, message: 'New notification'},
-  {id: 2, message: 'Another notification'},
+  { id: 1, message: 'New notification' },
+  { id: 2, message: 'Another notification' },
 ]);
 
 const menuItems = ref([
@@ -304,17 +305,12 @@ const logout = async () => {
   }
 };
 
-const handleFileUpload = (event) => {
-  postFile.value = event?.target?.files?.[0] || null; // Handle file input correctly
-};
-
 const submitPost = async () => {
-  if (!postContent.value && !postFile.value) {
-    alert('Please enter content or upload a file!');
+  if (!postFile.value && !postDescription.value) {
+    alert('Please upload a file or add a description!');
     return;
   }
   const formData = new FormData();
-  formData.append('content', postContent.value);
   formData.append('description', postDescription.value);
   formData.append('id_user', user.value.id);
   formData.append('publish_date', new Date().toISOString());
@@ -324,33 +320,64 @@ const submitPost = async () => {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' },
     });
     postPopup.value = false;
-    showPostSuccessSnackbar.value = true; // Show the success snackbar
-    await nextTick();
-    setTimeout(async () => {
-      showPostSuccessSnackbar.value = false; // Close the snackbar
-      postContent.value = '';
+    showPostSuccessSnackbar.value = true;
+    setTimeout(() => {
+      showPostSuccessSnackbar.value = false;
       postDescription.value = '';
       postFile.value = null;
-      await router.push('/home'); // Redirect after snackbar closes
-    }, 3000); // Close after 3 seconds
+      router.push('/home');
+    }, 3000);
   } catch (error) {
     console.error('Failed to create post:', error);
     postPopup.value = false;
-    showPostFailedSnackbar.value = true; // Show the failed snackbar
-    await nextTick();
+    showPostFailedSnackbar.value = true;
     setTimeout(() => {
-      showPostFailedSnackbar.value = false; // Close the snackbar
-      postPopup.value = true; // Reopen post creation dialog
-    }, 3000); // Close after 3 seconds
+      showPostFailedSnackbar.value = false;
+      postPopup.value = true;
+    }, 3000);
   }
 };
 
-const searchUsers = async () => {
+const submitStory = async () => {
+  if (!storyFile.value && !storyDescription.value) {
+    alert('Please upload a file or add a description!');
+    return;
+  }
+  const formData = new FormData();
+  formData.append('description', storyDescription.value);
+  formData.append('id_user', user.value.id);
+  formData.append('publish_date', new Date().toISOString());
+  if (storyFile.value) formData.append('file', storyFile.value);
+  try {
+    await axios.post('/api/stories', formData, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' },
+    });
+    storyPopup.value = false;
+    showPostSuccessSnackbar.value = true;
+    setTimeout(() => {
+      showPostSuccessSnackbar.value = false;
+      storyDescription.value = '';
+      storyFile.value = null;
+      router.push('/home');
+    }, 3000);
+  } catch (error) {
+    console.error('Failed to create story:', error);
+    storyPopup.value = false;
+    showPostFailedSnackbar.value = true;
+    setTimeout(() => {
+      showPostFailedSnackbar.value = false;
+      storyPopup.value = true;
+    }, 3000);
+  }
+};
+
+const debouncedSearchUsers = debounce(async () => {
   if (!searchQuery.value.trim()) {
     searchResults.value = [];
     showSearchResults.value = false;
     return;
   }
+  isSearching.value = true; // Activar "Searching..." antes de la solicitud
   try {
     const response = await axios.get('/api/search/users', { params: { username: searchQuery.value } });
     searchResults.value = response.data.data || [];
@@ -359,11 +386,13 @@ const searchUsers = async () => {
     console.error('Error searching users:', error);
     searchResults.value = [];
     showSearchResults.value = true;
+  } finally {
+    isSearching.value = false; // Desactivar "Searching..." cuando termine
   }
-};
+}, 300);
 
 const getSearchResultPhotoUrl = (result) => {
-  if (result.profile_photo_url) return result.profile_photo_url; // Si el backend lo proporciona
+  if (result.profile_photo_url) return result.profile_photo_url;
   if (result.profile_photo_path) {
     return result.profile_photo_path.startsWith('http')
       ? result.profile_photo_path
@@ -392,7 +421,7 @@ const updateNotifications = (updatedNotifications) => {
 };
 
 const getProfilePhotoUrl = computed(() => {
-  if (!user.value) return generateAvatar('User'); // Caso inicial mientras carga
+  if (!user.value) return generateAvatar('User');
   if (user.value.profile_photo_path) {
     return user.value.profile_photo_path.startsWith('http')
       ? user.value.profile_photo_path
@@ -403,47 +432,51 @@ const getProfilePhotoUrl = computed(() => {
 
 const hasNotifications = computed(() => notifications.value.length > 0);
 
-const updateSearchResultsPosition = () => {
-  if (searchContainer.value) {
-    const rect = searchContainer.value.getBoundingClientRect();
-    searchResultsStyle.value = {
-      position: 'fixed',
-      top: `${rect.bottom + window.scrollY}px`,
-      left: `${rect.left + window.scrollX}px`,
-      width: `${rect.width}px`,
-      backgroundColor: '#1f2937',
-      borderRadius: '0 0 8px 8px',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-      zIndex: '10000',
-      maxHeight: '15rem',
-      overflowY: 'auto',
-      borderTop: '1px solid #374151',
-    };
-  }
-};
-
 const handleBlur = () => {
   setTimeout(() => {
     if (!document.activeElement.closest('.search-results')) {
-      showSearchResults.value = false;
+      if (!searchQuery.value.trim()) {
+        searchResults.value = [];
+        showSearchResults.value = false;
+      }
     }
   }, 200);
 };
 
-const preventBlur = (event) => {
-  event.preventDefault();
+const handleFocus = () => {
+  showSearchResults.value = true;
+  if (searchQuery.value.trim() && searchResults.value.length === 0 && !isSearching.value) {
+    debouncedSearchUsers(); // Iniciar búsqueda si hay texto y no hay resultados
+  }
+};
+
+const updateSearchResultsPosition = () => {
+  if (searchContainer.value) {
+    const rect = searchContainer.value.getBoundingClientRect();
+    searchResultsStyle.value = {
+      top: `${rect.bottom}px`,
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+    };
+  }
 };
 
 watch(showSearchResults, (newValue) => {
   if (newValue) {
     nextTick(() => updateSearchResultsPosition());
+    window.addEventListener('scroll', updateSearchResultsPosition);
+    window.addEventListener('resize', updateSearchResultsPosition);
+  } else {
+    if (!searchQuery.value.trim()) {
+      searchResults.value = []; // Limpiar solo si no hay texto
+    }
+    window.removeEventListener('scroll', updateSearchResultsPosition);
+    window.removeEventListener('resize', updateSearchResultsPosition);
   }
 });
 
-watch(searchQuery, () => {
-  if (searchQuery.value.trim()) {
-    setTimeout(() => searchUsers(), 300);
-  } else {
+watch(searchQuery, (newValue) => {
+  if (!newValue.trim()) {
     searchResults.value = [];
     showSearchResults.value = false;
   }
@@ -451,57 +484,34 @@ watch(searchQuery, () => {
 
 onMounted(() => {
   fetchUser();
-  window.addEventListener('resize', updateSearchResultsPosition);
-  window.addEventListener('scroll', updateSearchResultsPosition);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', updateSearchResultsPosition);
   window.removeEventListener('scroll', updateSearchResultsPosition);
-  showPostSuccessSnackbar.value = false; // Ensure success snackbar is closed on unmount
-  showPostFailedSnackbar.value = false; // Ensure failed snackbar is closed on unmount
+  window.removeEventListener('resize', updateSearchResultsPosition);
+  showPostSuccessSnackbar.value = false;
+  showPostFailedSnackbar.value = false;
 });
 
-watch([menu, showNotifications], ([newMenu, newShowNotifications]) => {
-  if (newMenu && newShowNotifications) {
-    showNotifications.value = false;
-  }
-});
-
-// Watch route changes to ensure success snackbar closes
-watch(() => router.currentRoute.value.path, (newPath) => {
-  if (showPostSuccessSnackbar.value && newPath === '/home') {
-    showPostSuccessSnackbar.value = false;
-  }
-});
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
 </script>
 
-
 <style scoped>
-
-.dialog-text p {
-  margin-bottom: 1rem;
+/* Ensure the overlay doesn't interfere with other elements */
+.fixed.inset-0 {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
-
-.dialog-text strong {
-  color: #2563eb;
-}
-
-.custom-snackbar {
-  z-index: 10000; /* Ensure it appears above the navbar */
-  margin-bottom: 16px; /* Reduced offset from the bottom for better visibility */
-  margin-right: 200px; /* Offset from the right edge to prevent clipping */
-  position: fixed; /* Ensure fixed positioning */
-  bottom: 0; /* Stick to the bottom */
-  right: 0; /* Stick to the right */
-  left: auto; /* Prevent centering */
-  transform: none; /* Override any default transform that centers it */
-  max-width: calc(100% - 32px); /* Ensure it doesn't exceed viewport width minus margins */
-}
-
-/* Ensure white text for snackbars */
-.white--text {
-  color: white !important;
-}
-
 </style>
