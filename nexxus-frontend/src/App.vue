@@ -3,7 +3,3 @@
     <RouterView />
   </v-app>
 </template>
-
-<script setup>
-
-</script>

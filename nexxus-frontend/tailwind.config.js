@@ -5,8 +5,11 @@ export default {
     "./src/**/*.{vue,js,ts,jsx,tsx}",
 
   ],
+  darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {
+      opacity: ['group-hover'],
+    },
   },
   plugins: [],
 }

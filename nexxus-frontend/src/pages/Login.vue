@@ -12,12 +12,34 @@
 
         <button type="submit">Login</button>
       </form>
-      <p v-if="error" style="color: red">{{ error }}</p>
       <p>
         You don't have an account?
         <router-link to="/register">Register here</router-link>
       </p>
     </div>
+
+    <!-- Success Snackbar -->
+    <v-snackbar
+      v-model="showSuccessSnackbar"
+      :timeout="3000"
+      color="black"
+      class="white--text custom-snackbar"
+    >
+      <v-icon color="green" class="mr-2">mdi-check-circle</v-icon>
+      Signed in successfully!
+    </v-snackbar>
+
+    <!-- Error Snackbar -->
+    <v-snackbar
+      v-model="showErrorSnackbar"
+      :timeout="3000"
+      color="black"
+      class="white--text custom-snackbar"
+    >
+      <v-icon color="red" class="mr-2">mdi-alert-circle</v-icon>
+      {{ error }}
+    </v-snackbar>
+
     <div class="icons">
       <i class="icon network-icon"></i>
       <i class="icon profile-icon"></i>
@@ -26,7 +48,6 @@
 </template>
 
 <script>
-
 import apiClient from '../axios.js';
 
 export default {
@@ -36,7 +57,9 @@ export default {
       password: '',
       deviceName: 'web',
       error: null,
-    }
+      showSuccessSnackbar: false, // Controls success snackbar visibility
+      showErrorSnackbar: false,   // Controls error snackbar visibility
+    };
   },
   methods: {
     async login() {
@@ -46,36 +69,28 @@ export default {
           password: this.password,
           device_name: this.deviceName,
         });
+
         localStorage.setItem('token', response.data.token);
         this.error = null;
-        alert('Login successfully!');
-        this.$router.push('/home');
+        this.showSuccessSnackbar = true; // Show success snackbar
+
+        // Automatically redirect after 3 seconds
+        setTimeout(() => {
+          this.showSuccessSnackbar = false;
+          this.$router.push('/home');
+        }, 3000);
       } catch (err) {
-        this.error = 'Login failed. Please check your credentials.'
+        this.error = 'Login failed. Please check your credentials.';
+        this.showErrorSnackbar = true; // Show error snackbar
+
+        // Automatically hide error snackbar after 3 seconds
+        setTimeout(() => {
+          this.showErrorSnackbar = false;
+        }, 3000);
       }
     },
   },
-}
-
-
-//export default {
-//  data() {
-//    return {
-//      username: "",
-//      password: "",
-//   };
-//  },
-//  methods: {
-//    register() {
-//      // Handle registration logic
-//      console.log("Registering with:", this.username, this.password);
-//    },
-//    navigateToLogin() {
-//      // Redirect to login page
-//      console.log("Navigating to login page");
-//    },
-//  },
-//};
+};
 </script>
 
 <style scoped>
@@ -85,7 +100,7 @@ export default {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #f9f9f9;
+  background-color: #f0f2f5; /* Updated background color */
   border: 5px solid #ccc;
   border-radius: 10px;
   position: relative;
@@ -94,60 +109,62 @@ export default {
 
 .login-box {
   text-align: center;
-  background: #7f7f7f;
-  padding: 2rem;
-  border-radius: 10px;
+  background: #ffffff; /* Updated container background color */
+  padding: 3rem;
+  border-radius: 24px; /* Updated border radius */
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  width: 90%;
-  max-width: 400px;
+  width: 100%;
+  max-width: 800px; /* Updated max-width */
 }
 
 .logo {
-  width: 50px;
-  height: 50px;
-  margin-bottom: 1rem;
+  width: 60px; /* Slightly larger logo */
+  height: 60px;
+  margin-bottom: 1.5rem;
   display: block;
   margin-left: auto;
   margin-right: auto;
 }
 
 h1 {
-  font-size: 1.5rem;
+  font-size: 2rem; /* Larger font size for the heading */
   font-weight: bold;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   color: black;
 }
 
 form {
   display: flex;
   flex-direction: column;
-  background-color: ;
 }
 
 label {
   font-weight: bold;
-  margin-top: 1rem;
+  margin-top: 1.5rem; /* Increased spacing */
   margin-bottom: 0.5rem;
 }
 
 input {
-  padding: 0.5rem;
+  padding: 0.75rem; /* Increased padding for larger inputs */
   border: 1px solid #ccc;
   border-radius: 5px;
-  font-size: 1rem;
+  font-size: 1.1rem; /* Slightly larger font size */
+  color: black; /* Text color when typing */
 }
+
 input::placeholder {
-  color: white; /* Set placeholder text color to white */
+  color: black; /* Placeholder text color */
 }
+
 button {
-  margin-top: 1rem;
-  padding: 0.7rem;
+  margin-top: 1.5rem; /* Increased spacing */
+  padding: 0.9rem; /* Larger button */
   background-color: #555;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.1rem; /* Slightly larger font size */
 }
 
 button:hover {
@@ -155,8 +172,8 @@ button:hover {
 }
 
 p {
-  margin-top: 1rem;
-  font-size: 0.9rem;
+  margin-top: 1.5rem; /* Increased spacing */
+  font-size: 1rem; /* Slightly larger font size */
 }
 
 a {
@@ -189,5 +206,22 @@ a:hover {
   background: url("/profile-icon.png") no-repeat center;
   width: 24px;
   height: 24px;
+}
+
+.custom-snackbar {
+  z-index: 10000; /* Ensure it appears above other elements */
+  margin-bottom: 16px; /* Offset from the bottom */
+  margin-right: 200px; /* Offset from the right edge */
+  position: fixed; /* Fixed positioning */
+  bottom: 0; /* Stick to the bottom */
+  right: 0; /* Stick to the right */
+  left: auto; /* Prevent centering */
+  transform: none; /* Override any default transform */
+  max-width: calc(100% - 32px); /* Ensure it doesn't exceed viewport width */
+}
+
+/* Ensure white text for snackbars */
+.white--text {
+  color: white !important;
 }
 </style>

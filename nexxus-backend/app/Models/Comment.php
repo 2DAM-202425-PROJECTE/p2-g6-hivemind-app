@@ -3,40 +3,38 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Comment extends Model
 {
-    protected $table = 'comment';
+    use HasFactory;
+
+    protected $table = 'comments';
+    protected $primaryKey = 'id';
 
     protected $fillable = [
-        'id_post',
-        'id_user',
-        'comment_text',
-        'comment_date',
+        'post_id', 
+        'user_id', 
+        'content'
     ];
 
     public function post()
     {
-        return $this->belongsTo(Post::class, 'id_post');
+        return $this->belongsTo(Post::class, 'post_id');
     }
-
+    
     public function user()
     {
-        return $this->belongsTo(User::class, 'id_user');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function getCommentTextAttribute($value)
+    public function getContentAttribute($value)
     {
         return ucfirst($value);
     }
 
-    public function getCommentDateAttribute($value)
+    public function getCreatedAtAttribute($value)
     {
         return \Carbon\Carbon::parse($value)->format('d-m-Y');
-    }
-
-    public function setCommentDateAttribute($value)
-    {
-        $this->attributes['comment_date'] = \Carbon\Carbon::parse($value)->format('Y-m-d');
     }
 }

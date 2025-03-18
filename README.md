@@ -1,38 +1,95 @@
-# HiveMind Social Network
+# HiveMind
 
-## Scripts de desarrollo
+## Índex
 
-Estos scripts están configurados para facilitar la gestión de los entornos de desarrollo del proyecto. Los siguientes scripts se encuentran en el archivo `package.json` del **frontend**.
+- [Introducció](#introducció)
+- [Requisits previs](#requisits-previs)
+- [Guia d'instal·lació](#guia-dinstallacio)
+- [Ús](#ús)
+- [Autors](#autors)
 
-### Scripts disponibles
+## Introducció
 
-- **`npm run dev`**: Inicia el servidor de desarrollo de Vite para el frontend.
-- **`npm run all`**: Ejecuta los scripts `start-frontend` y `start-backend` de manera paralela. Este script está definido en el archivo `package.json` del **frontend**.
-- **`npm run start-frontend`**: Instala las dependencias del frontend (si no están instaladas) e inicia el servidor de Vite para el frontend.
-- **`npm run start-backend`**: Entra en la carpeta del backend (`nexxus-backend`), instala las dependencias (si no están instaladas) e inicia el servidor de backend con `php artisan serve`.
+HiveMind és una xarxa social moderna i dinàmica dissenyada per fomentar la interacció i la connexió entre usuaris. L'aplicació ofereix múltiples funcionalitats, permetent als usuaris crear comunitats, mantenir converses privades, compartir històries i publicar contingut multimèdia de manera senzilla i atractiva. Amb una interfície intuïtiva i una experiència d'usuari fluida, HiveMind té com a objectiu proporcionar un espai interactiu i enriquidor per a la comunicació digital.
 
----
+## Requisits previs
 
-## Scripts de desenvolupament
+- PHP 8.2 o superior  
+- Composer  
+- Node.js 18 o superior  
+- npm o yarn  
+- Base de dades MySQL o PostgreSQL  
 
-Aquests scripts estan configurats per a facilitar la gestió dels entorns de desenvolupament del projecte. Els següents scripts es troben en el fitxer `package.json` del **frontend**.
+## Guia d'instal·lacio
 
-### Scripts disponibles
+Per instal·lar el projecte, segueix aquests passos:
 
-- **`npm run dev`**: Inicia el servidor de desenvolupament de Vite per al frontend.
-- **`npm run all`**: Executa els scripts `start-frontend` i `start-backend` de manera paral·lela. Aquest script està definit en el fitxer `package.json` del **frontend**.
-- **`npm run start-frontend`**: Instal·la les dependències del frontend (si no estan instal·lades) i inicia el servidor de Vite per al frontend.
-- **`npm run start-backend`**: Entra a la carpeta del backend (`nexxus-backend`), instal·la les dependències (si no estan instal·lades) i inicia el servidor de backend amb `php artisan serve`.
+### Clonar el repositori
 
----
+```sh
+git clone https://github.com/2DAM-202425-PROJECTE/p2-g6-hivemind-app.git
+cd p2-g6-hivemind-app
+```
 
-## Development scripts
+### Executar el script d'inici
 
-These scripts are configured to simplify the management of the project’s development environments. The following scripts are defined in the `package.json` file of the **frontend**.
+L'script `start.sh` permet gestionar diverses opcions per configurar i executar el projecte. Pots executar-lo amb diferents paràmetres:
 
-### Available scripts
+```sh
+./start.sh [opcions]
+```
 
-- **`npm run dev`**: Starts the Vite development server for the frontend.
-- **`npm run all`**: Runs the `start-frontend` and `start-backend` scripts in parallel. This script is defined in the `package.json` file of the **frontend**.
-- **`npm run start-frontend`**: Installs the frontend dependencies (if not already installed) and starts the Vite server for the frontend.
-- **`npm run start-backend`**: Navigates to the `nexxus-backend` folder, installs the dependencies (if not already installed), and starts the backend server using `php artisan serve`.
+### Opcions disponibles
+
+| Opció            | Descripció                      |
+|-----------------|--------------------------------|
+| `--reset`       | Restableix la base de dades    |
+| `--migrations`  | Executa les migracions        |
+| `--seeders`     | Executa els seeders           |
+| `--skip-workers` | No inicia els workers        |
+| `--only-backend` | Inicia només el backend      |
+| `--only-frontend` | Inicia només el frontend    |
+| `--help`        | Mostra l'ajuda               |
+
+### Exemple d'ús
+
+Per iniciar el projecte amb la base de dades neta i executar les migracions:
+
+```sh
+./start.sh --reset
+```
+
+Per iniciar només el frontend:
+
+```sh
+./start.sh --only-frontend
+```
+
+## Ús
+
+Després d'iniciar el projecte, podràs accedir a la plataforma des del teu navegador:
+
+- **Frontend:** [http://localhost:3000](http://localhost:3000)  
+- **Backend:** [http://localhost:8000/admin](http://localhost:8000/admin)  
+
+Si s'han executat els seeders, es poden utilitzar els següents usuaris per accedir:
+
+| Nom           | Correu electrònic | Contrasenya     |
+|---------------|-------------------|-----------------|
+| Admin	        | admin@example.com	| admin           |
+| User	        | user@example.com	| user            |
+
+## Arreglar la mida per els fitxers de video en PHP
+Anem a  ```/etc/php/8.3/cli/php.ini```
+
+Modifiquem:
+- ``` upload_max_filesize = 100M ```
+- ``` post_max_size = 100M ``` 
+
+
+## Autors
+
+- **Radostin Valeriev Ivanov** - Backend Developer
+- **Manel Méndez Alcántara** - Frontend Architect
+- **Harry White** - UI/UX & Frontend Developer 
+- **Gerard Moreno Campos** - Backend Architect

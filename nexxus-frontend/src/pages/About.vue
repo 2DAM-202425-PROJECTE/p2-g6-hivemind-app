@@ -1,7 +1,7 @@
 <template>
   <div class="about-container">
     <Navbar />
-    <h1>About Nexxus by Hivemind</h1>
+    <h1>About Hivemind by Nexxus</h1>
     <div class="about-content">
       <h2>Project Overview</h2>
       <p>
@@ -80,7 +80,7 @@ import Footer from '@/components/AppFooter.vue';
   padding: 20px;
   padding-top: 90px;
   padding-bottom: 90px;
-  background-color: white;
+  background-color: #f0f2f5; /* Updated background color */
   min-height: 100vh;
   color: black;
 }
@@ -93,7 +93,7 @@ h1 {
 .about-content {
   max-width: 800px;
   margin: 0 auto;
-  background: #f0f0f0;
+  background: #ffffff; /* Updated content background color */
   border: 1px solid #d3d3d3;
   border-radius: 10px;
   padding: 20px;

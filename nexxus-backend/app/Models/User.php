@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -11,35 +10,28 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Jetstream\HasTeams;
 use Laravel\Sanctum\HasApiTokens;
+use Laravolt\Avatar\Facade as Avatar;
 
 class User extends Authenticatable
 {
     use CrudTrait;
     use HasApiTokens;
-
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory;
     use HasProfilePhoto;
     use HasTeams;
     use Notifiable;
     use TwoFactorAuthenticatable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
+        'username',
+        'description',
         'email',
         'password',
+        'profile_photo_path',
+        'banner_photo_path',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
@@ -47,20 +39,10 @@ class User extends Authenticatable
         'two_factor_secret',
     ];
 
-    /**
-     * The accessors to append to the model's array form.
-     *
-     * @var array<int, string>
-     */
     protected $appends = [
         'profile_photo_url',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -72,5 +54,52 @@ class User extends Authenticatable
     public function likes()
     {
         return $this->hasMany(Like::class);
+    }
+
+    public function posts()
+    {
+        return $this->hasMany(Post::class, 'id_user');
+    }
+
+    /**
+     * Sobrescribir el método por defecto de Jetstream para usar laravolt/avatar
+     */
+    protected function defaultProfilePhotoUrl()
+    {
+        return Avatar::create($this->name)->toBase64();
+    }
+
+    /**
+     * Obtener la URL de la foto de perfil
+     */
+    public function getProfilePhotoUrlAttribute()
+    {
+        if ($this->profile_photo_path) {
+            return asset('storage/' . $this->profile_photo_path);
+        }
+        return $this->defaultProfilePhotoUrl();
+    }
+
+    public function getBannerPhotoPathAttribute($value)
+    {
+        return $value ? asset('storage/' . $value) : null;
+    }
+
+    /**
+     * Obtener las iniciales del nombre (opcional, si lo necesitas en otro lugar)
+     */
+    protected function getInitials()
+    {
+        $words = explode(' ', trim($this->name));
+        $initials = '';
+
+        if (count($words) >= 1) {
+            $initials .= strtoupper(substr($words[0], 0, 1));
+        }
+        if (count($words) >= 2) {
+            $initials .= strtoupper(substr($words[count($words) - 1], 0, 1));
+        }
+
+        return $initials ?: 'U';
     }
 }

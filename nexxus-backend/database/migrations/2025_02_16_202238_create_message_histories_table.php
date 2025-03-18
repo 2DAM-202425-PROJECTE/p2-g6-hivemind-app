@@ -18,6 +18,7 @@ return new class extends Migration
             $table->text('old_content'); // Contenido antes de la edición/eliminación
             $table->enum('action', ['edited', 'deleted']); // Tipo de acción
             $table->timestamp('changed_at')->useCurrent(); // Fecha de la modificación
+            $table->timestamps();
         });
 
     }

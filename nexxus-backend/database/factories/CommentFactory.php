@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Comment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -12,15 +13,17 @@ class CommentFactory extends Factory
     /**
      * Define the model's default state.
      *
-     * @return array<string, mixed>
+     * @return array<string, mixed> 
      */
+    
+    protected $model = Comment::class;
+
     public function definition(): array
     {
         return [
-            'id_post' => $this->faker->numberBetween(1, 100),
-            'id_user' => $this->faker->numberBetween(1, 100),
-            'comment_text' => $this->faker->sentence,
-            'comment_date' => $this->faker->date(),
+            'post_id' => $this->faker->numberBetween(1, 100),
+            'user_id' => $this->faker->numberBetween(1, 100),
+            'content' => $this->faker->sentence,
         ];
     }
 }
