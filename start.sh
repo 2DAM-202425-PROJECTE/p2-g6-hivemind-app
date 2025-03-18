@@ -82,9 +82,10 @@ cd "$SCRIPT_DIR"
 
 # Check and install PHP extensions (for Debian/Ubuntu)
 echo -e "${YELLOW}🔍 Checking required PHP extensions...${NC}"
-PHP_EXTENSIONS=("gd" "curl" "json" "mbstring" "openssl" "pdo" "tokenizer" "xml" "mysql")
+PHP_EXTENSIONS=("gd" "curl" "json" "mbstring" "openssl" "pdo" "tokenizer" "xml" "pdo_mysql")
 for ext in "${PHP_EXTENSIONS[@]}"; do
-  if ! php -m | grep -q "^$ext$"; then
+  # Verificar si la extensión está habilitada
+  if ! php -r "exit(extension_loaded('$ext') ? 0 : 1);" > /dev/null 2>&1; then
     echo -e "${YELLOW}Installing php-$ext...${NC}"
     sudo apt-get update -y &> /dev/null
     sudo apt-get install -y "php-$ext" &> /dev/null
