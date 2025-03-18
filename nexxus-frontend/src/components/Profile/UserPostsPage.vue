@@ -1,7 +1,7 @@
 <template>
   <div class="user-posts-container">
     <Navbar />
-    <h1>{{ user.name || 'User' }}'s Posts</h1>
+    <h1>{{ user.name || 'Unknown User' }}'s Posts</h1>
     <div class="posts-and-comments">
       <div class="posts-column">
         <div v-if="userPosts.length === 0" class="no-posts">
