@@ -217,6 +217,30 @@
     Post Creation Failed - Retrying in a moment...
   </v-snackbar>
 
+  <v-snackbar
+    v-model="showStorySuccessSnackbar"
+    :timeout="3000"
+    color="black"
+    class="white--text"
+    bottom
+    right
+  >
+    <v-icon color="green" class="mr-2">mdi-check-circle</v-icon>
+    Story Created Successfully!
+  </v-snackbar>
+
+  <v-snackbar
+    v-model="showStoryFailedSnackbar"
+    :timeout="3000"
+    color="black"
+    class="white--text"
+    bottom
+    right
+  >
+    <v-icon color="red" class="mr-2">mdi-alert-circle</v-icon>
+    Story Creation Failed - Retrying in a moment...
+  </v-snackbar>
+
   <NotificationsModal
     :visible="showNotifications"
     :notifications="notifications"
@@ -250,9 +274,11 @@ const searchResults = ref([]);
 const showSearchResults = ref(false);
 const showPostSuccessSnackbar = ref(false);
 const showPostFailedSnackbar = ref(false);
+const showStorySuccessSnackbar = ref(false); // Added for story success
+const showStoryFailedSnackbar = ref(false);  // Added for story failure
 const searchContainer = ref(null);
 const searchResultsStyle = ref({});
-const isSearching = ref(false); // State for "Searching..."
+const isSearching = ref(false);
 
 const notifications = ref([
   { id: 1, message: 'New notification' },
@@ -353,9 +379,9 @@ const submitStory = async () => {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' },
     });
     storyPopup.value = false;
-    showPostSuccessSnackbar.value = true;
+    showStorySuccessSnackbar.value = true; // Use story-specific success snackbar
     setTimeout(() => {
-      showPostSuccessSnackbar.value = false;
+      showStorySuccessSnackbar.value = false;
       storyDescription.value = '';
       storyFile.value = null;
       router.push('/home');
@@ -363,9 +389,9 @@ const submitStory = async () => {
   } catch (error) {
     console.error('Failed to create story:', error);
     storyPopup.value = false;
-    showPostFailedSnackbar.value = true;
+    showStoryFailedSnackbar.value = true; // Use story-specific failure snackbar
     setTimeout(() => {
-      showPostFailedSnackbar.value = false;
+      showStoryFailedSnackbar.value = false;
       storyPopup.value = true;
     }, 3000);
   }
@@ -377,7 +403,7 @@ const debouncedSearchUsers = debounce(async () => {
     showSearchResults.value = false;
     return;
   }
-  isSearching.value = true; // Activar "Searching..." antes de la solicitud
+  isSearching.value = true;
   try {
     const response = await axios.get('/api/search/users', { params: { username: searchQuery.value } });
     searchResults.value = response.data.data || [];
@@ -387,7 +413,7 @@ const debouncedSearchUsers = debounce(async () => {
     searchResults.value = [];
     showSearchResults.value = true;
   } finally {
-    isSearching.value = false; // Desactivar "Searching..." cuando termine
+    isSearching.value = false;
   }
 }, 300);
 
@@ -446,7 +472,7 @@ const handleBlur = () => {
 const handleFocus = () => {
   showSearchResults.value = true;
   if (searchQuery.value.trim() && searchResults.value.length === 0 && !isSearching.value) {
-    debouncedSearchUsers(); // Iniciar búsqueda si hay texto y no hay resultados
+    debouncedSearchUsers();
   }
 };
 
@@ -468,7 +494,7 @@ watch(showSearchResults, (newValue) => {
     window.addEventListener('resize', updateSearchResultsPosition);
   } else {
     if (!searchQuery.value.trim()) {
-      searchResults.value = []; // Limpiar solo si no hay texto
+      searchResults.value = [];
     }
     window.removeEventListener('scroll', updateSearchResultsPosition);
     window.removeEventListener('resize', updateSearchResultsPosition);
@@ -491,6 +517,8 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateSearchResultsPosition);
   showPostSuccessSnackbar.value = false;
   showPostFailedSnackbar.value = false;
+  showStorySuccessSnackbar.value = false; // Cleanup story snackbars
+  showStoryFailedSnackbar.value = false;
 });
 
 function debounce(func, wait) {
@@ -507,7 +535,6 @@ function debounce(func, wait) {
 </script>
 
 <style scoped>
-/* Ensure the overlay doesn't interfere with other elements */
 .fixed.inset-0 {
   top: 0;
   left: 0;
