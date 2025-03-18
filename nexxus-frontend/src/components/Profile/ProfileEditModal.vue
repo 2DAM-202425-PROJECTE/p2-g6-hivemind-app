@@ -7,7 +7,7 @@
       <div class="relative w-full h-40 bg-gray-200 rounded-lg mb-6 overflow-hidden banner-container">
         <img
           v-if="bannerPreview || editedUser.banner_photo_path"
-          :src="bannerPreview || getImageUrl(editedUser.banner_photo_path)"
+          :src="bannerPreview || editedUser.banner_photo_path"
           alt="Profile Banner"
           class="w-full h-full object-cover transition duration-300 banner-image"
         />
