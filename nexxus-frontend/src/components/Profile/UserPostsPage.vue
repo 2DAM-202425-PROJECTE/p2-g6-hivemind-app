@@ -1,60 +1,69 @@
 <template>
   <div class="user-posts-container">
     <Navbar />
-    <h1>{{ user.name || 'User' }}'s Posts</h1>
+    <h1>{{ user.name || 'User' }}'s Post</h1>
     <div class="posts-and-comments">
       <div class="posts-column">
-        <div v-if="userPosts.length === 0" class="no-posts">
-          <p>No posts available</p>
+        <div v-if="!selectedPost" class="no-posts">
+          <p>No post available</p>
         </div>
-        <div v-else v-for="post in userPosts" :key="post.id" :id="`post-${post.id}`" class="post-card">
+        <div v-else :id="`post-${selectedPost.id}`" class="post-card">
           <div class="post-header">
-            <img :src="getProfilePhotoByUsername(post.username)" class="profile-pic" alt="Profile" />
+            <img :src="getProfilePhotoByUsername(selectedPost.username)" class="profile-pic" alt="Profile" />
             <div class="post-info">
-              <strong>{{ getUserNameByUsername(post.username) }}</strong>
-              <h5>{{ post.description || 'No description' }}</h5>
-              <template v-if="post.file_path && post.file_path.includes('.mp4')">
-                <video :src="getImageUrl(post.file_path)" alt="Post Video" class="post-content" controls />
+              <strong>{{ getUserNameByUsername(selectedPost.username) }}</strong>
+              <h5>{{ selectedPost.description || 'No description' }}</h5>
+              <template v-if="selectedPost.file_path && selectedPost.file_path.includes('.mp4')">
+                <video :src="getImageUrl(selectedPost.file_path)" alt="Post Video" class="post-content" controls />
               </template>
-              <template v-else-if="post.file_path">
-                <img :src="getImageUrl(post.file_path)" alt="Post Image" class="post-content" />
+              <template v-else-if="selectedPost.file_path">
+                <img :src="getImageUrl(selectedPost.file_path)" alt="Post Image" class="post-content" />
               </template>
               <template v-else>
                 <p>No media available</p>
               </template>
             </div>
             <div class="post-menu">
-              <button @click.stop="togglePostMenu(post.id)">
+              <button @click.stop="togglePostMenu(selectedPost.id)">
                 <i class="mdi mdi-dots-vertical"></i>
               </button>
-              <div v-if="postMenuVisible === post.id" class="dropdown-menu">
+              <div v-if="postMenuVisible === selectedPost.id" class="dropdown-menu">
                 <ul>
-                  <li v-show="isPostFromUser(post)" @click.stop="editPost(post)">Edit</li>
-                  <li v-show="isPostFromUser(post)" @click.stop="deletePost(post.id)" :disabled="isDeleting">Delete</li>
-                  <li @click.stop="reportPost(post)">Report</li>
+                  <li v-show="isPostFromUser(selectedPost)" @click.stop="editPost(selectedPost)">Edit</li>
+                  <li v-show="isPostFromUser(selectedPost)" @click.stop="deletePost(selectedPost.id)" :disabled="isDeleting">Delete</li>
+                  <li @click.stop="reportPost(selectedPost)">Report</li>
                 </ul>
               </div>
             </div>
           </div>
           <div class="post-actions">
-            <div class="action-item" @click.stop="toggleLike(post)">
-              <i class="mdi" :class="post.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
-              <span>{{ post.likes_count || 0 }} Likes</span>
+            <div class="action-item" @click.stop="toggleLike(selectedPost)">
+              <i class="mdi" :class="selectedPost.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
+              <span>{{ selectedPost.likes_count }} Likes</span>
             </div>
-            <div class="action-item" @click.stop="openCommentModal(post)">
-              <i class="mdi mdi-comment-outline"></i>
-              <span>{{ post.comments ? post.comments.length : 0 }} Comments</span>
-            </div>
-            <div class="action-item" @click.stop="sharePost(post)">
+            <div class="action-item" @click.stop="sharePost(selectedPost)">
               <i class="mdi mdi-share-outline"></i>
               <span>{{ shares }} Shares</span>
             </div>
           </div>
+          <!-- Comment Section -->
+          <div class="comments-section">
+            <h3>Comments</h3>
+            <div v-if="comments.length === 0" class="no-comments">
+              <p>No comments yet</p>
+            </div>
+            <div v-else class="comments-list">
+              <div v-for="comment in comments" :key="comment.id" class="comment">
+                <strong>{{ comment.user?.name || 'Unknown User' }}</strong>
+                <p>{{ comment.content }}</p>
+              </div>
+            </div>
+            <div class="comment-input">
+              <input v-model="newComment" placeholder="Add a comment..." @keyup.enter="addComment" />
+              <button @click="addComment">Post</button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="comments-column" v-if="selectedPost">
-        <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal"
-                      :currentUser="currentUser" @add-comment="addComment" :post="selectedPost" />
       </div>
     </div>
     <Footer />
@@ -66,17 +75,15 @@ import { ref, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
-import CommentModal from '@/components/CommentModal.vue';
 import axios from 'axios';
 
 const route = useRoute();
 const router = useRouter();
 const username = route.params.username;
 const user = ref({});
-const userPosts = ref([]);
-const isCommentModalVisible = ref(false);
-const selectedPostComments = ref([]);
 const selectedPost = ref(null);
+const comments = ref([]);
+const newComment = ref('');
 const isDeleting = ref(false);
 const postMenuVisible = ref(null);
 const currentUser = ref({});
@@ -93,22 +100,34 @@ onMounted(async () => {
       return;
     }
 
-    // Fetch user data by username to get the user ID
+    // Fetch user data by username
     console.log('Fetching user data for username:', username);
     const userResult = await axios.get(`${API_BASE_URL}/api/user/${username}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     console.log('User data:', userResult.data);
-    user.value = userResult.data;
+    user.value = userResult.data.user;
 
-    // Fetch posts using the user’s ID
-    const userId = userResult.data.id;
-    console.log('Fetching posts for user ID:', userId);
-    const postsResult = await axios.get(`${API_BASE_URL}/api/users/${userId}/posts`, {
+    // Fetch the specific post using postId from query
+    const postId = route.query.postId;
+    if (!postId) {
+      console.error('No postId provided in query');
+      return;
+    }
+    console.log('Fetching post with ID:', postId);
+    const postResult = await axios.get(`${API_BASE_URL}/api/posts/${postId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    console.log('Posts data:', postsResult.data);
-    userPosts.value = postsResult.data || [];
+    console.log('Post data:', postResult.data);
+    selectedPost.value = postResult.data.data; // Includes likes_count and liked_by_user
+
+    // Fetch comments for the post
+    console.log('Fetching comments for post ID:', postId);
+    const commentsResult = await axios.get(`${API_BASE_URL}/api/posts/${postId}/comments`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    console.log('Comments data:', commentsResult.data);
+    comments.value = commentsResult.data || [];
 
     // Fetch current authenticated user
     console.log('Fetching current user');
@@ -118,23 +137,20 @@ onMounted(async () => {
     console.log('Current user data:', currentUserResult.data);
     currentUser.value = currentUserResult.data;
 
-    // Scroll to specific post if postId is in query
-    const postId = route.query.postId;
-    if (postId) {
-      await nextTick();
-      const postElement = document.getElementById(`post-${postId}`);
-      if (postElement) {
-        postElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        postElement.classList.add('highlight');
-        setTimeout(() => postElement.classList.remove('highlight'), 2000);
-      } else {
-        console.warn(`Post element with ID post-${postId} not found`);
-      }
+    // Scroll to the post
+    await nextTick();
+    const postElement = document.getElementById(`post-${postId}`);
+    if (postElement) {
+      postElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      postElement.classList.add('highlight');
+      setTimeout(() => postElement.classList.remove('highlight'), 2000);
+    } else {
+      console.warn(`Post element with ID post-${postId} not found`);
     }
   } catch (error) {
-    console.error('Error fetching user posts:', error.response?.data || error.message);
+    console.error('Error fetching post or comments:', error.response?.data || error.message);
     console.error('Failed request:', error.config);
-    userPosts.value = [];
+    selectedPost.value = null;
   }
 });
 
@@ -147,56 +163,42 @@ const toggleLike = async (post) => {
   try {
     const token = localStorage.getItem('token');
     if (post.liked_by_user) {
+      // Unlike the post
       await axios.delete(`${API_BASE_URL}/api/posts/${post.id}/like`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       post.liked_by_user = false;
-      post.likes_count = (post.likes_count || 0) - 1;
+      post.likes_count -= 1;
     } else {
-      await axios.post(`${API_BASE_URL}/api/posts/${post.id}/like`, {}, {
+      // Like the post
+      const response = await axios.post(`${API_BASE_URL}/api/posts/${post.id}/like`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       post.liked_by_user = true;
-      post.likes_count = (post.likes_count || 0) + 1;
+      post.likes_count += 1;
     }
   } catch (error) {
-    console.error('Error toggling like:', error);
-  }
-};
-
-const openCommentModal = async (post) => {
-  try {
-    const token = localStorage.getItem('token');
-    // Use the new /api/posts/{id} endpoint to fetch detailed post data
-    const response = await axios.get(`${API_BASE_URL}/api/posts/${post.id}`, {
+    console.error('Error toggling like:', error.response?.data || error.message);
+    // Optionally fetch the latest state if the action fails
+    const postResult = await axios.get(`${API_BASE_URL}/api/posts/${post.id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    const detailedPost = response.data.data; // Extract from 'data' key based on your response structure
-    selectedPostComments.value = detailedPost.comments || [];
-    selectedPost.value = detailedPost; // Update with full post data including likes and comments
-    isCommentModalVisible.value = true;
-  } catch (error) {
-    console.error('Error fetching post details:', error.response?.data || error.message);
+    post.liked_by_user = postResult.data.data.liked_by_user;
+    post.likes_count = postResult.data.data.likes_count;
   }
 };
 
-const closeCommentModal = () => {
-  isCommentModalVisible.value = false;
-  selectedPostComments.value = [];
-  selectedPost.value = null;
-};
-
-const addComment = async (comment) => {
+const addComment = async () => {
+  if (!newComment.value.trim()) return;
   try {
     const token = localStorage.getItem('token');
     const response = await axios.post(`${API_BASE_URL}/api/posts/${selectedPost.value.id}/comments`, {
-      content: comment
+      content: newComment.value
     }, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    selectedPostComments.value.push(response.data);
-    selectedPost.value.comments = selectedPost.value.comments || [];
-    selectedPost.value.comments.push(response.data);
+    comments.value.push(response.data);
+    newComment.value = '';
   } catch (error) {
     console.error('Error adding comment:', error);
   }
@@ -218,8 +220,8 @@ const deletePost = async (postId) => {
       await axios.delete(`${API_BASE_URL}/api/posts/${postId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      userPosts.value = userPosts.value.filter(post => post.id !== postId);
-      postMenuVisible.value = null;
+      selectedPost.value = null;
+      router.push(`/profile/${username}`);
     } catch (error) {
       console.error('Error deleting post:', error);
     } finally {
@@ -231,7 +233,7 @@ const deletePost = async (postId) => {
 const reportPost = async (post) => {
   try {
     const token = localStorage.getItem('token');
-    await axios.post(`${API_BASE_URL}/api/posts/${post.id}/report`, { // Note: This route doesn’t exist yet
+    await axios.post(`${API_BASE_URL}/api/posts/${post.id}/report`, {
       reason: prompt('Please enter reason for reporting:')
     }, {
       headers: { Authorization: `Bearer ${token}` }
@@ -276,10 +278,6 @@ h1 {
 .posts-column {
   flex: 2;
   margin-right: 20px;
-}
-
-.comments-column {
-  flex: 1;
 }
 
 .post-card {
@@ -367,6 +365,7 @@ h1 {
   display: flex;
   justify-content: space-between;
   font-size: 14px;
+  margin-bottom: 20px;
 }
 
 .action-item {
@@ -395,5 +394,67 @@ h1 {
   text-align: center;
   color: #666;
   padding: 20px;
+}
+
+.comments-section {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 10px;
+}
+
+.comments-section h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.comments-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.comment {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.comment strong {
+  font-size: 14px;
+}
+
+.comment p {
+  margin: 5px 0 0;
+  font-size: 14px;
+}
+
+.no-comments {
+  text-align: center;
+  color: #666;
+}
+
+.comment-input {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.comment-input input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.comment-input button {
+  padding: 10px 20px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.comment-input button:hover {
+  background: #0056b3;
 }
 </style>
