@@ -5,7 +5,7 @@
       <img :src="chat.profile_photo_url" alt="Avatar" class="w-12 h-12 rounded-full">
       <div>
         <h3 class="text-lg font-semibold text-black">{{ chat.name }}</h3>
-        <p class="text-sm text-gray-600">{{ chat.email }}</p>
+        <p class="text-sm text-gray-600">@{{ chat.username }}</p>
       </div>
     </div>
   </div>
