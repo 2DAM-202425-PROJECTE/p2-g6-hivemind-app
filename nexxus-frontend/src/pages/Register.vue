@@ -5,16 +5,16 @@
       <h1>Create your Hivemind Account</h1>
       <form @submit.prevent="register">
         <label for="name">Name:</label>
-        <input id="name" type="text" v-model="name" placeholder="Enter your name" required />
+        <input id="name" type="text" v-model="name" placeholder="Enter your name" autocomplete="name" required />
 
         <label for="username">Username:</label>
-        <input id="username" type="text" v-model="username" placeholder="Enter your username" required />
+        <input id="username" type="text" v-model="username" placeholder="Enter your username" autocomplete="username" required />
 
         <label for="email">Email:</label>
-        <input id="email" type="text" v-model="email" placeholder="Enter your email" required />
+        <input id="email" type="email" v-model="email" placeholder="Enter your email" autocomplete="email" required />
 
         <label for="password">Password:</label>
-        <input id="password" type="password" v-model="password" placeholder="Enter your password" required />
+        <input id="password" type="password" v-model="password" placeholder="Enter your password" autocomplete="new-password" required />
 
         <button type="submit">Register</button>
       </form>

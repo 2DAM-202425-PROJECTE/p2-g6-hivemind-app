@@ -2,7 +2,7 @@
   <div class="home-container">
     <Navbar />
     <h1>Home</h1>
-    <StoriesBar :stories="stories.data"/> <!-- Añade el componente StoriesBar -->
+    <StoriesBar :stories="stories.data" />
 
     <div class="post-card" v-for="post in posts.data" :key="post.id">
       <div class="post-header">
@@ -12,10 +12,10 @@
             <li>
               <strong>{{ getUserNameById(post.id_user) }}</strong>
               <h5>{{ post.description }}</h5>
-              <template v-if="post.file_path.includes('.mp4')">
+              <template v-if="post.file_path && post.file_path.includes('.mp4')">
                 <video :src="getImageUrl(post.file_path)" alt="file Video" class="post-content" controls />
               </template>
-              <template v-else>
+              <template v-else-if="post.file_path">
                 <img :src="getImageUrl(post.file_path)" alt="file Image" class="post-content" />
               </template>
             </li>
@@ -39,17 +39,18 @@
         <v-card>
           <v-card-title>Edit Post</v-card-title>
           <v-card-text>
-            <div v-if="selectedPost && selectedPost.image_url" class="current-image">
-              <p>Current Image:</p>
-              <img :src="'http://localhost:8000/' + selectedPost.image_url" alt="Current post image"
-                   style="max-width: 100%; max-height: 200px; margin-bottom: 10px;">
+            <div v-if="selectedPost && selectedPost.file_path" class="current-image">
+              <p>Current File:</p>
+              <img v-if="!selectedPost.file_path.includes('.mp4')" :src="getImageUrl(selectedPost.file_path)"
+                   alt="Current post image" style="max-width: 100%; max-height: 200px; margin-bottom: 10px;" />
+              <video v-else :src="getImageUrl(selectedPost.file_path)" controls
+                     style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
             </div>
 
             <v-file-input label="Replace Image/Video (.png, .jpg, .jpeg, .mp4)" accept=".png, .jpg, .jpeg, .mp4"
                           @update:modelValue="handleEditFileUpload" outlined></v-file-input>
 
-            <v-text-field v-model="editPostDescription" label="Description" outlined>
-            </v-text-field>
+            <v-text-field v-model="editPostDescription" label="Description" outlined></v-text-field>
           </v-card-text>
 
           <v-card-actions>
@@ -89,12 +90,13 @@ import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import UserRecommendation from '@/components/UserRecommendation.vue';
 import CommentModal from '@/components/CommentModal.vue';
-import StoriesBar from '@/components/StoriesBar.vue'; // Importa el componente StoriesBar
+import StoriesBar from '@/components/StoriesBar.vue';
 import { ref } from 'vue';
 import { onMounted } from 'vue';
 import axios from 'axios';
+import { generateAvatar } from '@/utils/avatar'; // Importar la función de avatar
 
-const posts = ref([]);
+const posts = ref({ data: [] });
 const users = ref({});
 const isCommentModalVisible = ref(false);
 const selectedPostComments = ref([]);
@@ -105,11 +107,13 @@ const postMenuVisible = ref(null);
 const editPostPopup = ref(false);
 const editPostDescription = ref('');
 const editPostFile = ref(null);
-const stories = ref([]);
+const stories = ref({ data: [] });
+const shares = ref(0); // Añadido para evitar errores con "shares"
 
 const currentUser = ref({
-  name: 'Current User', // Replace with actual user data
-  profile_photo_path: 'https://via.placeholder.com/50' // Replace with actual user profile photo URL
+  id: null,
+  name: 'Current User',
+  profile_photo_path: null,
 });
 
 onMounted(async () => {
@@ -124,16 +128,16 @@ onMounted(async () => {
     const result = await axios.get('http://localhost:8000/api/posts', {
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: 'application/json'
-      }
+        Accept: 'application/json',
+      },
     });
     posts.value = result.data;
 
     const usersResult = await axios.get('http://localhost:8000/api/users', {
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: 'application/json'
-      }
+        Accept: 'application/json',
+      },
     });
 
     if (!usersResult.data || !usersResult.data.data) {
@@ -144,28 +148,26 @@ onMounted(async () => {
     users.value = usersResult.data.data.reduce((acc, user) => {
       acc[user.id] = {
         name: user.name,
-        profile_photo_path: user.profile_photo_path
+        profile_photo_path: user.profile_photo_path,
       };
       return acc;
     }, {});
 
     console.log('Usuarios:', users.value);
 
-    // Fetch current user data
     const userResult = await axios.get('http://localhost:8000/api/user', {
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: 'application/json'
-      }
+        Accept: 'application/json',
+      },
     });
     currentUser.value = userResult.data;
 
-    // Fetch stories data
     const storiesResult = await axios.get('http://localhost:8000/api/stories', {
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: 'application/json'
-      }
+        Accept: 'application/json',
+      },
     });
     stories.value = storiesResult.data;
 
@@ -175,18 +177,21 @@ onMounted(async () => {
 });
 
 const getImageUrl = (path) => {
-  if (!path) return 'https://via.placeholder.com/150';
+  if (!path) return generateAvatar('User'); // Usar avatar generado si no hay path
   return `http://localhost:8000/storage/${path}`;
 };
 
 const getProfilePhotoById = (id) => {
   const user = users.value[id];
-  return user && user.profile_photo_path ? user.profile_photo_path : 'https://via.placeholder.com/50';
+  if (user && user.profile_photo_path) {
+    return `http://localhost:8000/storage/${user.profile_photo_path}`;
+  }
+  return generateAvatar(user?.name || 'User');
 };
 
 const getUserNameById = (id) => {
   const user = users.value[id];
-  return user && user.name ? user.name : 'usuario desconocido';
+  return user?.name || 'Usuario desconocido';
 };
 
 const toggleLike = async (post) => {
