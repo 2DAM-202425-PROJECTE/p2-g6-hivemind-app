@@ -73,12 +73,28 @@ cd "$SCRIPT_DIR"
 
 cd nexxus-backend || exit 1
 if [ -f composer.json ]; then
-  composer install &> /dev/null
+  composer update &> /dev/null
 else
   echo -e "${RED}composer.json not found in nexxus-backend.${NC}"
   exit 1
 fi
 cd "$SCRIPT_DIR"
+
+# Check and install PHP extensions (for Debian/Ubuntu)
+echo -e "${YELLOW}🔍 Checking required PHP extensions...${NC}"
+PHP_EXTENSIONS=("gd" "curl" "json" "mbstring" "openssl" "pdo" "tokenizer" "xml" "mysql")
+for ext in "${PHP_EXTENSIONS[@]}"; do
+  if ! php -m | grep -q "^$ext$"; then
+    echo -e "${YELLOW}Installing php-$ext...${NC}"
+    sudo apt-get update -y &> /dev/null
+    sudo apt-get install -y "php-$ext" &> /dev/null
+    if [ $? -ne 0 ]; then
+      echo -e "${RED}Failed to install php-$ext. Please install it manually.${NC}"
+      exit 1
+    fi
+  fi
+done
+echo -e "${GREEN}✅ PHP extensions are installed.${NC}"
 
 # Check for incompatibilities
 if [ "$RESET_DB" = true ]; then
