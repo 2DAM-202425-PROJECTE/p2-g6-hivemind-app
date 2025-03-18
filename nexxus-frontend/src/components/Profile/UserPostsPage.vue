@@ -54,8 +54,14 @@
             </div>
             <div v-else class="comments-list">
               <div v-for="comment in comments" :key="comment.id" class="comment">
-                <strong>{{ comment.user?.name || 'Unknown User' }}</strong>
-                <p>{{ comment.content }}</p>
+                <img :src="getCommentUserPhoto(comment.user)" class="comment-profile-pic" alt="User Profile" />
+                <div class="comment-content">
+                  <strong>{{ comment.user?.name || 'Unknown User' }}</strong>
+                  <p>{{ comment.content }}</p>
+                  <button v-if="isPostFromUser(selectedPost)" @click="deleteComment(comment.id)" class="delete-comment-btn">
+                    <i class="mdi mdi-delete"></i>
+                  </button>
+                </div>
               </div>
             </div>
             <div class="comment-input">
@@ -119,7 +125,7 @@ onMounted(async () => {
       headers: { Authorization: `Bearer ${token}` }
     });
     console.log('Post data:', postResult.data);
-    selectedPost.value = postResult.data.data; // Includes likes_count and liked_by_user
+    selectedPost.value = postResult.data.data;
 
     // Fetch comments for the post
     console.log('Fetching comments for post ID:', postId);
@@ -156,6 +162,7 @@ onMounted(async () => {
 
 const getImageUrl = (path) => `${API_BASE_URL}/storage/${path}`;
 const getProfilePhotoByUsername = (username) => user.value.profile_photo_path || 'https://via.placeholder.com/50';
+const getCommentUserPhoto = (user) => user?.profile_photo_path ? `${API_BASE_URL}/storage/${user.profile_photo_path}` : 'https://via.placeholder.com/40';
 const getUserNameByUsername = (username) => user.value.name || 'Unknown User';
 const isPostFromUser = (post) => post.username === currentUser.value.username;
 
@@ -163,15 +170,13 @@ const toggleLike = async (post) => {
   try {
     const token = localStorage.getItem('token');
     if (post.liked_by_user) {
-      // Unlike the post
       await axios.delete(`${API_BASE_URL}/api/posts/${post.id}/like`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       post.liked_by_user = false;
       post.likes_count -= 1;
     } else {
-      // Like the post
-      const response = await axios.post(`${API_BASE_URL}/api/posts/${post.id}/like`, {}, {
+      await axios.post(`${API_BASE_URL}/api/posts/${post.id}/like`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       post.liked_by_user = true;
@@ -179,7 +184,6 @@ const toggleLike = async (post) => {
     }
   } catch (error) {
     console.error('Error toggling like:', error.response?.data || error.message);
-    // Optionally fetch the latest state if the action fails
     const postResult = await axios.get(`${API_BASE_URL}/api/posts/${post.id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -201,6 +205,19 @@ const addComment = async () => {
     newComment.value = '';
   } catch (error) {
     console.error('Error adding comment:', error);
+  }
+};
+
+const deleteComment = async (commentId) => {
+  if (!confirm('Are you sure you want to delete this comment?')) return;
+  try {
+    const token = localStorage.getItem('token');
+    await axios.delete(`${API_BASE_URL}/api/comments/${commentId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    comments.value = comments.value.filter(comment => comment.id !== commentId);
+  } catch (error) {
+    console.error('Error deleting comment:', error.response?.data || error.message);
   }
 };
 
@@ -414,17 +431,50 @@ h1 {
 }
 
 .comment {
+  display: flex;
+  align-items: flex-start;
   padding: 10px;
   border-bottom: 1px solid #eee;
+  position: relative;
 }
 
-.comment strong {
+.comment-profile-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.comment-content {
+  flex: 1;
+}
+
+.comment-content strong {
   font-size: 14px;
 }
 
-.comment p {
+.comment-content p {
   margin: 5px 0 0;
   font-size: 14px;
+}
+
+.delete-comment-btn {
+  background: none;
+  border: none;
+  color: #ff4444;
+  cursor: pointer;
+  padding: 0;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
+.delete-comment-btn i {
+  font-size: 18px;
+}
+
+.delete-comment-btn:hover {
+  color: #cc0000;
 }
 
 .no-comments {
