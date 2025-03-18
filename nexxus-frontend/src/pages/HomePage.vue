@@ -8,10 +8,10 @@
       <div class="post-header">
         <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
         <div class="post-info">
-          <strong>{{ getUserNameById(post.id_user) }}</strong>
-          <h5>{{ post.description }}</h5>
           <ul>
             <li>
+              <strong>{{ getUserNameById(post.id_user) }}</strong>
+              <h5>{{ post.description }}</h5>
               <template v-if="post.file_path.includes('.mp4')">
                 <video :src="getImageUrl(post.file_path)" alt="file Video" class="post-content" controls />
               </template>
@@ -22,8 +22,15 @@
           </ul>
         </div>
         <div class="post-menu">
+          <button @click="togglePostMenu(post.id)">
+            <i class="mdi mdi-dots-vertical"></i>
+          </button>
           <div v-if="postMenuVisible === post.id" class="dropdown-menu">
-            <!-- Menu items here -->
+            <ul>
+              <li v-show="isPostFromUser(post)" @click="editPost(post)">Edit</li>
+              <li v-show="isPostFromUser(post)" @click="deletePost(post.id)" :disabled="isDeleting">Delete</li>
+              <li @click="reportPost(post)">Report</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -35,11 +42,11 @@
             <div v-if="selectedPost && selectedPost.image_url" class="current-image">
               <p>Current Image:</p>
               <img :src="'http://localhost:8000/' + selectedPost.image_url" alt="Current post image"
-                style="max-width: 100%; max-height: 200px; margin-bottom: 10px;">
+                   style="max-width: 100%; max-height: 200px; margin-bottom: 10px;">
             </div>
 
             <v-file-input label="Replace Image/Video (.png, .jpg, .jpeg, .mp4)" accept=".png, .jpg, .jpeg, .mp4"
-              @update:modelValue="handleEditFileUpload" outlined></v-file-input>
+                          @update:modelValue="handleEditFileUpload" outlined></v-file-input>
 
             <v-text-field v-model="editPostDescription" label="Description" outlined>
             </v-text-field>
@@ -62,7 +69,7 @@
           <i class="mdi mdi-comment-outline"></i>
           <span>{{ post.comments ? post.comments.length : 0 }} Comments</span>
         </div>
-        <div class="action-item" @click="sharePost">
+        <div class="action-item" @click="sharePost(post)">
           <i class="mdi mdi-share-outline"></i>
           <span>{{ shares }} Shares</span>
         </div>
@@ -70,7 +77,7 @@
     </div>
 
     <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal"
-    :currentUser="currentUser"    @add-comment="addComment" :post="selectedPost" />
+                  :currentUser="currentUser" @add-comment="addComment" :post="selectedPost" />
 
     <UserRecommendation />
     <Footer />
