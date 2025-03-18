@@ -19,7 +19,7 @@
       :timeout="2000"
       color="green darken-2"
       bottom
-      right
+      class="d-flex justify-end"
     >
       Profile URL copied to clipboard!
     </v-snackbar>
