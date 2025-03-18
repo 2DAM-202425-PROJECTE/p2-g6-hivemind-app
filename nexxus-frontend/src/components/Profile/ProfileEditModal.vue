@@ -4,59 +4,70 @@
       <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Profile</h2>
 
       <!-- Banner -->
-      <div class="relative w-full h-40 bg-gray-200 rounded-lg mb-6 overflow-hidden group">
+      <div class="relative w-full h-40 bg-gray-200 rounded-lg mb-6 overflow-hidden banner-container">
         <img
           v-if="bannerPreview || editedUser.banner_photo_path"
           :src="bannerPreview || getImageUrl(editedUser.banner_photo_path)"
           alt="Profile Banner"
-          class="w-full h-full object-cover transition duration-300 group-hover:brightness-50"
+          class="w-full h-full object-cover transition duration-300 banner-image"
         />
-        <div v-else class="absolute inset-0 flex items-center justify-center text-gray-500">
+        <div v-else class="absolute inset-0 flex items-center justify-center text-gray-500 pointer-events-none">
           Upload a profile banner
         </div>
-        <input
-          type="file"
-          @change="uploadBanner"
-          accept=".png, .jpg, .jpeg"
-          class="absolute inset-0 opacity-0 cursor-pointer"
-        />
-        <button
-          v-if="bannerPreview || editedUser.banner_photo_path"
-          @click="removeBanner"
-          class="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <i class="fas fa-trash"></i>
-        </button>
-      </div>
-
-      <!-- Foto de perfil -->
-      <div class="relative flex justify-center -mt-20 mb-6">
-        <div class="relative group">
-          <img
-            :src="profilePreview || editedUser.profile_photo_url"
-            alt="Profile Pic"
-            class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-md object-cover"
-          />
+        <div class="banner-buttons absolute inset-0 flex items-center justify-center gap-4 transition-opacity duration-300">
           <label
-            for="profile-upload"
-            class="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600"
+            for="banner-upload"
+            class="bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600"
           >
             <i class="fas fa-camera"></i>
           </label>
           <input
-            id="profile-upload"
+            id="banner-upload"
             type="file"
-            @change="uploadProfilePic"
+            @change="uploadBanner"
             accept=".png, .jpg, .jpeg"
             class="hidden"
           />
           <button
-            v-if="profilePreview || editedUser.profile_photo_url"
-            @click="removeProfilePic"
-            class="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            v-if="bannerPreview || editedUser.banner_photo_path"
+            @click="removeBanner"
+            class="bg-red-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600"
           >
             <i class="fas fa-trash"></i>
           </button>
+        </div>
+      </div>
+
+      <!-- Foto de perfil -->
+      <div class="relative flex justify-center -mt-20 mb-6">
+        <div class="relative w-32 h-32 profile-container">
+          <img
+            :src="profileImageSrc"
+            alt="Profile Pic"
+            class="w-full h-full rounded-full border-4 border-white dark:border-gray-800 shadow-md object-cover transition duration-300 profile-image"
+          />
+          <div class="profile-buttons absolute inset-0 flex items-center justify-center gap-4 transition-opacity duration-300">
+            <label
+              for="profile-upload"
+              class="bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600"
+            >
+              <i class="fas fa-camera"></i>
+            </label>
+            <input
+              id="profile-upload"
+              type="file"
+              @change="uploadProfilePic"
+              accept=".png, .jpg, .jpeg"
+              class="hidden"
+            />
+            <button
+              v-if="hasRemovableProfilePic"
+              @click="removeProfilePic"
+              class="bg-red-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600"
+            >
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -105,7 +116,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, watch } from 'vue';
+import { ref, defineProps, defineEmits, watch, computed } from 'vue';
 import apiClient from '@/axios';
 
 const props = defineProps(['user', 'isOpen']);
@@ -118,6 +129,46 @@ const profilePreview = ref(null);
 const bannerPreview = ref(null);
 const errorMessage = ref('');
 const successMessage = ref('');
+
+// Generar avatar con iniciales
+const generateAvatar = (name) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 100;
+  canvas.height = 100;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#FFDE21';
+  ctx.fillRect(0, 0, 100, 100);
+
+  const words = name.trim().split(' ');
+  let initials = '';
+  if (words.length === 1 && words[0].length >= 2) {
+    initials = words[0].substring(0, 2);
+  } else if (words.length >= 2) {
+    initials = words[0][0] + words[words.length - 1][0];
+  } else if (words.length === 1) {
+    initials = words[0][0];
+  }
+  initials = initials.toUpperCase();
+  ctx.fillStyle = '#000000';
+  ctx.font = 'bold 48px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(initials, 50, 50);
+
+  return canvas.toDataURL('image/png');
+};
+
+// Fuente de la imagen de perfil
+const profileImageSrc = computed(() => {
+  if (profilePreview.value) return profilePreview.value;
+  if (editedUser.value.profile_photo_path) return getImageUrl(editedUser.value.profile_photo_path);
+  return generateAvatar(editedUser.value.name || 'User');
+});
+
+// Determinar si la imagen de perfil es removible
+const hasRemovableProfilePic = computed(() => {
+  return profilePreview.value || (editedUser.value.profile_photo_path && true);
+});
 
 watch(() => props.user, (newUser) => {
   editedUser.value = { ...newUser };
@@ -154,22 +205,24 @@ const removeBanner = () => {
 const removeProfilePic = () => {
   profilePhoto.value = null;
   profilePreview.value = null;
-  editedUser.value.profile_photo_url = null;
+  editedUser.value.profile_photo_path = null;
 };
 
 const saveProfile = async () => {
   const formData = new FormData();
   formData.append('name', editedUser.value.name || '');
   formData.append('description', editedUser.value.description || '');
+
   if (profilePhoto.value) {
     formData.append('profile_photo', profilePhoto.value);
-  } else if (!profilePreview.value) {
-    formData.append('remove_profile_photo', '1');
+  } else if (!editedUser.value.profile_photo_path && props.user.profile_photo_path) {
+    formData.append('profile_photo', '');
   }
+
   if (bannerPhoto.value) {
     formData.append('banner_photo', bannerPhoto.value);
-  } else if (!bannerPreview.value) {
-    formData.append('remove_banner_photo', '1');
+  } else if (!editedUser.value.banner_photo_path && props.user.banner_photo_path) {
+    formData.append('banner_photo', '');
   }
 
   try {
@@ -197,3 +250,39 @@ const closeModal = () => {
   successMessage.value = '';
 };
 </script>
+
+<style scoped>
+/* Estilos para el banner */
+.banner-container {
+  position: relative;
+}
+
+.banner-container:hover .banner-image {
+  filter: brightness(50%);
+}
+
+.banner-container:hover .banner-buttons {
+  opacity: 1;
+}
+
+.banner-buttons {
+  opacity: 0;
+}
+
+/* Estilos para la foto de perfil */
+.profile-container {
+  position: relative;
+}
+
+.profile-container:hover .profile-image {
+  filter: brightness(50%);
+}
+
+.profile-container:hover .profile-buttons {
+  opacity: 1;
+}
+
+.profile-buttons {
+  opacity: 0;
+}
+</style>

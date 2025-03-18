@@ -36,6 +36,8 @@ class DatabaseSeeder extends Seeder
             'username' => 'admin',
             'email' => 'admin@example.com',
             'password' => bcrypt('admin'),
+            'profile_photo_path' => null,
+            'banner_photo_path' => null,
         ]);
 
         User::factory()->withPersonalTeam()->create([

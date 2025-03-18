@@ -42,9 +42,9 @@ const route = useRoute();
 const {user, userPosts, isCurrentUser, fetchUser, fetchUserProfileByUsername} = useProfile();
 
 const isEditModalVisible = ref(false);
-const isModalVisible = ref(false); // Para el ShareModal, aunque no se usa aún
-const shareUrl = ref(''); // Para el ShareModal, si decides usarlo
-const snackbar = ref(false); // Controla el snackbar
+const isModalVisible = ref(false);
+const shareUrl = ref('');
+const snackbar = ref(false);
 
 const editProfile = () => {
   isEditModalVisible.value = true;
