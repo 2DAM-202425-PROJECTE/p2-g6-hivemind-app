@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { setAuthToken } from "./auth.js";
 
-// Páginas
+// Pages
 import HomePage from "./pages/HomePage.vue";
 import Login from "./pages/Login.vue";
 import Register from "./pages/Register.vue";
@@ -17,9 +17,9 @@ import PurchasePage from "./pages/PurchasePage.vue";
 import AppSettingsPage from "./pages/AppSettingsPage.vue";
 import AccountSettingsPage from "./pages/AccountSettingsPage.vue";
 import CompleteProfilePage from "./pages/CompleteProfilePage.vue";
+import UserPostsPage from "./components/Profile/UserPostsPage.vue"; // Verify this path
 
-
-// Definición de rutas
+// Route definitions
 export const routes = [
   {
     path: "/",
@@ -43,16 +43,21 @@ export const routes = [
   { path: "/settings", name: "Settings", component: AppSettingsPage },
   { path: "/account-settings", name: "AccountSettings", component: AccountSettingsPage },
   { path: "/complete-profile", name: "CompleteProfile", component: CompleteProfilePage },
-
+  {
+    path: "/users/username/:username/posts",
+    name: "UserPostsPage",
+    component: UserPostsPage,
+    props: true
+  },
 ];
 
-// Creación del router
+// Create router
 const router = createRouter({
   history: createWebHistory(),
   routes,
 });
 
-// Middleware para proteger rutas (excepto Login y Register)
+// Middleware to protect routes (except Login and Register)
 router.beforeEach((to, from, next) => {
   const isAuthenticated = !!localStorage.getItem("token");
   const publicRoutes = ["Login", "Register"];

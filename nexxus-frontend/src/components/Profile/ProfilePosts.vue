@@ -5,7 +5,8 @@
       <div
         v-for="post in userPosts"
         :key="post.id"
-        class="relative bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:shadow-lg hover:-translate-y-1"
+        @click="viewPost(post.id)"
+        class="relative bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
       >
         <!-- Imagen del post -->
         <div class="w-full h-48">
@@ -16,7 +17,7 @@
           />
         </div>
         <!-- Botón de tres puntos -->
-        <div class="absolute top-2 right-2">
+        <div class="absolute top-2 right-2" @click.stop>
           <button
             @click="toggleMenu(post.id)"
             class="p-1 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
@@ -31,21 +32,21 @@
             <ul class="py-1 text-sm text-gray-700 dark:text-gray-200">
               <li
                 v-if="isCurrentUser"
-                @click="editPost(post)"
+                @click.stop="editPost(post)"
                 class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
               >
                 Edit
               </li>
               <li
                 v-if="isCurrentUser"
-                @click="deletePost(post.id)"
+                @click.stop="deletePost(post.id)"
                 class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
               >
                 Delete
               </li>
               <li
                 v-if="!isCurrentUser"
-                @click="reportPost(post)"
+                @click.stop="reportPost(post)"
                 class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
               >
                 Report
@@ -109,8 +110,10 @@
 
 <script setup>
 import { ref, defineProps, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
 import axios from 'axios';
 
+const router = useRouter();
 const props = defineProps({
   userPosts: {
     type: Array,
@@ -130,6 +133,7 @@ const editPostDescription = ref('');
 const editPostFile = ref(null);
 
 const toggleMenu = (postId) => {
+  console.log('Toggle menu for post:', postId);
   activeMenu.value = activeMenu.value === postId ? null : postId;
 };
 
@@ -140,6 +144,7 @@ const handleClickOutside = (event) => {
 };
 
 onMounted(() => {
+  console.log('ProfilePosts mounted with userPosts:', props.userPosts);
   document.addEventListener('click', handleClickOutside);
 });
 
@@ -155,14 +160,57 @@ const getImageUrl = (filePath) => {
   return `${baseUrl}/storage/${filePath}`;
 };
 
+const viewPost = async (postId) => {
+  console.log('viewPost triggered for postId:', postId);
+  try {
+    const token = localStorage.getItem('token');
+    const post = props.userPosts.find(p => p.id === postId);
+    if (!post) {
+      console.error('Post not found:', postId);
+      return;
+    }
+
+    let username = post.username;
+    console.log('Post data:', post); // Debug: Check what data is available
+
+    // If username isn’t in the post, try to fetch it using the current user’s username or adjust based on your API
+    if (!username) {
+      // Assuming ProfilePage provides the username via route params or parent component
+      const currentUsername = router.currentRoute.value.params.username;
+      if (currentUsername) {
+        username = currentUsername; // Use the profile’s username if available
+      } else {
+        // Fallback: Fetch user data (adjust endpoint based on your API)
+        const userResponse = await axios.get(`http://localhost:8000/api/users/id/${post.id_user}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        username = userResponse.data.username;
+      }
+    }
+
+    console.log('Navigating to UserPostsPage with:', { username, postId });
+    if (username) {
+      router.push({
+        name: 'UserPostsPage',
+        params: { username: username },
+        query: { postId: postId }
+      });
+    } else {
+      console.error('Username not found for post:', postId);
+    }
+  } catch (error) {
+    console.error('Error in viewPost:', error.response?.data || error.message);
+  }
+};
+
 watch(() => props.userPosts, (newPosts) => {
-  console.log('userPosts actualizado en ProfilePosts.vue:', newPosts);
+  console.log('userPosts updated in ProfilePosts.vue:', newPosts);
 }, { immediate: true });
 
 const deletePost = async (postId) => {
   isDeleting.value = true;
   try {
-    const response = await axios.delete(`http://localhost:8000/api/posts/${postId}`, {
+    await axios.delete(`http://localhost:8000/api/posts/${postId}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
@@ -235,7 +283,17 @@ const saveEditPost = async () => {
   }
 };
 
-const reportPost = (post) => {
-  console.log('Report post:', post.id);
+const reportPost = async (post) => {
+  try {
+    const token = localStorage.getItem('token');
+    await axios.post(`http://localhost:8000/api/posts/${post.id}/report`, {
+      reason: prompt('Please enter reason for reporting:'),
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    alert('Post reported successfully');
+  } catch (error) {
+    console.error('Error reporting post:', error);
+  }
 };
 </script>
