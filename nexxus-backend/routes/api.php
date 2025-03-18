@@ -42,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function ()
     Route::get('/posts', [PostController::class, 'index']);
     Route::post('/posts', [PostController::class, 'store']);
     Route::put('/posts/{post}', [PostController::class, 'update']);
+    Route::get('/posts/{id}', [PostController::class, 'show']);
     Route::delete('/posts/{id}', [PostController::class, 'destroy']);
 
     // posts likes routes

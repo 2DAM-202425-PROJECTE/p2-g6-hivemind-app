@@ -105,7 +105,25 @@ class PostController extends Controller
             'post' => $post
         ], 200);
     }
+    public function show($id)
+    {
+        $post = Post::with(['likes', 'comments.user'])->find($id);
 
+        if (!$post) {
+            return response()->json([
+                'message' => 'Post not found',
+            ], 404);
+        }
+
+        $post->liked_by_user = $post->likes->contains('user_id', auth()->id());
+        $post->likes_count = $post->likes->count();
+
+        return response()->json([
+            'message' => 'Post retrieved successfully',
+            'data' => $post,
+        ], 200);
+
+    }
     public function destroy($id)
     {
 

@@ -1,7 +1,7 @@
 <template>
   <div class="user-posts-container">
     <Navbar />
-    <h1>{{ user.name || 'Unknown User' }}'s Posts</h1>
+    <h1>{{ user.name || 'User' }}'s Posts</h1>
     <div class="posts-and-comments">
       <div class="posts-column">
         <div v-if="userPosts.length === 0" class="no-posts">
@@ -102,7 +102,7 @@ onMounted(async () => {
     user.value = userResult.data;
 
     // Fetch posts using the user’s ID
-    const userId = userResult.data.id; // Assuming the response includes 'id'
+    const userId = userResult.data.id;
     console.log('Fetching posts for user ID:', userId);
     const postsResult = await axios.get(`${API_BASE_URL}/api/users/${userId}/posts`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -167,14 +167,16 @@ const toggleLike = async (post) => {
 const openCommentModal = async (post) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await axios.get(`${API_BASE_URL}/api/posts/${post.id}/comments`, {
+    // Use the new /api/posts/{id} endpoint to fetch detailed post data
+    const response = await axios.get(`${API_BASE_URL}/api/posts/${post.id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    selectedPostComments.value = response.data || [];
-    selectedPost.value = post;
+    const detailedPost = response.data.data; // Extract from 'data' key based on your response structure
+    selectedPostComments.value = detailedPost.comments || [];
+    selectedPost.value = detailedPost; // Update with full post data including likes and comments
     isCommentModalVisible.value = true;
   } catch (error) {
-    console.error('Error fetching comments:', error);
+    console.error('Error fetching post details:', error.response?.data || error.message);
   }
 };
 
@@ -229,7 +231,7 @@ const deletePost = async (postId) => {
 const reportPost = async (post) => {
   try {
     const token = localStorage.getItem('token');
-    await axios.post(`${API_BASE_URL}/api/posts/${post.id}/report`, { // Note: No report route exists; this will fail
+    await axios.post(`${API_BASE_URL}/api/posts/${post.id}/report`, { // Note: This route doesn’t exist yet
       reason: prompt('Please enter reason for reporting:')
     }, {
       headers: { Authorization: `Bearer ${token}` }
