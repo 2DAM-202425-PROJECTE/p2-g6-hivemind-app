@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -76,18 +77,39 @@ class UserController extends Controller
             'description' => 'nullable|string|max:150',
         ]);
 
+        // Manejar la foto de perfil
         if ($request->hasFile('profile_photo')) {
+            if ($user->profile_photo_path) {
+                Storage::disk('public')->delete($user->profile_photo_path);
+            }
             $profilePhotoPath = $request->file('profile_photo')->store('profile_photos', 'public');
             $user->profile_photo_path = $profilePhotoPath;
+        } elseif ($request->has('profile_photo') && $request->input('profile_photo') === null) {
+            // Si se envía profile_photo como null explícitamente, eliminar la imagen
+            if ($user->profile_photo_path) {
+                Storage::disk('public')->delete($user->profile_photo_path);
+            }
+            $user->profile_photo_path = null;
         }
 
+        // Manejar el banner
         if ($request->hasFile('banner_photo')) {
+            if ($user->banner_photo_path) {
+                Storage::disk('public')->delete($user->banner_photo_path);
+            }
             $bannerPhotoPath = $request->file('banner_photo')->store('banner_photos', 'public');
             $user->banner_photo_path = $bannerPhotoPath;
+        } elseif ($request->has('banner_photo') && $request->input('banner_photo') === null) {
+            // Si se envía banner_photo como null explícitamente, eliminar la imagen
+            if ($user->banner_photo_path) {
+                Storage::disk('public')->delete($user->banner_photo_path);
+            }
+            $user->banner_photo_path = null;
         }
 
+        // Actualizar nombre y descripción
         $user->name = $validatedData['name'];
-        $user->description = $validatedData['description'];
+        $user->description = $validatedData['description'] ?? null;
 
         $user->save();
 

@@ -31,12 +31,12 @@
     <div class="flex items-center space-x-2">
       <template v-if="user">
         <v-btn icon :to="`/profile/${user.username}`" class="text-white">
-          <v-avatar size="32">
+          <v-avatar size="48">
             <img
               :src="getProfilePhotoUrl"
               alt="Profile Picture"
               class="object-cover w-full h-full"
-              @error="e => e.target.src = '/default-profile.jpg'"
+              @error="e => e.target.src = generateAvatar(user.value?.name || 'User')"
             />
           </v-avatar>
         </v-btn>
@@ -77,10 +77,10 @@
         <!-- Contenedor de la imagen -->
         <v-avatar size="32" class="mr-3 flex-shrink-0">
           <img
-            :src="result.profile_photo_path ? `http://localhost:8000/storage/${result.profile_photo_path}` : '/default-profile.jpg'"
+            :src="getSearchResultPhotoUrl(result)"
             alt="User Avatar"
             class="object-cover w-full h-full"
-            @error="e => e.target.src = '/default-profile.jpg'"
+            @error="e => e.target.src = generateAvatar(result.name || 'User')"
           />
         </v-avatar>
 
@@ -90,10 +90,7 @@
           <span class="text-gray-400 text-sm leading-tight">@{{ result.username }}</span>
         </div>
       </v-list-item>
-      <li
-        v-if="searchResults.length === 0"
-        class="px-4 py-2 text-gray-400 text-sm"
-      >
+      <li v-if="searchResults.length === 0" class="px-4 py-2 text-gray-400 text-sm">
         No users found
       </li>
     </ul>
@@ -235,7 +232,7 @@ import { useRouter } from 'vue-router';
 import axios from '../axios';
 import { clearAuthToken } from '../auth';
 import NotificationsModal from './NotificationsModal.vue';
-import { routes } from '../router';
+import { generateAvatar } from '../utils/avatar';
 
 const router = useRouter();
 const menu = ref(false);
@@ -365,6 +362,16 @@ const searchUsers = async () => {
   }
 };
 
+const getSearchResultPhotoUrl = (result) => {
+  if (result.profile_photo_url) return result.profile_photo_url; // Si el backend lo proporciona
+  if (result.profile_photo_path) {
+    return result.profile_photo_path.startsWith('http')
+      ? result.profile_photo_path
+      : `http://localhost:8000/storage/${result.profile_photo_path}`;
+  }
+  return generateAvatar(result.name || 'User');
+};
+
 const goToUserProfile = (username) => {
   router.push(`/profile/${username}`);
   searchQuery.value = '';
@@ -385,12 +392,13 @@ const updateNotifications = (updatedNotifications) => {
 };
 
 const getProfilePhotoUrl = computed(() => {
-  if (user.value?.profile_photo_path) {
+  if (!user.value) return generateAvatar('User'); // Caso inicial mientras carga
+  if (user.value.profile_photo_path) {
     return user.value.profile_photo_path.startsWith('http')
       ? user.value.profile_photo_path
       : `http://localhost:8000/storage/${user.value.profile_photo_path}`;
   }
-  return '/default-profile.jpg';
+  return generateAvatar(user.value.name || 'User');
 });
 
 const hasNotifications = computed(() => notifications.value.length > 0);

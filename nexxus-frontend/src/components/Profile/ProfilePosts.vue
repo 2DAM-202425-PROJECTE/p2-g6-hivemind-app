@@ -31,14 +31,14 @@
             <ul class="py-1 text-sm text-gray-700 dark:text-gray-200">
               <li
                 v-if="isCurrentUser"
-                @click="openEditPost(post)"
+                @click="editPost(post)"
                 class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
               >
                 Edit
               </li>
               <li
                 v-if="isCurrentUser"
-                @click="deletePost(post)"
+                @click="deletePost(post.id)"
                 class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
               >
                 Delete
@@ -109,6 +109,7 @@
 
 <script setup>
 import { ref, defineProps, watch, onMounted, onBeforeUnmount } from 'vue';
+import axios from 'axios';
 
 const props = defineProps({
   userPosts: {
@@ -122,7 +123,11 @@ const props = defineProps({
 });
 
 const activeMenu = ref(null);
+const isDeleting = ref(false);
+const showEditPopup = ref(false);
 const selectedPost = ref(null);
+const editPostDescription = ref('');
+const editPostFile = ref(null);
 
 const toggleMenu = (postId) => {
   activeMenu.value = activeMenu.value === postId ? null : postId;
@@ -142,24 +147,95 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside);
 });
 
-// Implementación temporal de getImageUrl (ajústala según tu código real)
 const getImageUrl = (filePath) => {
-  const baseUrl = 'http://localhost:8000'; // Cambia esto por tu dominio real
+  const baseUrl = 'http://localhost:8000';
   if (filePath.startsWith('/')) {
-    return `${baseUrl}${filePath}`; // Ej: "http://localhost:8000/uploads/1.png"
+    return `${baseUrl}${filePath}`;
   }
-  return `${baseUrl}/storage/${filePath}`; // Ej: "http://localhost:8000/storage/uploads/Oizjc769xfrvkACNDGum4vCDT4V41ybU569wDVfg.png"
+  return `${baseUrl}/storage/${filePath}`;
 };
 
 watch(() => props.userPosts, (newPosts) => {
   console.log('userPosts actualizado en ProfilePosts.vue:', newPosts);
 }, { immediate: true });
 
-const editPost = (post) => {
-  console.log('Editar post:', post.id);
+const deletePost = async (postId) => {
+  isDeleting.value = true;
+  try {
+    const response = await axios.delete(`http://localhost:8000/api/posts/${postId}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (Array.isArray(props.userPosts)) {
+      const index = props.userPosts.findIndex(post => post.id === postId);
+      if (index !== -1) {
+        props.userPosts.splice(index, 1);
+      }
+    }
+  } catch (error) {
+    console.error('Error deleting post:', error.response?.data || error.message);
+    alert('Failed to delete post. ' + (error.response?.data?.message || error.message));
+  } finally {
+    isDeleting.value = false;
+  }
 };
 
-const deletePost = (post) => {
-  console.log('Eliminar post:', post.id);
+const editPost = (post) => {
+  selectedPost.value = post;
+  editPostDescription.value = post.description || '';
+  editPostFile.value = null;
+  showEditPopup.value = true;
+};
+
+const handleEditFileUpload = (event) => {
+  editPostFile.value = event.target.files ? event.target.files[0] : null;
+};
+
+const cancelEditPost = () => {
+  showEditPopup.value = false;
+  editPostDescription.value = '';
+  editPostFile.value = null;
+};
+
+const saveEditPost = async () => {
+  if (!selectedPost.value) return;
+
+  try {
+    const formData = new FormData();
+    formData.append('description', editPostDescription.value);
+    formData.append('_method', 'PUT');
+
+    if (editPostFile.value) {
+      formData.append('file', editPostFile.value);
+    }
+
+    const response = await axios.post(
+      `http://localhost:8000/api/posts/${selectedPost.value.id}`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    const updatedPost = response.data.post;
+    const index = props.userPosts.findIndex(p => p.id === selectedPost.value.id);
+    if (index !== -1) {
+      props.userPosts.splice(index, 1, updatedPost);
+    }
+
+    showEditPopup.value = false;
+  } catch (error) {
+    console.error('Error updating post:', error);
+    alert('Error: ' + (error.response?.data?.message || error.message));
+  }
+};
+
+const reportPost = (post) => {
+  console.log('Report post:', post.id);
 };
 </script>
