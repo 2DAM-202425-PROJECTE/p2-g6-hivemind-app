@@ -20,6 +20,7 @@ import AccountSettingsPage from "./pages/AccountSettingsPage.vue";
 import CompleteProfilePage from "./pages/CompleteProfilePage.vue";
 import UserPostsPage from "./components/Profile/UserPostsPage.vue"; // Verify this path
 import VideosPage from "./pages/VideosPage.vue"; // Updated to match file name
+import UserVideosPage from './components/Profile/UserVideosPage.vue'; // Adjust path as needed
 
 export const routes = [
   {
@@ -48,6 +49,12 @@ export const routes = [
     path: "/users/username/:username/posts",
     name: "UserPostsPage",
     component: UserPostsPage,
+    props: true
+  },
+  {
+    path: '/users/username/:username/videos',
+    name: 'UserVideosPage',
+    component: UserVideosPage,
     props: true
   },
   {

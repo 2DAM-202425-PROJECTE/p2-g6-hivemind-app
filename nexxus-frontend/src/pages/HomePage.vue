@@ -4,7 +4,7 @@
     <h1>Home</h1>
     <StoriesBar :stories="stories.data" />
 
-    <div class="post-card" v-for="post in posts.data" :key="post.id" @click="goToUserPosts(post)">
+    <div class="post-card" v-for="post in posts.data" :key="post.id" @click="navigateToPost(post)">
       <div class="post-header">
         <div class="post-profile-link" @click.stop="goToUserProfile(post.id_user)">
           <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
@@ -50,13 +50,10 @@
               <video v-else :src="getImageUrl(selectedPost.file_path)" controls
                      style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
             </div>
-
             <v-file-input label="Replace Image/Video (.png, .jpg, .jpeg, .mp4)" accept=".png, .jpg, .jpeg, .mp4"
                           @update:modelValue="handleEditFileUpload" outlined></v-file-input>
-
             <v-text-field v-model="editPostDescription" label="Description" outlined></v-text-field>
           </v-card-text>
-
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn text @click="cancelEditPost">Cancel</v-btn>
@@ -70,7 +67,7 @@
           <i class="mdi" :class="post.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
           <span>{{ post.likes_count }} Likes</span>
         </div>
-        <div class="action-item" @click.stop="goToUserPosts(post)">
+        <div class="action-item" @click.stop="navigateToPost(post)">
           <i class="mdi mdi-comment-outline"></i>
           <span>{{ post.comments ? post.comments.length : 0 }} Comments</span>
         </div>
@@ -124,18 +121,12 @@ onMounted(async () => {
     }
 
     const result = await axios.get('http://localhost:8000/api/posts', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-      },
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
     posts.value = result.data;
 
     const usersResult = await axios.get('http://localhost:8000/api/users', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-      },
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
 
     if (!usersResult.data || !usersResult.data.data) {
@@ -144,29 +135,17 @@ onMounted(async () => {
     }
 
     users.value = usersResult.data.data.reduce((acc, user) => {
-      acc[user.id] = {
-        name: user.name,
-        username: user.username,
-        profile_photo_path: user.profile_photo_path,
-      };
+      acc[user.id] = { name: user.name, username: user.username, profile_photo_path: user.profile_photo_path };
       return acc;
     }, {});
 
-    console.log('Usuarios:', users.value);
-
     const userResult = await axios.get('http://localhost:8000/api/user', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-      },
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
     currentUser.value = userResult.data;
 
     const storiesResult = await axios.get('http://localhost:8000/api/stories', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-      },
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
     stories.value = storiesResult.data;
   } catch (error) {
@@ -174,73 +153,50 @@ onMounted(async () => {
   }
 });
 
-const getImageUrl = (path) => {
-  if (!path) return generateAvatar('User');
-  return `http://localhost:8000/storage/${path}`;
-};
-
+const getImageUrl = (path) => path ? `http://localhost:8000/storage/${path}` : generateAvatar('User');
 const getProfilePhotoById = (id) => {
   const user = users.value[id];
-  if (user && user.profile_photo_path) {
-    return `http://localhost:8000/storage/${user.profile_photo_path}`;
-  }
-  return generateAvatar(user?.name || 'User');
+  return user?.profile_photo_path ? `http://localhost:8000/storage/${user.profile_photo_path}` : generateAvatar(user?.name || 'User');
 };
-
-const getUserNameById = (id) => {
-  const user = users.value[id];
-  return user?.name || 'Usuario desconocido';
-};
-
-const getUsernameById = (id) => {
-  const user = users.value[id];
-  return user?.username || null;
-};
+const getUserNameById = (id) => users.value[id]?.name || 'Usuario desconocido';
+const getUsernameById = (id) => users.value[id]?.username || null;
 
 const goToUserProfile = (userId) => {
   const username = getUsernameById(userId);
-  console.log('Navigating to profile with username:', username, 'for userId:', userId);
-  if (username) {
-    router.push(`/profile/${username}`);
-  } else {
-    console.warn('No username found for userId:', userId);
-  }
+  if (username) router.push(`/profile/${username}`);
+  else console.warn('No username found for userId:', userId);
 };
 
-const goToUserPosts = (post) => {
+// New navigation logic for video vs non-video posts
+const navigateToPost = (post) => {
   const username = getUsernameById(post.id_user);
-  console.log('Navigating to user posts with username:', username, 'postId:', post.id);
-  if (username) {
-    router.push(`/users/username/${username}/posts?postId=${post.id}`);
-  } else {
+  if (!username) {
     console.warn('No username found for userId:', post.id_user);
+    return;
+  }
+
+  if (post.file_path && post.file_path.includes('.mp4')) {
+    console.log('Navigating to user videos with username:', username, 'postId:', post.id);
+    router.push(`/users/username/${username}/videos?postId=${post.id}`);
+  } else {
+    console.log('Navigating to user posts with username:', username, 'postId:', post.id);
+    router.push(`/users/username/${username}/posts?postId=${post.id}`);
   }
 };
 
 const toggleLike = async (post) => {
-  console.log('Toggling like for post:', post);
   const token = localStorage.getItem('token');
-  if (!token) {
-    console.error('No token available');
-    return;
-  }
+  if (!token) return console.error('No token available');
 
   const url = `http://localhost:8000/api/posts/${post.id}/like`;
   const method = post.liked_by_user ? 'delete' : 'post';
 
   try {
-    await axios({
-      method,
-      url,
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
+    await axios({ method, url, headers: { Authorization: `Bearer ${token}` } });
     post.liked_by_user = !post.liked_by_user;
     post.likes_count += post.liked_by_user ? 1 : -1;
   } catch (error) {
-    console.error('Error toggling like for post:', error.response?.data || error.message);
+    console.error('Error toggling like:', error.response?.data || error.message);
   }
 };
 
@@ -248,7 +204,7 @@ const togglePostMenu = (postId) => {
   postMenuVisible.value = postMenuVisible.value === postId ? null : postId;
 };
 
-const editPost = async (post) => {
+const editPost = (post) => {
   selectedPost.value = post;
   editPostDescription.value = post.description || '';
   editPostFile.value = null;
@@ -268,32 +224,21 @@ const cancelEditPost = () => {
 const saveEditPost = async () => {
   if (!selectedPost.value) return;
 
+  const formData = new FormData();
+  formData.append('description', editPostDescription.value);
+  formData.append('_method', 'PUT');
+  if (editPostFile.value) formData.append('file', editPostFile.value);
+
   try {
-    const formData = new FormData();
-    formData.append('description', editPostDescription.value);
-    formData.append('_method', 'PUT');
-
-    if (editPostFile.value) {
-      formData.append('file', editPostFile.value);
-    }
-
     const response = await axios.post(
       `http://localhost:8000/api/posts/${selectedPost.value.id}`,
       formData,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'multipart/form-data',
-        }
-      }
+      { headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' } }
     );
 
     const updatedPost = response.data.post;
     const index = posts.value.data.findIndex(p => p.id === selectedPost.value.id);
-    if (index !== -1) {
-      posts.value.data.splice(index, 1, updatedPost);
-    }
-
+    if (index !== -1) posts.value.data.splice(index, 1, updatedPost);
     editPostPopup.value = false;
   } catch (error) {
     console.error('Error updating post:', error);
@@ -301,42 +246,30 @@ const saveEditPost = async () => {
   }
 };
 
-const isPostFromUser = (post) => {
-  return post.id_user === currentUser.value.id;
-};
+const isPostFromUser = (post) => post.id_user === currentUser.value.id;
 
 const deletePost = async (postId) => {
   isDeleting.value = true;
   try {
-    const response = await axios.delete(`http://localhost:8000/api/posts/${postId}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
+    await axios.delete(`http://localhost:8000/api/posts/${postId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     });
-
-    if (Array.isArray(posts.value)) {
-      posts.value = posts.value.filter(post => post.id !== postId);
-    }
-
+    posts.value.data = posts.value.data.filter(post => post.id !== postId);
     location.reload();
   } catch (error) {
     console.error('Error deleting post:', error.response?.data || error.message);
-    alert('Failed to delete post. ' + (error.response?.data?.message || error.message));
+    alert('Failed to delete post: ' + (error.response?.data?.message || error.message));
   } finally {
     isDeleting.value = false;
   }
 };
 
-const reportPost = (post) => {
-  alert(`Reported post with ID: ${post.id}`);
-};
-
-const sharePost = (post) => {
-  // Implement share post logic if needed
-};
+const reportPost = (post) => alert(`Reported post with ID: ${post.id}`);
+const sharePost = (post) => {}; // Implement if needed
 </script>
 
 <style scoped>
+/* Same as your original styles */
 .home-container {
   font-family: Arial, sans-serif;
   padding: 20px;

@@ -32,7 +32,7 @@ class PostController extends Controller
             'description' => 'nullable|string',
             'publish_date' => 'required|date',
             'id_user' => 'required|integer|exists:users,id',
-            'file' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,mp4|max:500000',
+            'file' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,mp4|max:100000',
         ]);
 
         if ($request->hasFile('file')) {
