@@ -450,20 +450,29 @@ h1 {
 
 .post-header {
   display: flex;
-  gap: 10px;
-  align-items: center;
+  justify-content: space-between; /* Ensures profile pic is left, menu is right */
+  align-items: flex-start; /* Aligns items to the top */
   margin-bottom: 15px;
   position: relative;
 }
 
 .post-profile-link {
   cursor: pointer;
+  flex-shrink: 0; /* Prevents shrinking of profile pic container */
 }
 
 .profile-pic {
   width: 50px;
   height: 50px;
+  min-width: 50px; /* Ensures consistent size */
+  min-height: 50px; /* Ensures consistent size */
   border-radius: 50%;
+  object-fit: cover; /* Ensures image fills the space consistently */
+}
+
+.post-info {
+  flex-grow: 1; /* Takes up available space between profile pic and menu */
+  margin-left: 10px; /* Adds spacing between profile pic and content */
 }
 
 .post-info h3 {
@@ -486,8 +495,7 @@ h1 {
 }
 
 .post-menu {
-  margin-left: auto;
-  position: relative;
+  flex-shrink: 0; /* Prevents shrinking of menu */
 }
 
 .post-menu button {

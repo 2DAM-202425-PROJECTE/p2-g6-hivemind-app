@@ -308,12 +308,16 @@ h1 {
 
 .post-profile-link {
   cursor: pointer;
+  flex-shrink: 0; /* Prevents the profile pic container from shrinking */
 }
 
 .profile-pic {
   width: 50px;
   height: 50px;
+  min-width: 50px; /* Ensures it doesn't shrink below this size */
+  min-height: 50px; /* Ensures it doesn't shrink below this size */
   border-radius: 50%;
+  object-fit: cover; /* Ensures the image fills the space consistently */
 }
 
 .post-info {
@@ -341,7 +345,7 @@ h1 {
 }
 
 .post-menu {
-  /* No margin-left needed due to justify-content */
+  flex-shrink: 0; /* Prevents the menu from shrinking */
 }
 
 .post-menu button {
