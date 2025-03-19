@@ -1,98 +1,60 @@
 <template>
-  <div class="user-posts-container">
+  <div class="user-videos-container">
     <Navbar />
-    <h1>{{ user.name || 'User' }}'s Post</h1>
-    <div class="posts-and-comments">
-      <div class="posts-column">
-        <div v-if="!selectedPost" class="no-posts">
-          <p>No post available</p>
+    <h1>{{ user.name || 'User' }}'s Video</h1>
+    <div class="videos-and-comments">
+      <div class="videos-column">
+        <div v-if="!selectedVideo" class="no-videos">
+          <p>No video available</p>
         </div>
-        <div v-else :id="`post-${selectedPost.id}`" class="post-card">
-          <div class="post-header">
-            <div class="post-profile-link" @click="goToUserProfile(getUsernameById(selectedPost.id_user))">
-              <img :src="getProfilePhotoById(selectedPost.id_user)" class="profile-pic" alt="Profile" />
+        <div v-else :id="`video-${selectedVideo.id}`" class="video-card">
+          <div class="video-header">
+            <div class="profile-section">
+              <div class="video-profile-link" @click="goToUserProfile(getUsernameById(selectedVideo.id_user))">
+                <img :src="getProfilePhotoById(selectedVideo.id_user)" class="profile-pic" alt="Profile" />
+              </div>
+              <div class="video-info">
+                <strong class="video-username" @click="goToUserProfile(getUsernameById(selectedVideo.id_user))">
+                  {{ getUserNameById(selectedVideo.id_user) }}
+                </strong>
+                <span class="username-handle">{{ getUsernameById(selectedVideo.id_user) }}</span>
+              </div>
             </div>
-            <div class="post-info">
-              <strong class="post-username" @click="goToUserProfile(getUsernameById(selectedPost.id_user))">
-                {{ getUserNameById(selectedPost.id_user) }}
-              </strong>
-              <h5>{{ selectedPost.description || 'No description' }}</h5>
-              <template v-if="selectedPost.file_path && selectedPost.file_path.includes('.mp4')">
-                <video :src="getImageUrl(selectedPost.file_path)" alt="Post Video" class="post-content" controls />
-              </template>
-              <template v-else-if="selectedPost.file_path">
-                <img :src="getImageUrl(selectedPost.file_path)" alt="Post Image" class="post-content" />
-              </template>
-              <template v-else>
-                <p>No media available</p>
-              </template>
-            </div>
-            <div class="post-menu">
-              <button @click.stop="togglePostMenu(selectedPost.id)">
+            <div class="video-menu">
+              <button @click.stop="toggleVideoMenu(selectedVideo.id)">
                 <i class="mdi mdi-dots-vertical"></i>
               </button>
-              <div v-if="postMenuVisible === selectedPost.id" class="dropdown-menu">
+              <div v-if="videoMenuVisible === selectedVideo.id" class="dropdown-menu">
                 <ul>
-                  <template v-if="isPostFromUser(selectedPost)">
-                    <li @click.stop="editPost(selectedPost)">Edit</li>
-                    <li @click.stop="openDeletePostDialog(selectedPost.id)" :disabled="isDeleting">Delete</li>
+                  <template v-if="isVideoFromUser(selectedVideo)">
+                    <li @click.stop="editVideo(selectedVideo)">Edit</li>
+                    <li @click.stop="openDeleteVideoDialog(selectedVideo.id)" :disabled="isDeleting">Delete</li>
                   </template>
                   <template v-else>
-                    <li @click.stop="reportPost(selectedPost)">Report</li>
+                    <li @click.stop="reportVideo(selectedVideo)">Report</li>
                   </template>
                 </ul>
               </div>
             </div>
           </div>
-
-          <!-- Edit Post Dialog -->
-          <v-dialog v-model="editPostPopup" max-width="500">
-            <v-card>
-              <v-card-title>Edit Post</v-card-title>
-              <v-card-text>
-                <div v-if="selectedPost && selectedPost.file_path" class="current-image">
-                  <p>Current File:</p>
-                  <img v-if="!selectedPost.file_path.includes('.mp4')" :src="getImageUrl(selectedPost.file_path)"
-                       alt="Current post image" style="max-width: 100%; max-height: 200px; margin-bottom: 10px;" />
-                  <video v-else :src="getImageUrl(selectedPost.file_path)" controls
-                         style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
-                </div>
-                <v-file-input label="Replace Image/Video (.png, .jpg, .jpeg, .mp4)" accept=".png, .jpg, .jpeg, .mp4"
-                              @update:modelValue="handleEditFileUpload" outlined></v-file-input>
-                <v-text-field v-model="editPostDescription" label="Description" outlined></v-text-field>
-              </v-card-text>
-              <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn text @click="cancelEditPost">Cancel</v-btn>
-                <v-btn color="primary" @click="saveEditPost">Update Post</v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-dialog>
-
-          <!-- Delete Confirmation Dialog -->
-          <v-dialog v-model="deleteDialog" max-width="400">
-            <v-card>
-              <v-card-title class="headline">Confirm Deletion</v-card-title>
-              <v-card-text>
-                Are you sure you want to delete this {{ deleteType === 'post' ? 'post' : 'comment' }}? This action cannot be undone.
-              </v-card-text>
-              <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn text @click="cancelDelete">Cancel</v-btn>
-                <v-btn color="error" @click="confirmDelete">Delete</v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-dialog>
-
-          <div class="post-actions">
-            <div class="action-item" @click.stop="toggleLike(selectedPost)">
-              <i class="mdi" :class="selectedPost.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
-              <span>{{ selectedPost.likes_count }} Likes</span>
+          <div class="video-description">
+            <h5>{{ selectedVideo.description || 'No description' }}</h5>
+          </div>
+          <video :src="getImageUrl(selectedVideo.file_path)" alt="Post Video" class="video-content" controls />
+          <div class="video-actions">
+            <div class="action-item" @click.stop="toggleLike(selectedVideo)">
+              <i class="mdi" :class="selectedVideo.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
+              <span>{{ selectedVideo.likes_count }} Likes</span>
             </div>
-            <div class="action-item" @click.stop="sharePost(selectedPost)">
+            <div class="action-item">
+              <i class="mdi mdi-comment-outline"></i>
+              <span>{{ comments.length }} Comments</span>
+            </div>
+            <div class="action-item" @click.stop="shareVideo(selectedVideo)">
               <i class="mdi mdi-share-outline"></i>
               <span>{{ shares }} Shares</span>
             </div>
+
           </div>
           <!-- Comment Section -->
           <div class="comments-section">
@@ -110,7 +72,7 @@
                     {{ comment.user?.name || 'Unknown User' }}
                   </strong>
                   <p>{{ comment.content }}</p>
-                  <button v-if="isPostFromUser(selectedPost)" @click="openDeleteCommentDialog(comment.id)" class="delete-comment-btn">
+                  <button v-if="isVideoFromUser(selectedVideo)" @click="openDeleteCommentDialog(comment.id)" class="delete-comment-btn">
                     <i class="mdi mdi-delete"></i>
                   </button>
                 </div>
@@ -124,6 +86,44 @@
         </div>
       </div>
     </div>
+
+    <!-- Edit Video Dialog -->
+    <v-dialog v-model="editVideoPopup" max-width="500">
+      <v-card>
+        <v-card-title>Edit Video</v-card-title>
+        <v-card-text>
+          <div v-if="selectedVideo && selectedVideo.file_path" class="current-video">
+            <p>Current Video:</p>
+            <video :src="getImageUrl(selectedVideo.file_path)" controls
+                   style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
+          </div>
+          <v-file-input label="Replace Video (.mp4, .mov)" accept=".mp4, .mov"
+                        @update:modelValue="handleEditFileUpload" outlined></v-file-input>
+          <v-text-field v-model="editVideoDescription" label="Description" outlined></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="cancelEditVideo">Cancel</v-btn>
+          <v-btn color="primary" @click="saveEditVideo">Update Video</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <v-dialog v-model="deleteDialog" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Confirm Deletion</v-card-title>
+        <v-card-text>
+          Are you sure you want to delete this {{ deleteType === 'video' ? 'video' : 'comment' }}? This action cannot be undone.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="cancelDelete">Cancel</v-btn>
+          <v-btn color="error" @click="confirmDelete">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <Footer />
   </div>
 </template>
@@ -134,28 +134,29 @@ import { useRoute, useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import axios from 'axios';
-import { generateAvatar } from '@/utils/avatar';
+import { generateAvatar } from '@/utils/avatar.js';
 
 const route = useRoute();
 const router = useRouter();
 const username = route.params.username;
 const user = ref({});
-const selectedPost = ref(null);
+const selectedVideo = ref(null);
 const comments = ref([]);
 const newComment = ref('');
 const isDeleting = ref(false);
-const postMenuVisible = ref(null);
-const editPostPopup = ref(false);
-const editPostDescription = ref('');
-const editPostFile = ref(null);
+const videoMenuVisible = ref(null);
+const editVideoPopup = ref(false);
+const editVideoDescription = ref('');
+const editVideoFile = ref(null);
 const currentUser = ref({});
 const users = ref({});
 const shares = ref(0);
 const deleteDialog = ref(false);
-const deleteType = ref(''); // 'post' or 'comment'
-const itemToDelete = ref(null); // Stores postId or commentId
+const deleteType = ref('');
+const itemToDelete = ref(null);
 
 const API_BASE_URL = 'http://localhost:8000';
+const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
 
 onMounted(async () => {
   try {
@@ -170,11 +171,7 @@ onMounted(async () => {
       headers: { Authorization: `Bearer ${token}` }
     });
     users.value = usersResult.data.data.reduce((acc, user) => {
-      acc[user.id] = {
-        name: user.name,
-        username: user.username,
-        profile_photo_path: user.profile_photo_path,
-      };
+      acc[user.id] = { name: user.name, username: user.username, profile_photo_path: user.profile_photo_path };
       return acc;
     }, {});
 
@@ -190,14 +187,22 @@ onMounted(async () => {
       console.error('No postId provided in query');
       return;
     }
-    console.log('Fetching post with ID:', postId);
+    console.log('Fetching video post with ID:', postId);
     const postResult = await axios.get(`${API_BASE_URL}/api/posts/${postId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    console.log('Post data:', postResult.data);
-    selectedPost.value = postResult.data.data;
+    const post = postResult.data.data;
+    console.log('Post data:', post);
 
-    console.log('Fetching comments for post ID:', postId);
+    if (post.file_path && VIDEO_EXTENSIONS.some(ext => post.file_path.toLowerCase().endsWith(ext))) {
+      selectedVideo.value = post;
+    } else {
+      console.warn('Selected post is not a video');
+      selectedVideo.value = null;
+      return;
+    }
+
+    console.log('Fetching comments for video ID:', postId);
     const commentsResult = await axios.get(`${API_BASE_URL}/api/posts/${postId}/comments`, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -212,18 +217,18 @@ onMounted(async () => {
     currentUser.value = currentUserResult.data;
 
     await nextTick();
-    const postElement = document.getElementById(`post-${postId}`);
-    if (postElement) {
-      postElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      postElement.classList.add('highlight');
-      setTimeout(() => postElement.classList.remove('highlight'), 2000);
+    const videoElement = document.getElementById(`video-${postId}`);
+    if (videoElement) {
+      videoElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      videoElement.classList.add('highlight');
+      setTimeout(() => videoElement.classList.remove('highlight'), 2000);
     } else {
-      console.warn(`Post element with ID post-${postId} not found`);
+      console.warn(`Video element with ID video-${postId} not found`);
     }
   } catch (error) {
-    console.error('Error fetching post or comments:', error.response?.data || error.message);
+    console.error('Error fetching video or comments:', error.response?.data || error.message);
     console.error('Failed request:', error.config);
-    selectedPost.value = null;
+    selectedVideo.value = null;
   }
 });
 
@@ -235,7 +240,7 @@ const getProfilePhotoById = (id) => {
 const getCommentUserPhoto = (user) => user?.profile_photo_path ? `${API_BASE_URL}/storage/${user.profile_photo_path}` : 'https://via.placeholder.com/40';
 const getUserNameById = (id) => users.value[id]?.name || 'Unknown User';
 const getUsernameById = (id) => users.value[id]?.username || null;
-const isPostFromUser = (post) => post.id_user === currentUser.value.id;
+const isVideoFromUser = (video) => video.id_user === currentUser.value.id;
 
 const goToUserProfile = (username) => {
   console.log('Navigating to profile with username:', username);
@@ -246,29 +251,29 @@ const goToUserProfile = (username) => {
   }
 };
 
-const toggleLike = async (post) => {
+const toggleLike = async (video) => {
   try {
     const token = localStorage.getItem('token');
-    if (post.liked_by_user) {
-      await axios.delete(`${API_BASE_URL}/api/posts/${post.id}/like`, {
+    if (video.liked_by_user) {
+      await axios.delete(`${API_BASE_URL}/api/posts/${video.id}/like`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      post.liked_by_user = false;
-      post.likes_count -= 1;
+      video.liked_by_user = false;
+      video.likes_count -= 1;
     } else {
-      await axios.post(`${API_BASE_URL}/api/posts/${post.id}/like`, {}, {
+      await axios.post(`${API_BASE_URL}/api/posts/${video.id}/like`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      post.liked_by_user = true;
-      post.likes_count += 1;
+      video.liked_by_user = true;
+      video.likes_count += 1;
     }
   } catch (error) {
     console.error('Error toggling like:', error.response?.data || error.message);
-    const postResult = await axios.get(`${API_BASE_URL}/api/posts/${post.id}`, {
+    const postResult = await axios.get(`${API_BASE_URL}/api/posts/${video.id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    post.liked_by_user = postResult.data.data.liked_by_user;
-    post.likes_count = postResult.data.data.likes_count;
+    video.liked_by_user = postResult.data.data.liked_by_user;
+    video.likes_count = postResult.data.data.likes_count;
   }
 };
 
@@ -276,7 +281,7 @@ const addComment = async () => {
   if (!newComment.value.trim()) return;
   try {
     const token = localStorage.getItem('token');
-    const response = await axios.post(`${API_BASE_URL}/api/posts/${selectedPost.value.id}/comments`, {
+    const response = await axios.post(`${API_BASE_URL}/api/posts/${selectedVideo.value.id}/comments`, {
       content: newComment.value
     }, {
       headers: { Authorization: `Bearer ${token}` }
@@ -294,9 +299,9 @@ const openDeleteCommentDialog = (commentId) => {
   deleteDialog.value = true;
 };
 
-const openDeletePostDialog = (postId) => {
-  deleteType.value = 'post';
-  itemToDelete.value = postId;
+const openDeleteVideoDialog = (videoId) => {
+  deleteType.value = 'video';
+  itemToDelete.value = videoId;
   deleteDialog.value = true;
 };
 
@@ -309,12 +314,12 @@ const cancelDelete = () => {
 const confirmDelete = async () => {
   const token = localStorage.getItem('token');
   try {
-    if (deleteType.value === 'post') {
+    if (deleteType.value === 'video') {
       isDeleting.value = true;
       await axios.delete(`${API_BASE_URL}/api/posts/${itemToDelete.value}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      selectedPost.value = null;
+      selectedVideo.value = null;
       router.push(`/profile/${username}`);
     } else if (deleteType.value === 'comment') {
       await axios.delete(`${API_BASE_URL}/api/comments/${itemToDelete.value}`, {
@@ -332,85 +337,78 @@ const confirmDelete = async () => {
   }
 };
 
-const togglePostMenu = (postId) => {
-  postMenuVisible.value = postMenuVisible.value === postId ? null : postId;
+const toggleVideoMenu = (videoId) => {
+  videoMenuVisible.value = videoMenuVisible.value === videoId ? null : videoId;
 };
 
-const editPost = (post) => {
-  editPostDescription.value = post.description || '';
-  editPostFile.value = null;
-  editPostPopup.value = true;
+const editVideo = (video) => {
+  editVideoDescription.value = video.description || '';
+  editVideoFile.value = null;
+  editVideoPopup.value = true;
 };
 
 const handleEditFileUpload = (files) => {
-  editPostFile.value = files ? files[0] : null;
+  editVideoFile.value = files ? files[0] : null;
 };
 
-const cancelEditPost = () => {
-  editPostPopup.value = false;
-  editPostDescription.value = '';
-  editPostFile.value = null;
+const cancelEditVideo = () => {
+  editVideoPopup.value = false;
+  editVideoDescription.value = '';
+  editVideoFile.value = null;
 };
 
-const saveEditPost = async () => {
-  if (!selectedPost.value) return;
+const saveEditVideo = async () => {
+  if (!selectedVideo.value) return;
 
   try {
     const token = localStorage.getItem('token');
     const formData = new FormData();
-    formData.append('description', editPostDescription.value);
+    formData.append('description', editVideoDescription.value);
     formData.append('_method', 'PUT');
-    if (editPostFile.value) {
-      formData.append('file', editPostFile.value);
+    if (editVideoFile.value) {
+      formData.append('file', editVideoFile.value);
     }
 
     const response = await axios.post(
-      `${API_BASE_URL}/api/posts/${selectedPost.value.id}`,
+      `${API_BASE_URL}/api/posts/${selectedVideo.value.id}`,
       formData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        }
-      }
+      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
     );
 
-    selectedPost.value = response.data.post || response.data.data;
-    editPostPopup.value = false;
+    selectedVideo.value = response.data.post || response.data.data;
+    editVideoPopup.value = false;
   } catch (error) {
-    console.error('Error updating post:', error);
+    console.error('Error updating video:', error);
     alert('Error: ' + (error.response?.data?.message || error.message));
   }
 };
 
-const reportPost = async (post) => {
+const reportVideo = async (video) => {
   try {
     const token = localStorage.getItem('token');
-    await axios.post(`${API_BASE_URL}/api/posts/${post.id}/report`, {
+    await axios.post(`${API_BASE_URL}/api/posts/${video.id}/report`, {
       reason: prompt('Please enter reason for reporting:')
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    alert('Post reported successfully');
-    postMenuVisible.value = null;
+    }, { headers: { Authorization: `Bearer ${token}` } });
+    alert('Video reported successfully');
+    videoMenuVisible.value = null;
   } catch (error) {
-    console.error('Error reporting post:', error);
+    console.error('Error reporting video:', error);
   }
 };
 
-const sharePost = (post) => {
-  const shareUrl = `${window.location.origin}/post/${post.id}`;
+const shareVideo = (video) => {
+  const shareUrl = `${window.location.origin}/users/username/${username}/videos?postId=${video.id}`;
   navigator.clipboard.writeText(shareUrl)
     .then(() => {
       shares.value++;
-      alert('Post URL copied to clipboard!');
+      alert('Video URL copied to clipboard!');
     })
     .catch(err => console.error('Error copying URL:', err));
 };
 </script>
 
 <style scoped>
-.user-posts-container {
+.user-videos-container {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
@@ -422,83 +420,91 @@ const sharePost = (post) => {
 h1 {
   font-size: 24px;
   padding-bottom: 20px;
+  text-align: center;
 }
 
-.posts-and-comments {
+.videos-and-comments {
   display: flex;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-.posts-column {
+.videos-column {
   flex: 2;
   margin-right: 20px;
 }
 
-.post-card {
+.video-card {
   background: #ffffff;
   border: 1px solid #ffffff;
   border-radius: 24px;
   padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
-  margin-bottom: 20px;
   width: 100%;
 }
 
-.post-card.highlight {
+.video-card.highlight {
   animation: highlight 2s ease-out;
 }
 
-.post-header {
+.video-header {
   display: flex;
-  justify-content: space-between; /* Ensures profile pic is left, menu is right */
-  align-items: flex-start; /* Aligns items to the top */
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 15px;
-  position: relative;
 }
 
-.post-profile-link {
+.profile-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.video-profile-link {
   cursor: pointer;
-  flex-shrink: 0; /* Prevents shrinking of profile pic container */
 }
 
 .profile-pic {
-  width: 50px;
-  height: 50px;
-  min-width: 50px; /* Ensures consistent size */
-  min-height: 50px; /* Ensures consistent size */
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  object-fit: cover; /* Ensures image fills the space consistently */
 }
 
-.post-info {
-  flex-grow: 1; /* Takes up available space between profile pic and menu */
-  margin-left: 10px; /* Adds spacing between profile pic and content */
+.video-info {
+  display: flex;
+  flex-direction: column;
 }
 
-.post-info h3 {
+.video-username {
   font-size: 16px;
-  margin: 0;
-}
-
-.post-info p {
-  font-size: 12px;
-  margin: 0;
-}
-
-.post-username {
-  font-size: 16px;
+  font-weight: bold;
   cursor: pointer;
 }
 
-.post-username:hover {
+.video-username:hover {
   text-decoration: underline;
 }
 
-.post-menu {
-  flex-shrink: 0; /* Prevents shrinking of menu */
+.username-handle {
+  font-size: 14px;
+  color: #666;
 }
 
-.post-menu button {
+.video-description {
+  margin-bottom: 15px;
+}
+
+.video-content {
+  width: 100%;
+  max-height: 600px;
+  border-radius: 20px;
+  margin-bottom: 15px;
+}
+
+.video-menu {
+  position: relative;
+}
+
+.video-menu button {
   background: none;
   border: none;
   cursor: pointer;
@@ -530,7 +536,7 @@ h1 {
   background: #f0f0f0;
 }
 
-.post-actions {
+.video-actions {
   display: flex;
   justify-content: space-between;
   font-size: 14px;
@@ -551,18 +557,6 @@ h1 {
 
 .action-item span {
   font-size: 14px;
-}
-
-.post-content {
-  width: 100%;
-  border-radius: 20px;
-  margin-bottom: 15px;
-}
-
-.no-posts {
-  text-align: center;
-  color: #666;
-  padding: 20px;
 }
 
 .comments-section {
@@ -667,5 +661,11 @@ h1 {
 
 .comment-input button:hover {
   background: #0056b3;
+}
+
+.no-videos {
+  text-align: center;
+  color: #666;
+  padding: 20px;
 }
 </style>

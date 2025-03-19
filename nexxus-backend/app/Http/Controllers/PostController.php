@@ -32,7 +32,7 @@ class PostController extends Controller
             'description' => 'nullable|string',
             'publish_date' => 'required|date',
             'id_user' => 'required|integer|exists:users,id',
-            'file' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,mp4|max:500000',
+            'file' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,mp4|max:100000',
         ]);
 
         if ($request->hasFile('file')) {
@@ -105,7 +105,25 @@ class PostController extends Controller
             'post' => $post
         ], 200);
     }
+    public function show($id)
+    {
+        $post = Post::with(['likes', 'comments.user'])->find($id);
 
+        if (!$post) {
+            return response()->json([
+                'message' => 'Post not found',
+            ], 404);
+        }
+
+        $post->liked_by_user = $post->likes->contains('user_id', auth()->id());
+        $post->likes_count = $post->likes->count();
+
+        return response()->json([
+            'message' => 'Post retrieved successfully',
+            'data' => $post,
+        ], 200);
+
+    }
     public function destroy($id)
     {
 

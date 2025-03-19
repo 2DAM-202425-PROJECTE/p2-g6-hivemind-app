@@ -42,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function ()
     Route::get('/posts', [PostController::class, 'index']);
     Route::post('/posts', [PostController::class, 'store']);
     Route::put('/posts/{post}', [PostController::class, 'update']);
+    Route::get('/posts/{id}', [PostController::class, 'show']);
     Route::delete('/posts/{id}', [PostController::class, 'destroy']);
 
     // posts likes routes
@@ -61,6 +62,7 @@ Route::middleware('auth:sanctum')->group(function ()
 
     Route::get('/stories', [StoryController::class, 'index']);
     Route::post('/stories', [StoryController::class, 'store']);
+    Route::delete('/stories/{id}', [StoryController::class, 'destroy'])->middleware('auth:sanctum');
 
     // Chats routes
     Route::get('/chats/private', [ChatController::class, 'getPrivateChat']);

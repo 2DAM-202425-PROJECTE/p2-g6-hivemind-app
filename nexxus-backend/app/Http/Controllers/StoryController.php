@@ -6,6 +6,7 @@ use App\Models\Story;
 use App\Models\Like;
 use App\Models\Comment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class StoryController extends Controller
 {
@@ -39,5 +40,29 @@ class StoryController extends Controller
             'message' => 'Story created successfully',
             'data' => $story,
         ], 201);
+    }
+
+    public function destroy($id)
+    {
+        $story = Story::find($id);
+
+        if (!$story) {
+            return response()->json([
+                'message' => 'Story not found',
+            ], 404);
+        }
+
+        // Eliminar l'arxiu associat a la història si existeix
+        if ($story->file_path && Storage::exists('public/' . $story->file_path)) {
+            Storage::delete('public/' . $story->file_path);
+        }
+
+        // Eliminar la història
+        $story->delete();
+
+        return response()->json([
+            'message' => 'Story deleted successfully',
+        ], 200);
+
     }
 }

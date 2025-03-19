@@ -18,7 +18,29 @@ class UserController extends Controller
             'data' => $users,
         ], 200);
     }
+    public function posts($id)
+    {
+        $user = User::find($id);
 
+        if (!$user) {
+            return response()->json([
+                'message' => 'User not found',
+            ], 404);
+        }
+
+        $posts = $user->posts()->with(['likes', 'comments.user'])->get();
+
+        // Add liked_by_user and likes_count to each post, similar to your show method
+        $posts->each(function ($post) {
+            $post->liked_by_user = $post->likes->contains('user_id', auth()->id());
+            $post->likes_count = $post->likes->count();
+        });
+
+        return response()->json([
+            'message' => 'User posts retrieved successfully',
+            'data' => $posts,
+        ], 200);
+    }
 
     public function getRandomUsers()
     {
