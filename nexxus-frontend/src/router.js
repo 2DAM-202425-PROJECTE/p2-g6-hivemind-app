@@ -1,3 +1,4 @@
+// router/index.js
 import { createRouter, createWebHistory } from "vue-router";
 import { setAuthToken } from "./auth.js";
 
@@ -18,8 +19,8 @@ import AppSettingsPage from "./pages/AppSettingsPage.vue";
 import AccountSettingsPage from "./pages/AccountSettingsPage.vue";
 import CompleteProfilePage from "./pages/CompleteProfilePage.vue";
 import UserPostsPage from "./components/Profile/UserPostsPage.vue"; // Verify this path
+import VideosPage from "./pages/VideosPage.vue"; // Updated to match file name
 
-// Route definitions
 export const routes = [
   {
     path: "/",
@@ -49,15 +50,18 @@ export const routes = [
     component: UserPostsPage,
     props: true
   },
+  {
+    path: '/videos',
+    name: 'Videos',
+    component: VideosPage // Updated to direct import
+  },
 ];
 
-// Create router
 const router = createRouter({
   history: createWebHistory(),
   routes,
 });
 
-// Middleware to protect routes (except Login and Register)
 router.beforeEach((to, from, next) => {
   const isAuthenticated = !!localStorage.getItem("token");
   const publicRoutes = ["Login", "Register"];
