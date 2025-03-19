@@ -1,7 +1,8 @@
+// router/index.js
 import { createRouter, createWebHistory } from "vue-router";
 import { setAuthToken } from "./auth.js";
 
-// Páginas
+// Pages
 import HomePage from "./pages/HomePage.vue";
 import Login from "./pages/Login.vue";
 import Register from "./pages/Register.vue";
@@ -16,8 +17,11 @@ import ShopPage from "./pages/ShopPage.vue";
 import PurchasePage from "./pages/PurchasePage.vue";
 import AppSettingsPage from "./pages/AppSettingsPage.vue";
 import AccountSettingsPage from "./pages/AccountSettingsPage.vue";
+import CompleteProfilePage from "./pages/CompleteProfilePage.vue";
+import UserPostsPage from "./components/Profile/UserPostsPage.vue"; // Verify this path
+import VideosPage from "./pages/VideosPage.vue"; // Updated to match file name
+import UserVideosPage from './components/Profile/UserVideosPage.vue'; // Adjust path as needed
 
-// Definición de rutas
 export const routes = [
   {
     path: "/",
@@ -40,15 +44,31 @@ export const routes = [
   { path: "/purchase/:id", name: "Purchase", component: PurchasePage, props: true },
   { path: "/settings", name: "Settings", component: AppSettingsPage },
   { path: "/account-settings", name: "AccountSettings", component: AccountSettingsPage },
+  { path: "/complete-profile", name: "CompleteProfile", component: CompleteProfilePage },
+  {
+    path: "/users/username/:username/posts",
+    name: "UserPostsPage",
+    component: UserPostsPage,
+    props: true
+  },
+  {
+    path: '/users/username/:username/videos',
+    name: 'UserVideosPage',
+    component: UserVideosPage,
+    props: true
+  },
+  {
+    path: '/videos',
+    name: 'Videos',
+    component: VideosPage
+  },
 ];
 
-// Creación del router
 const router = createRouter({
   history: createWebHistory(),
   routes,
 });
 
-// Middleware para proteger rutas (excepto Login y Register)
 router.beforeEach((to, from, next) => {
   const isAuthenticated = !!localStorage.getItem("token");
   const publicRoutes = ["Login", "Register"];

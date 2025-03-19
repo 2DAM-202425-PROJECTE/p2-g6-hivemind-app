@@ -17,6 +17,7 @@
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn text @click="showStoryModal = false">Close</v-btn>
+                <v-btn color="red" text @click="deleteStory(selectedStory.id)">Delete</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -87,6 +88,32 @@ const getStoryImagePath = (path) => {
     return `http://localhost:8000/storage/${path}`;
 };
 
+const fetchStories = async () => {
+    const response = await axios.get('http://localhost:8000/api/stories', {
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+    });
+    story.value = response.data;
+};
+
+const deleteStory = async (id) => {
+    if (confirm('Are you sure you want to delete this story?')) {
+        try {
+            await axios.delete(`http://localhost:8000/api/stories/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                },
+            });
+            alert('Story deleted successfully');
+            showStoryModal.value = false; // Tanca el popup de la història
+            fetchStories(); // Actualiza la llista de les històries
+        } catch (error) {
+            console.error(error);
+            alert('Failed to delete story');
+        }
+    }
+};
 </script>
 
 <style scoped>

@@ -1,0 +1,5 @@
+{
+    "require": {
+        "laravolt/avatar": "^6.1"
+    }
+}
