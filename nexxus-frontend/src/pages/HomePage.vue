@@ -404,6 +404,10 @@ h1 {
 
 .post-content {
   width: 100%;
+  height: 400px; /* Fixed height for all posts */
+  max-width: 760px; /* Matches max-width of post-card minus padding (800px - 20px * 2) */
+  max-height: 400px; /* Ensures no overflow */
+  object-fit: contain; /* Scales content to fit without clipping */
   border-radius: 20px;
   margin-bottom: 15px;
 }
