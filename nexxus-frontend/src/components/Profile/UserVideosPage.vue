@@ -9,15 +9,16 @@
         </div>
         <div v-else :id="`video-${selectedVideo.id}`" class="video-card">
           <div class="video-header">
-            <div class="video-profile-link" @click="goToUserProfile(getUsernameById(selectedVideo.id_user))">
-              <img :src="getProfilePhotoById(selectedVideo.id_user)" class="profile-pic" alt="Profile" />
-            </div>
-            <div class="video-info">
-              <strong class="video-username" @click="goToUserProfile(getUsernameById(selectedVideo.id_user))">
-                {{ getUserNameById(selectedVideo.id_user) }}
-              </strong>
-              <h5>{{ selectedVideo.description || 'No description' }}</h5>
-              <video :src="getImageUrl(selectedVideo.file_path)" alt="Post Video" class="video-content" controls />
+            <div class="profile-section">
+              <div class="video-profile-link" @click="goToUserProfile(getUsernameById(selectedVideo.id_user))">
+                <img :src="getProfilePhotoById(selectedVideo.id_user)" class="profile-pic" alt="Profile" />
+              </div>
+              <div class="video-info">
+                <strong class="video-username" @click="goToUserProfile(getUsernameById(selectedVideo.id_user))">
+                  {{ getUserNameById(selectedVideo.id_user) }}
+                </strong>
+                <span class="username-handle">{{ getUsernameById(selectedVideo.id_user) }}</span>
+              </div>
             </div>
             <div class="video-menu">
               <button @click.stop="toggleVideoMenu(selectedVideo.id)">
@@ -36,53 +37,24 @@
               </div>
             </div>
           </div>
-
-          <!-- Edit Video Dialog -->
-          <v-dialog v-model="editVideoPopup" max-width="500">
-            <v-card>
-              <v-card-title>Edit Video</v-card-title>
-              <v-card-text>
-                <div v-if="selectedVideo && selectedVideo.file_path" class="current-video">
-                  <p>Current Video:</p>
-                  <video :src="getImageUrl(selectedVideo.file_path)" controls
-                         style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
-                </div>
-                <v-file-input label="Replace Video (.mp4, .mov)" accept=".mp4, .mov"
-                              @update:modelValue="handleEditFileUpload" outlined></v-file-input>
-                <v-text-field v-model="editVideoDescription" label="Description" outlined></v-text-field>
-              </v-card-text>
-              <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn text @click="cancelEditVideo">Cancel</v-btn>
-                <v-btn color="primary" @click="saveEditVideo">Update Video</v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-dialog>
-
-          <!-- Delete Confirmation Dialog -->
-          <v-dialog v-model="deleteDialog" max-width="400">
-            <v-card>
-              <v-card-title class="headline">Confirm Deletion</v-card-title>
-              <v-card-text>
-                Are you sure you want to delete this {{ deleteType === 'video' ? 'video' : 'comment' }}? This action cannot be undone.
-              </v-card-text>
-              <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn text @click="cancelDelete">Cancel</v-btn>
-                <v-btn color="error" @click="confirmDelete">Delete</v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-dialog>
-
+          <div class="video-description">
+            <h5>{{ selectedVideo.description || 'No description' }}</h5>
+          </div>
+          <video :src="getImageUrl(selectedVideo.file_path)" alt="Post Video" class="video-content" controls />
           <div class="video-actions">
             <div class="action-item" @click.stop="toggleLike(selectedVideo)">
               <i class="mdi" :class="selectedVideo.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
               <span>{{ selectedVideo.likes_count }} Likes</span>
             </div>
+            <div class="action-item">
+              <i class="mdi mdi-comment-outline"></i>
+              <span>{{ comments.length }} Comments</span>
+            </div>
             <div class="action-item" @click.stop="shareVideo(selectedVideo)">
               <i class="mdi mdi-share-outline"></i>
               <span>{{ shares }} Shares</span>
             </div>
+
           </div>
           <!-- Comment Section -->
           <div class="comments-section">
@@ -114,6 +86,44 @@
         </div>
       </div>
     </div>
+
+    <!-- Edit Video Dialog -->
+    <v-dialog v-model="editVideoPopup" max-width="500">
+      <v-card>
+        <v-card-title>Edit Video</v-card-title>
+        <v-card-text>
+          <div v-if="selectedVideo && selectedVideo.file_path" class="current-video">
+            <p>Current Video:</p>
+            <video :src="getImageUrl(selectedVideo.file_path)" controls
+                   style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
+          </div>
+          <v-file-input label="Replace Video (.mp4, .mov)" accept=".mp4, .mov"
+                        @update:modelValue="handleEditFileUpload" outlined></v-file-input>
+          <v-text-field v-model="editVideoDescription" label="Description" outlined></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="cancelEditVideo">Cancel</v-btn>
+          <v-btn color="primary" @click="saveEditVideo">Update Video</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <v-dialog v-model="deleteDialog" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Confirm Deletion</v-card-title>
+        <v-card-text>
+          Are you sure you want to delete this {{ deleteType === 'video' ? 'video' : 'comment' }}? This action cannot be undone.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="cancelDelete">Cancel</v-btn>
+          <v-btn color="error" @click="confirmDelete">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <Footer />
   </div>
 </template>
@@ -146,7 +156,7 @@ const deleteType = ref('');
 const itemToDelete = ref(null);
 
 const API_BASE_URL = 'http://localhost:8000';
-const VIDEO_EXTENSIONS = ['.mp4', '.mov']; // Add more video formats as needed
+const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
 
 onMounted(async () => {
   try {
@@ -161,11 +171,7 @@ onMounted(async () => {
       headers: { Authorization: `Bearer ${token}` }
     });
     users.value = usersResult.data.data.reduce((acc, user) => {
-      acc[user.id] = {
-        name: user.name,
-        username: user.username,
-        profile_photo_path: user.profile_photo_path,
-      };
+      acc[user.id] = { name: user.name, username: user.username, profile_photo_path: user.profile_photo_path };
       return acc;
     }, {});
 
@@ -188,7 +194,6 @@ onMounted(async () => {
     const post = postResult.data.data;
     console.log('Post data:', post);
 
-    // Check if the post is a video
     if (post.file_path && VIDEO_EXTENSIONS.some(ext => post.file_path.toLowerCase().endsWith(ext))) {
       selectedVideo.value = post;
     } else {
@@ -367,12 +372,7 @@ const saveEditVideo = async () => {
     const response = await axios.post(
       `${API_BASE_URL}/api/posts/${selectedVideo.value.id}`,
       formData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        }
-      }
+      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
     );
 
     selectedVideo.value = response.data.post || response.data.data;
@@ -388,9 +388,7 @@ const reportVideo = async (video) => {
     const token = localStorage.getItem('token');
     await axios.post(`${API_BASE_URL}/api/posts/${video.id}/report`, {
       reason: prompt('Please enter reason for reporting:')
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    }, { headers: { Authorization: `Bearer ${token}` } });
     alert('Video reported successfully');
     videoMenuVisible.value = null;
   } catch (error) {
@@ -422,10 +420,13 @@ const shareVideo = (video) => {
 h1 {
   font-size: 24px;
   padding-bottom: 20px;
+  text-align: center;
 }
 
 .videos-and-comments {
   display: flex;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .videos-column {
@@ -438,9 +439,6 @@ h1 {
   border: 1px solid #ffffff;
   border-radius: 24px;
   padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
-  margin-bottom: 20px;
   width: 100%;
 }
 
@@ -450,10 +448,15 @@ h1 {
 
 .video-header {
   display: flex;
-  gap: 10px;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
-  position: relative;
+}
+
+.profile-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .video-profile-link {
@@ -461,23 +464,19 @@ h1 {
 }
 
 .profile-pic {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
 }
 
-.video-info h3 {
-  font-size: 16px;
-  margin: 0;
-}
-
-.video-info p {
-  font-size: 12px;
-  margin: 0;
+.video-info {
+  display: flex;
+  flex-direction: column;
 }
 
 .video-username {
   font-size: 16px;
+  font-weight: bold;
   cursor: pointer;
 }
 
@@ -485,8 +484,23 @@ h1 {
   text-decoration: underline;
 }
 
+.username-handle {
+  font-size: 14px;
+  color: #666;
+}
+
+.video-description {
+  margin-bottom: 15px;
+}
+
+.video-content {
+  width: 100%;
+  max-height: 600px;
+  border-radius: 20px;
+  margin-bottom: 15px;
+}
+
 .video-menu {
-  margin-left: auto;
   position: relative;
 }
 
@@ -543,18 +557,6 @@ h1 {
 
 .action-item span {
   font-size: 14px;
-}
-
-.video-content {
-  width: 100%;
-  border-radius: 20px;
-  margin-bottom: 15px;
-}
-
-.no-videos {
-  text-align: center;
-  color: #666;
-  padding: 20px;
 }
 
 .comments-section {
@@ -659,5 +661,11 @@ h1 {
 
 .comment-input button:hover {
   background: #0056b3;
+}
+
+.no-videos {
+  text-align: center;
+  color: #666;
+  padding: 20px;
 }
 </style>

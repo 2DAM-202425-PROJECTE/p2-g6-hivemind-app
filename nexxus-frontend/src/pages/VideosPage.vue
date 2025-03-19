@@ -7,17 +7,19 @@
         <p>No videos available</p>
       </div>
       <div v-else class="video-grid">
-        <div v-for="video in videos" :key="video.id" :id="`video-${video.id}`" class="video-card">
+        <div v-for="video in videos" :key="video.id" :id="`video-${video.id}`" class="video-card"
+             @click="goToUserVideoPage(video)">
           <div class="video-header">
-            <div class="video-profile-link" @click="goToUserProfile(getUsernameById(video.id_user))">
-              <img :src="getProfilePhotoById(video.id_user)" class="profile-pic" alt="Profile" />
-            </div>
-            <div class="video-info">
-              <strong class="video-username" @click="goToUserProfile(getUsernameById(video.id_user))">
-                {{ getUserNameById(video.id_user) }}
-              </strong>
-              <h5>{{ video.description || 'No description' }}</h5>
-              <video :src="getImageUrl(video.file_path)" alt="Video" class="video-content" controls @click.stop />
+            <div class="profile-section">
+              <div class="video-profile-link" @click.stop="goToUserProfile(getUsernameById(video.id_user))">
+                <img :src="getProfilePhotoById(video.id_user)" class="profile-pic" alt="Profile" />
+              </div>
+              <div class="video-info">
+                <strong class="video-username" @click.stop="goToUserProfile(getUsernameById(video.id_user))">
+                  {{ getUserNameById(video.id_user) }}
+                </strong>
+                <span class="username-handle">{{ getUsernameById(video.id_user) }}</span>
+              </div>
             </div>
             <div class="video-menu">
               <button @click.stop="toggleVideoMenu(video.id)">
@@ -36,6 +38,10 @@
               </div>
             </div>
           </div>
+          <div class="video-description">
+            <h5>{{ video.description || 'No description' }}</h5>
+          </div>
+          <video :src="getImageUrl(video.file_path)" alt="Video" class="video-content" controls @click.stop />
           <div class="video-actions">
             <div class="action-item" @click.stop="toggleLike(video)">
               <i class="mdi" :class="video.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
@@ -117,7 +123,7 @@ const deleteDialog = ref(false);
 const itemToDelete = ref(null);
 
 const API_BASE_URL = 'http://localhost:8000';
-const VIDEO_EXTENSIONS = ['.mp4', '.mov']; // Add more video formats as needed
+const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
 
 onMounted(async () => {
   try {
@@ -128,26 +134,19 @@ onMounted(async () => {
       return;
     }
 
-    // Fetch all users
     const usersResult = await axios.get(`${API_BASE_URL}/api/users`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     users.value = usersResult.data.data.reduce((acc, user) => {
-      acc[user.id] = {
-        name: user.name,
-        username: user.username,
-        profile_photo_path: user.profile_photo_path,
-      };
+      acc[user.id] = { name: user.name, username: user.username, profile_photo_path: user.profile_photo_path };
       return acc;
     }, {});
 
-    // Fetch current user
     const currentUserResult = await axios.get(`${API_BASE_URL}/api/user`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     currentUser.value = currentUserResult.data;
 
-    // Fetch all posts and filter for videos
     const postsResult = await axios.get(`${API_BASE_URL}/api/posts`, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -156,7 +155,6 @@ onMounted(async () => {
       post.file_path && VIDEO_EXTENSIONS.some(ext => post.file_path.toLowerCase().endsWith(ext))
     );
 
-    // Randomize the video list
     videos.value = videoPosts.sort(() => Math.random() - 0.5);
     console.log('Randomized video posts:', videos.value);
   } catch (error) {
@@ -175,18 +173,23 @@ const getUsernameById = (id) => users.value[id]?.username || null;
 const isVideoFromUser = (video) => video.id_user === currentUser.value.id;
 
 const goToUserProfile = (username) => {
+  if (username) router.push(`/profile/${username}`);
+  else console.warn('No username available for profile navigation');
+};
+
+const goToUserVideoPage = (video) => {
+  const username = getUsernameById(video.id_user);
   if (username) {
-    router.push(`/profile/${username}`);
+    console.log('Navigating to user video page with username:', username, 'postId:', video.id);
+    router.push(`/users/username/${username}/videos?postId=${video.id}`);
   } else {
-    console.warn('No username available for profile navigation');
+    console.warn('No username found for userId:', video.id_user);
   }
 };
 
 const goToVideoComments = (videoId) => {
   const username = getUsernameById(videos.value.find(v => v.id === videoId)?.id_user);
-  if (username) {
-    router.push(`/users/username/${username}/videos?postId=${videoId}`);
-  }
+  if (username) router.push(`/users/username/${username}/videos?postId=${videoId}`);
 };
 
 const toggleLike = async (video) => {
@@ -245,19 +248,12 @@ const saveEditVideo = async () => {
     const formData = new FormData();
     formData.append('description', editVideoDescription.value);
     formData.append('_method', 'PUT');
-    if (editVideoFile.value) {
-      formData.append('file', editVideoFile.value);
-    }
+    if (editVideoFile.value) formData.append('file', editVideoFile.value);
 
     const response = await axios.post(
       `${API_BASE_URL}/api/posts/${selectedVideo.value.id}`,
       formData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        }
-      }
+      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
     );
 
     const updatedVideo = response.data.post || response.data.data;
@@ -303,9 +299,7 @@ const reportVideo = async (video) => {
     const token = localStorage.getItem('token');
     await axios.post(`${API_BASE_URL}/api/posts/${video.id}/report`, {
       reason: prompt('Please enter reason for reporting:')
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    }, { headers: { Authorization: `Bearer ${token}` } });
     alert('Video reported successfully');
     videoMenuVisible.value = null;
   } catch (error) {
@@ -330,6 +324,7 @@ const shareVideo = (video) => {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
+  padding-bottom: 80px; /* Add padding to prevent overlap with footer */
   background-color: #f0f2f5;
   min-height: 100vh;
   color: black;
@@ -358,18 +353,24 @@ h1 {
   border-radius: 24px;
   padding: 20px;
   width: 100%;
+  cursor: pointer;
 }
 
-.video-card.highlight {
-  animation: highlight 2s ease-out;
+.video-card:hover {
+  background: #f9f9f9;
 }
 
 .video-header {
   display: flex;
-  gap: 10px;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
-  position: relative;
+}
+
+.profile-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .video-profile-link {
@@ -377,17 +378,19 @@ h1 {
 }
 
 .profile-pic {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
 }
 
 .video-info {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .video-username {
   font-size: 16px;
+  font-weight: bold;
   cursor: pointer;
 }
 
@@ -395,14 +398,23 @@ h1 {
   text-decoration: underline;
 }
 
+.username-handle {
+  font-size: 14px;
+  color: #666;
+}
+
+.video-description {
+  margin-bottom: 15px;
+}
+
 .video-content {
   width: 100%;
+  max-height: 400px;
   border-radius: 20px;
   margin-bottom: 15px;
 }
 
 .video-menu {
-  margin-left: auto;
   position: relative;
 }
 
