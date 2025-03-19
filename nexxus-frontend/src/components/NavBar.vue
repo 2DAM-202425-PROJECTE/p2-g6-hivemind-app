@@ -385,6 +385,7 @@ const submitStory = async () => {
       storyDescription.value = '';
       storyFile.value = null;
       router.push('/home');
+      window.location.reload();
     }, 3000);
   } catch (error) {
     console.error('Failed to create story:', error);
