@@ -9,12 +9,12 @@
         </div>
         <div v-else :id="`post-${selectedPost.id}`" class="post-card">
           <div class="post-header">
-            <div class="post-profile-link" @click="goToUserProfile(selectedPost.username)">
-              <img :src="getProfilePhotoByUsername(selectedPost.username)" class="profile-pic" alt="Profile" />
+            <div class="post-profile-link" @click="goToUserProfile(getUsernameById(selectedPost.id_user))">
+              <img :src="getProfilePhotoById(selectedPost.id_user)" class="profile-pic" alt="Profile" />
             </div>
             <div class="post-info">
-              <strong class="post-username" @click="goToUserProfile(selectedPost.username)">
-                {{ getUserNameByUsername(selectedPost.username) }}
+              <strong class="post-username" @click="goToUserProfile(getUsernameById(selectedPost.id_user))">
+                {{ getUserNameById(selectedPost.id_user) }}
               </strong>
               <h5>{{ selectedPost.description || 'No description' }}</h5>
               <template v-if="selectedPost.file_path && selectedPost.file_path.includes('.mp4')">
@@ -35,7 +35,7 @@
                 <ul>
                   <template v-if="isPostFromUser(selectedPost)">
                     <li @click.stop="editPost(selectedPost)">Edit</li>
-                    <li @click.stop="deletePost(selectedPost.id)" :disabled="isDeleting">Delete</li>
+                    <li @click.stop="openDeletePostDialog(selectedPost.id)" :disabled="isDeleting">Delete</li>
                   </template>
                   <template v-else>
                     <li @click.stop="reportPost(selectedPost)">Report</li>
@@ -69,6 +69,21 @@
             </v-card>
           </v-dialog>
 
+          <!-- Delete Confirmation Dialog -->
+          <v-dialog v-model="deleteDialog" max-width="400">
+            <v-card>
+              <v-card-title class="headline">Confirm Deletion</v-card-title>
+              <v-card-text>
+                Are you sure you want to delete this {{ deleteType === 'post' ? 'post' : 'comment' }}? This action cannot be undone.
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn text @click="cancelDelete">Cancel</v-btn>
+                <v-btn color="error" @click="confirmDelete">Delete</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+
           <div class="post-actions">
             <div class="action-item" @click.stop="toggleLike(selectedPost)">
               <i class="mdi" :class="selectedPost.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
@@ -95,7 +110,7 @@
                     {{ comment.user?.name || 'Unknown User' }}
                   </strong>
                   <p>{{ comment.content }}</p>
-                  <button v-if="isPostFromUser(selectedPost)" @click="deleteComment(comment.id)" class="delete-comment-btn">
+                  <button v-if="isPostFromUser(selectedPost)" @click="openDeleteCommentDialog(comment.id)" class="delete-comment-btn">
                     <i class="mdi mdi-delete"></i>
                   </button>
                 </div>
@@ -119,6 +134,7 @@ import { useRoute, useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import axios from 'axios';
+import { generateAvatar } from '@/utils/avatar';
 
 const route = useRoute();
 const router = useRouter();
@@ -133,7 +149,11 @@ const editPostPopup = ref(false);
 const editPostDescription = ref('');
 const editPostFile = ref(null);
 const currentUser = ref({});
+const users = ref({});
 const shares = ref(0);
+const deleteDialog = ref(false);
+const deleteType = ref(''); // 'post' or 'comment'
+const itemToDelete = ref(null); // Stores postId or commentId
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -146,7 +166,18 @@ onMounted(async () => {
       return;
     }
 
-    // Fetch user data by username
+    const usersResult = await axios.get(`${API_BASE_URL}/api/users`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    users.value = usersResult.data.data.reduce((acc, user) => {
+      acc[user.id] = {
+        name: user.name,
+        username: user.username,
+        profile_photo_path: user.profile_photo_path,
+      };
+      return acc;
+    }, {});
+
     console.log('Fetching user data for username:', username);
     const userResult = await axios.get(`${API_BASE_URL}/api/user/${username}`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -154,7 +185,6 @@ onMounted(async () => {
     console.log('User data:', userResult.data);
     user.value = userResult.data.user;
 
-    // Fetch the specific post using postId from query
     const postId = route.query.postId;
     if (!postId) {
       console.error('No postId provided in query');
@@ -167,7 +197,6 @@ onMounted(async () => {
     console.log('Post data:', postResult.data);
     selectedPost.value = postResult.data.data;
 
-    // Fetch comments for the post
     console.log('Fetching comments for post ID:', postId);
     const commentsResult = await axios.get(`${API_BASE_URL}/api/posts/${postId}/comments`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -175,7 +204,6 @@ onMounted(async () => {
     console.log('Comments data:', commentsResult.data);
     comments.value = commentsResult.data || [];
 
-    // Fetch current authenticated user
     console.log('Fetching current user');
     const currentUserResult = await axios.get(`${API_BASE_URL}/api/user`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -183,7 +211,6 @@ onMounted(async () => {
     console.log('Current user data:', currentUserResult.data);
     currentUser.value = currentUserResult.data;
 
-    // Scroll to the post
     await nextTick();
     const postElement = document.getElementById(`post-${postId}`);
     if (postElement) {
@@ -200,11 +227,15 @@ onMounted(async () => {
   }
 });
 
-const getImageUrl = (path) => `${API_BASE_URL}/storage/${path}`;
-const getProfilePhotoByUsername = (username) => user.value.profile_photo_path || 'https://via.placeholder.com/50';
+const getImageUrl = (path) => path ? `${API_BASE_URL}/storage/${path}` : generateAvatar('User');
+const getProfilePhotoById = (id) => {
+  const user = users.value[id];
+  return user?.profile_photo_path ? `${API_BASE_URL}/storage/${user.profile_photo_path}` : generateAvatar(user?.name || 'User');
+};
 const getCommentUserPhoto = (user) => user?.profile_photo_path ? `${API_BASE_URL}/storage/${user.profile_photo_path}` : 'https://via.placeholder.com/40';
-const getUserNameByUsername = (username) => user.value.name || 'Unknown User';
-const isPostFromUser = (post) => post.username === currentUser.value.username;
+const getUserNameById = (id) => users.value[id]?.name || 'Unknown User';
+const getUsernameById = (id) => users.value[id]?.username || null;
+const isPostFromUser = (post) => post.id_user === currentUser.value.id;
 
 const goToUserProfile = (username) => {
   console.log('Navigating to profile with username:', username);
@@ -257,16 +288,47 @@ const addComment = async () => {
   }
 };
 
-const deleteComment = async (commentId) => {
-  if (!confirm('Are you sure you want to delete this comment?')) return;
+const openDeleteCommentDialog = (commentId) => {
+  deleteType.value = 'comment';
+  itemToDelete.value = commentId;
+  deleteDialog.value = true;
+};
+
+const openDeletePostDialog = (postId) => {
+  deleteType.value = 'post';
+  itemToDelete.value = postId;
+  deleteDialog.value = true;
+};
+
+const cancelDelete = () => {
+  deleteDialog.value = false;
+  itemToDelete.value = null;
+  deleteType.value = '';
+};
+
+const confirmDelete = async () => {
+  const token = localStorage.getItem('token');
   try {
-    const token = localStorage.getItem('token');
-    await axios.delete(`${API_BASE_URL}/api/comments/${commentId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    comments.value = comments.value.filter(comment => comment.id !== commentId);
+    if (deleteType.value === 'post') {
+      isDeleting.value = true;
+      await axios.delete(`${API_BASE_URL}/api/posts/${itemToDelete.value}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      selectedPost.value = null;
+      router.push(`/profile/${username}`);
+    } else if (deleteType.value === 'comment') {
+      await axios.delete(`${API_BASE_URL}/api/comments/${itemToDelete.value}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      comments.value = comments.value.filter(comment => comment.id !== itemToDelete.value);
+    }
   } catch (error) {
-    console.error('Error deleting comment:', error.response?.data || error.message);
+    console.error(`Error deleting ${deleteType.value}:`, error.response?.data || error.message);
+  } finally {
+    isDeleting.value = false;
+    deleteDialog.value = false;
+    itemToDelete.value = null;
+    deleteType.value = '';
   }
 };
 
@@ -313,29 +375,11 @@ const saveEditPost = async () => {
       }
     );
 
-    selectedPost.value = response.data.post || response.data.data; // Adjust based on API response structure
+    selectedPost.value = response.data.post || response.data.data;
     editPostPopup.value = false;
   } catch (error) {
     console.error('Error updating post:', error);
     alert('Error: ' + (error.response?.data?.message || error.message));
-  }
-};
-
-const deletePost = async (postId) => {
-  if (confirm('Are you sure you want to delete this post?')) {
-    try {
-      isDeleting.value = true;
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_BASE_URL}/api/posts/${postId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      selectedPost.value = null;
-      router.push(`/profile/${username}`);
-    } catch (error) {
-      console.error('Error deleting post:', error);
-    } finally {
-      isDeleting.value = false;
-    }
   }
 };
 
