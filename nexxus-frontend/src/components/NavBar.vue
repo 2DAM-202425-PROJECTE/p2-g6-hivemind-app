@@ -1,12 +1,18 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from '../axios'
 import { clearAuthToken } from '../auth'
 import NotificationsModal from './NotificationsModal.vue' // Import the NotificationsModal component
+import { debounce } from 'lodash'
 
+const router = useRouter()
 const menu = ref(false)
 const searchQuery = ref('')
+const searchResults = ref([])
+const showSearchResults = ref(false)
 const user = ref(null)
+const users = ref([])
 const popup = ref(false)
 const postPopup = ref(false)
 const storyPopup = ref(false)
@@ -31,7 +37,6 @@ const menuItems = ref([
   { text: 'My Profile', to: '/profile', icon: 'mdi-account' },
   { text: 'Account Settings', to: '/account-settings', icon: 'mdi-account-cog' }, // Add account settings
   { text: 'App Settings', to: '/settings', icon: 'mdi-cog' } // Add app settings
-
 ])
 
 const fetchUser = async () => {
@@ -49,24 +54,62 @@ const fetchUser = async () => {
   }
 }
 
+const fetchUsers = async () => {
+  try {
+    const response = await axios.get('/api/users')
+    users.value = response.data.data
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+const searchUsers = () => {
+  if (searchQuery.value.trim() === '') {
+    searchResults.value = []
+    showSearchResults.value = false
+    return
+  }
+  searchResults.value = users.value.filter(user => 
+    user.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  )
+  showSearchResults.value = true
+  console.log(searchResults.value)
+}
+
+const debouncedSearchUsers = debounce(searchUsers, 300)
+
+const handleBlur = () => {
+  setTimeout(() => {
+    showSearchResults.value = false
+  }, 200)
+}
+
+const preventBlur = (e) => {
+  e.preventDefault()
+}
+
+const goToUserProfile = (username) => {
+  router.push(`/profile/${username}`)
+}
+
 const logout = async () => {
   try {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token")
 
     if (!token) {
-      throw new Error("No token found");
+      throw new Error("No token found")
     }
 
     await axios.post('/api/logout', {}, {
       headers: {
         Authorization: `Bearer ${token}`
       }
-    });
+    })
 
-    localStorage.removeItem("token");
-    clearAuthToken();
-    user.value = null;
-    window.location.href = "/";
+    localStorage.removeItem("token")
+    clearAuthToken()
+    user.value = null
+    window.location.href = "/"
   } catch (err) {
     console.error(err)
     alert('Logout failed.')
@@ -78,44 +121,43 @@ const handleFileUpload = (event) => {
 }
 
 const submitStory = async () => {
-    if (!storyDescription.value && !storyFile.value) {
-        alert('Please enter a description or upload a file!')
-        return
-    }
+  if (!storyDescription.value && !storyFile.value) {
+    alert('Please enter a description or upload a file!')
+    return
+  }
 
-    const formData = new FormData()
-    formData.append('description', storyDescription.value)
-    formData.append('id_user', user.value.id) // Assuming user is logged in
-    formData.append('publish_date', new Date().toISOString()) // Add publish_date
+  const formData = new FormData()
+  formData.append('description', storyDescription.value)
+  formData.append('id_user', user.value.id) // Assuming user is logged in
+  formData.append('publish_date', new Date().toISOString()) // Add publish_date
 
-    if (storyFile.value) {
-        formData.append('file', storyFile.value)
-    }
+  if (storyFile.value) {
+    formData.append('file', storyFile.value)
+  }
 
-    try {
-        const response = await axios.post('http://localhost:8000/api/stories', formData, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem('token')}`,
-                Accept: 'application/json',
-                'Content-Type': 'multipart/form-data'
-            }
-        })
-        alert('Story created successfully!')
-        storyPopup.value = false
-        storyDescription.value = ''
-        storyFile.value = null
+  try {
+    const response = await axios.post('http://localhost:8000/api/stories', formData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Accept: 'application/json',
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    alert('Story created successfully!')
+    storyPopup.value = false
+    storyDescription.value = ''
+    storyFile.value = null
 
-        // Update the home page with the new story
-        window.location.href = "/home"
-    } catch (error) {
-        console.error(error)
-        alert('Failed to create story.')
-    }
+    // Update the home page with the new story
+    window.location.href = "/home"
+  } catch (error) {
+    console.error(error)
+    alert('Failed to create story.')
+  }
 }
 
 const submitPost = async () => {
   localStorage.setItem('postContent', postContent.value)
-  
 
   if (!postContent.value && !postFile.value) {
     alert('Please enter content or upload a file!')
@@ -171,6 +213,11 @@ const updateNotifications = (updatedNotifications) => {
 
 onMounted(() => {
   fetchUser()
+  fetchUsers()
+})
+
+watch(searchQuery, () => {
+  debouncedSearchUsers()
 })
 
 watch([menu, showNotifications], ([newMenu, newShowNotifications]) => {
@@ -178,10 +225,9 @@ watch([menu, showNotifications], ([newMenu, newShowNotifications]) => {
     showNotifications.value = false
   }
 })
-const hasNotifications = computed(() => notifications.value.length > 0);
+const hasNotifications = computed(() => notifications.value.length > 0)
 
 </script>
-
 
 <template>
   <!-- v-app-bar sin cambios -->
@@ -207,7 +253,7 @@ const hasNotifications = computed(() => notifications.value.length > 0);
         prepend-inner-icon="mdi-magnify"
         class="bg-gray-800 text-white rounded-lg"
         @focus="showSearchResults = true"
-        @input="searchUsers"
+        @input="debouncedSearchUsers"
         @blur="handleBlur"
       ></v-text-field>
     </div>
@@ -245,7 +291,7 @@ const hasNotifications = computed(() => notifications.value.length > 0);
 
   <!-- Lista con separadores y ajustes -->
   <div
-    v-if="showSearchResults && searchQuery"
+    v-if="showSearchResults && searchQuery.trim()"
     class="search-results"
     :style="searchResultsStyle"
     ref="searchResultsContainer"
