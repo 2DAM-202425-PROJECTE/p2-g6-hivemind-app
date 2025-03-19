@@ -108,6 +108,7 @@ const deleteStory = async (id) => {
             alert('Story deleted successfully');
             showStoryModal.value = false; // Tanca el popup de la història
             fetchStories(); // Actualiza la llista de les històries
+            window.location.reload(); // Recarrega la pàgina
         } catch (error) {
             console.error(error);
             alert('Failed to delete story');
