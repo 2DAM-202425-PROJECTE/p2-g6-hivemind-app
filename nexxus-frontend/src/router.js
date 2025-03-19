@@ -53,7 +53,7 @@ export const routes = [
   {
     path: '/videos',
     name: 'Videos',
-    component: VideosPage // Updated to direct import
+    component: VideosPage
   },
 ];
 
