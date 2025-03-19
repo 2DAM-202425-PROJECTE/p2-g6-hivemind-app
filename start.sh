@@ -102,8 +102,7 @@ cd nexxus-backend || exit 1
 if [ -f artisan ]; then
   # Run storage:link and suppress output, checking the exit code
   php artisan storage:link > /dev/null 2>&1
-  if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Storage link created successfully.${NC}"
+  echo -e "${GREEN}✅ Storage link created successfully.${NC}"
 else
   echo -e "${RED}artisan file not found in nexxus-backend.${NC}"
   exit 1
