@@ -167,7 +167,6 @@ const goToUserProfile = (userId) => {
   else console.warn('No username found for userId:', userId);
 };
 
-// New navigation logic for video vs non-video posts
 const navigateToPost = (post) => {
   const username = getUsernameById(post.id_user);
   if (!username) {
@@ -269,7 +268,6 @@ const sharePost = (post) => {}; // Implement if needed
 </script>
 
 <style scoped>
-/* Same as your original styles */
 .home-container {
   font-family: Arial, sans-serif;
   padding: 20px;
@@ -302,8 +300,8 @@ h1 {
 
 .post-header {
   display: flex;
-  gap: 10px;
-  align-items: center;
+  justify-content: space-between; /* Ensures profile pic is left, menu is right */
+  align-items: flex-start; /* Aligns items to the top */
   margin-bottom: 15px;
   position: relative;
 }
@@ -316,6 +314,11 @@ h1 {
   width: 50px;
   height: 50px;
   border-radius: 50%;
+}
+
+.post-info {
+  flex-grow: 1; /* Takes up available space between profile pic and menu */
+  margin-left: 10px; /* Adds spacing between profile pic and content */
 }
 
 .post-info h3 {
@@ -338,8 +341,7 @@ h1 {
 }
 
 .post-menu {
-  margin-left: auto;
-  position: relative;
+  /* No margin-left needed due to justify-content */
 }
 
 .post-menu button {
