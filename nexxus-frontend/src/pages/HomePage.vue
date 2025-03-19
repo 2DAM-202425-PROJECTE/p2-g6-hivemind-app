@@ -4,13 +4,17 @@
     <h1>Home</h1>
     <StoriesBar :stories="stories.data" />
 
-    <div class="post-card" v-for="post in posts.data" :key="post.id">
+    <div class="post-card" v-for="post in posts.data" :key="post.id" @click="goToUserPosts(post)">
       <div class="post-header">
-        <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
+        <div class="post-profile-link" @click.stop="goToUserProfile(post.id_user)">
+          <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
+        </div>
         <div class="post-info">
           <ul>
             <li>
-              <strong>{{ getUserNameById(post.id_user) }}</strong>
+              <strong class="post-username" @click.stop="goToUserProfile(post.id_user)">
+                {{ getUserNameById(post.id_user) }}
+              </strong>
               <h5>{{ post.description }}</h5>
               <template v-if="post.file_path && post.file_path.includes('.mp4')">
                 <video :src="getImageUrl(post.file_path)" alt="file Video" class="post-content" controls />
@@ -22,14 +26,14 @@
           </ul>
         </div>
         <div class="post-menu">
-          <button @click="togglePostMenu(post.id)">
+          <button @click.stop="togglePostMenu(post.id)">
             <i class="mdi mdi-dots-vertical"></i>
           </button>
           <div v-if="postMenuVisible === post.id" class="dropdown-menu">
             <ul>
-              <li v-show="isPostFromUser(post)" @click="editPost(post)">Edit</li>
-              <li v-show="isPostFromUser(post)" @click="deletePost(post.id)" :disabled="isDeleting">Delete</li>
-              <li @click="reportPost(post)">Report</li>
+              <li v-show="isPostFromUser(post)" @click.stop="editPost(post)">Edit</li>
+              <li v-show="isPostFromUser(post)" @click.stop="deletePost(post.id)" :disabled="isDeleting">Delete</li>
+              <li @click.stop="reportPost(post)">Report</li>
             </ul>
           </div>
         </div>
@@ -62,23 +66,20 @@
       </v-dialog>
 
       <div class="post-actions">
-        <div class="action-item" @click="toggleLike(post)">
+        <div class="action-item" @click.stop="toggleLike(post)">
           <i class="mdi" :class="post.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
           <span>{{ post.likes_count }} Likes</span>
         </div>
-        <div class="action-item" @click="openCommentModal(post)">
+        <div class="action-item" @click.stop="goToUserPosts(post)">
           <i class="mdi mdi-comment-outline"></i>
           <span>{{ post.comments ? post.comments.length : 0 }} Comments</span>
         </div>
-        <div class="action-item" @click="sharePost(post)">
+        <div class="action-item" @click.stop="sharePost(post)">
           <i class="mdi mdi-share-outline"></i>
           <span>{{ shares }} Shares</span>
         </div>
       </div>
     </div>
-
-    <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal"
-                  :currentUser="currentUser" @add-comment="addComment" :post="selectedPost" />
 
     <UserRecommendation />
     <Footer />
@@ -86,20 +87,18 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import UserRecommendation from '@/components/UserRecommendation.vue';
-import CommentModal from '@/components/CommentModal.vue';
 import StoriesBar from '@/components/StoriesBar.vue';
-import { ref } from 'vue';
-import { onMounted } from 'vue';
 import axios from 'axios';
-import { generateAvatar } from '@/utils/avatar'; // Importar la función de avatar
+import { generateAvatar } from '@/utils/avatar';
 
+const router = useRouter();
 const posts = ref({ data: [] });
 const users = ref({});
-const isCommentModalVisible = ref(false);
-const selectedPostComments = ref([]);
 const selectedPostId = ref(null);
 const selectedPost = ref(null);
 const isDeleting = ref(false);
@@ -108,7 +107,7 @@ const editPostPopup = ref(false);
 const editPostDescription = ref('');
 const editPostFile = ref(null);
 const stories = ref({ data: [] });
-const shares = ref(0); // Añadido para evitar errores con "shares"
+const shares = ref(0);
 
 const currentUser = ref({
   id: null,
@@ -119,7 +118,6 @@ const currentUser = ref({
 onMounted(async () => {
   try {
     const token = localStorage.getItem('token');
-
     if (!token) {
       console.error('No hay token disponible');
       return;
@@ -148,6 +146,7 @@ onMounted(async () => {
     users.value = usersResult.data.data.reduce((acc, user) => {
       acc[user.id] = {
         name: user.name,
+        username: user.username,
         profile_photo_path: user.profile_photo_path,
       };
       return acc;
@@ -170,14 +169,13 @@ onMounted(async () => {
       },
     });
     stories.value = storiesResult.data;
-
   } catch (error) {
     console.error('Error al obtener datos', error.response?.data || error.message);
   }
 });
 
 const getImageUrl = (path) => {
-  if (!path) return generateAvatar('User'); // Usar avatar generado si no hay path
+  if (!path) return generateAvatar('User');
   return `http://localhost:8000/storage/${path}`;
 };
 
@@ -192,6 +190,31 @@ const getProfilePhotoById = (id) => {
 const getUserNameById = (id) => {
   const user = users.value[id];
   return user?.name || 'Usuario desconocido';
+};
+
+const getUsernameById = (id) => {
+  const user = users.value[id];
+  return user?.username || null;
+};
+
+const goToUserProfile = (userId) => {
+  const username = getUsernameById(userId);
+  console.log('Navigating to profile with username:', username, 'for userId:', userId);
+  if (username) {
+    router.push(`/profile/${username}`);
+  } else {
+    console.warn('No username found for userId:', userId);
+  }
+};
+
+const goToUserPosts = (post) => {
+  const username = getUsernameById(post.id_user);
+  console.log('Navigating to user posts with username:', username, 'postId:', post.id);
+  if (username) {
+    router.push(`/users/username/${username}/posts?postId=${post.id}`);
+  } else {
+    console.warn('No username found for userId:', post.id_user);
+  }
 };
 
 const toggleLike = async (post) => {
@@ -221,43 +244,6 @@ const toggleLike = async (post) => {
   }
 };
 
-const openCommentModal = async (post) => {
-  selectedPost.value = post;
-  selectedPostId.value = post.id;
-  isCommentModalVisible.value = true;
-
-  try {
-    const response = await axios.get(
-      `http://localhost:8000/api/posts/${post.id}/comments`,
-      { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-    );
-    selectedPostComments.value = response.data;
-    isCommentModalVisible.value = true;
-  } catch (error) {
-    console.error('Error:', error.response.data);
-  }
-};
-
-const closeCommentModal = () => {
-  isCommentModalVisible.value = false;
-};
-
-const addComment = async (comment) => {
-  try {
-    const response = await axios.post(`http://localhost:8000/api/posts/${selectedPostId.value}/comments`, {
-      content: comment,
-    }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-
-    selectedPostComments.value.push(response.data);
-  } catch (error) {
-    console.error('Error adding comment:', error.response?.data || error.message);
-  }
-};
-
 const togglePostMenu = (postId) => {
   postMenuVisible.value = postMenuVisible.value === postId ? null : postId;
 };
@@ -270,7 +256,7 @@ const editPost = async (post) => {
 };
 
 const handleEditFileUpload = (files) => {
-  editPostFile.value = files ? files[0] : null; // Handle single file upload
+  editPostFile.value = files ? files[0] : null;
 };
 
 const cancelEditPost = () => {
@@ -285,13 +271,13 @@ const saveEditPost = async () => {
   try {
     const formData = new FormData();
     formData.append('description', editPostDescription.value);
-    formData.append('_method', 'PUT'); // Add method override
+    formData.append('_method', 'PUT');
 
     if (editPostFile.value) {
       formData.append('file', editPostFile.value);
     }
 
-    const response = await axios.post( // Use POST instead of PUT
+    const response = await axios.post(
       `http://localhost:8000/api/posts/${selectedPost.value.id}`,
       formData,
       {
@@ -302,11 +288,10 @@ const saveEditPost = async () => {
       }
     );
 
-    // Update frontend data with response
-    const updatedPost = response.data.post; // Access nested post data
+    const updatedPost = response.data.post;
     const index = posts.value.data.findIndex(p => p.id === selectedPost.value.id);
     if (index !== -1) {
-      posts.value.data.splice(index, 1, updatedPost); // Ensure reactivity
+      posts.value.data.splice(index, 1, updatedPost);
     }
 
     editPostPopup.value = false;
@@ -315,6 +300,7 @@ const saveEditPost = async () => {
     alert('Error: ' + (error.response?.data?.message || error.message));
   }
 };
+
 const isPostFromUser = (post) => {
   return post.id_user === currentUser.value.id;
 };
@@ -333,7 +319,6 @@ const deletePost = async (postId) => {
     }
 
     location.reload();
-
   } catch (error) {
     console.error('Error deleting post:', error.response?.data || error.message);
     alert('Failed to delete post. ' + (error.response?.data?.message || error.message));
@@ -343,12 +328,11 @@ const deletePost = async (postId) => {
 };
 
 const reportPost = (post) => {
-  // Implement report post logic
   alert(`Reported post with ID: ${post.id}`);
 };
 
 const sharePost = (post) => {
-  // Implement share post logic
+  // Implement share post logic if needed
 };
 </script>
 
@@ -367,28 +351,6 @@ h1 {
   padding-bottom: 20px;
 }
 
-.stories {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.story {
-  text-align: center;
-}
-
-.story img {
-  width: 80px;
-  height: 80px;
-  border-radius: 10px;
-  border: 2px solid #7f7f7f;
-}
-
-.story p {
-  margin-top: 5px;
-  font-size: 12px;
-}
-
 .post-card {
   background: #ffffff;
   border: 1px solid #ffffff;
@@ -398,6 +360,11 @@ h1 {
   margin: 0 auto;
   margin-bottom: 20px;
   width: 100%;
+  cursor: pointer;
+}
+
+.post-card:hover {
+  background: #f9f9f9;
 }
 
 .post-header {
@@ -406,6 +373,10 @@ h1 {
   align-items: center;
   margin-bottom: 15px;
   position: relative;
+}
+
+.post-profile-link {
+  cursor: pointer;
 }
 
 .profile-pic {
@@ -422,6 +393,15 @@ h1 {
 .post-info p {
   font-size: 12px;
   margin: 0;
+}
+
+.post-username {
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.post-username:hover {
+  text-decoration: underline;
 }
 
 .post-menu {
@@ -459,12 +439,6 @@ h1 {
 
 .dropdown-menu li:hover {
   background: #f0f0f0;
-}
-
-.post-image {
-  width: 100%;
-  border-radius: 20px;
-  margin-bottom: 15px;
 }
 
 .post-actions {

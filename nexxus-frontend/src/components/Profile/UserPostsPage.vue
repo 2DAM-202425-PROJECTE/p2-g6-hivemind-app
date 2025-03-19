@@ -9,9 +9,13 @@
         </div>
         <div v-else :id="`post-${selectedPost.id}`" class="post-card">
           <div class="post-header">
-            <img :src="getProfilePhotoByUsername(selectedPost.username)" class="profile-pic" alt="Profile" />
+            <div class="post-profile-link" @click="goToUserProfile(selectedPost.username)">
+              <img :src="getProfilePhotoByUsername(selectedPost.username)" class="profile-pic" alt="Profile" />
+            </div>
             <div class="post-info">
-              <strong>{{ getUserNameByUsername(selectedPost.username) }}</strong>
+              <strong class="post-username" @click="goToUserProfile(selectedPost.username)">
+                {{ getUserNameByUsername(selectedPost.username) }}
+              </strong>
               <h5>{{ selectedPost.description || 'No description' }}</h5>
               <template v-if="selectedPost.file_path && selectedPost.file_path.includes('.mp4')">
                 <video :src="getImageUrl(selectedPost.file_path)" alt="Post Video" class="post-content" controls />
@@ -29,13 +33,42 @@
               </button>
               <div v-if="postMenuVisible === selectedPost.id" class="dropdown-menu">
                 <ul>
-                  <li v-show="isPostFromUser(selectedPost)" @click.stop="editPost(selectedPost)">Edit</li>
-                  <li v-show="isPostFromUser(selectedPost)" @click.stop="deletePost(selectedPost.id)" :disabled="isDeleting">Delete</li>
-                  <li @click.stop="reportPost(selectedPost)">Report</li>
+                  <template v-if="isPostFromUser(selectedPost)">
+                    <li @click.stop="editPost(selectedPost)">Edit</li>
+                    <li @click.stop="deletePost(selectedPost.id)" :disabled="isDeleting">Delete</li>
+                  </template>
+                  <template v-else>
+                    <li @click.stop="reportPost(selectedPost)">Report</li>
+                  </template>
                 </ul>
               </div>
             </div>
           </div>
+
+          <!-- Edit Post Dialog -->
+          <v-dialog v-model="editPostPopup" max-width="500">
+            <v-card>
+              <v-card-title>Edit Post</v-card-title>
+              <v-card-text>
+                <div v-if="selectedPost && selectedPost.file_path" class="current-image">
+                  <p>Current File:</p>
+                  <img v-if="!selectedPost.file_path.includes('.mp4')" :src="getImageUrl(selectedPost.file_path)"
+                       alt="Current post image" style="max-width: 100%; max-height: 200px; margin-bottom: 10px;" />
+                  <video v-else :src="getImageUrl(selectedPost.file_path)" controls
+                         style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
+                </div>
+                <v-file-input label="Replace Image/Video (.png, .jpg, .jpeg, .mp4)" accept=".png, .jpg, .jpeg, .mp4"
+                              @update:modelValue="handleEditFileUpload" outlined></v-file-input>
+                <v-text-field v-model="editPostDescription" label="Description" outlined></v-text-field>
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn text @click="cancelEditPost">Cancel</v-btn>
+                <v-btn color="primary" @click="saveEditPost">Update Post</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+
           <div class="post-actions">
             <div class="action-item" @click.stop="toggleLike(selectedPost)">
               <i class="mdi" :class="selectedPost.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
@@ -54,9 +87,13 @@
             </div>
             <div v-else class="comments-list">
               <div v-for="comment in comments" :key="comment.id" class="comment">
-                <img :src="getCommentUserPhoto(comment.user)" class="comment-profile-pic" alt="User Profile" />
+                <div class="comment-profile-link" @click="goToUserProfile(comment.user?.username)">
+                  <img :src="getCommentUserPhoto(comment.user)" class="comment-profile-pic" alt="User Profile" />
+                </div>
                 <div class="comment-content">
-                  <strong>{{ comment.user?.name || 'Unknown User' }}</strong>
+                  <strong class="comment-username" @click="goToUserProfile(comment.user?.username)">
+                    {{ comment.user?.name || 'Unknown User' }}
+                  </strong>
                   <p>{{ comment.content }}</p>
                   <button v-if="isPostFromUser(selectedPost)" @click="deleteComment(comment.id)" class="delete-comment-btn">
                     <i class="mdi mdi-delete"></i>
@@ -92,6 +129,9 @@ const comments = ref([]);
 const newComment = ref('');
 const isDeleting = ref(false);
 const postMenuVisible = ref(null);
+const editPostPopup = ref(false);
+const editPostDescription = ref('');
+const editPostFile = ref(null);
 const currentUser = ref({});
 const shares = ref(0);
 
@@ -166,6 +206,15 @@ const getCommentUserPhoto = (user) => user?.profile_photo_path ? `${API_BASE_URL
 const getUserNameByUsername = (username) => user.value.name || 'Unknown User';
 const isPostFromUser = (post) => post.username === currentUser.value.username;
 
+const goToUserProfile = (username) => {
+  console.log('Navigating to profile with username:', username);
+  if (username) {
+    router.push(`/profile/${username}`);
+  } else {
+    console.warn('No username available for profile navigation');
+  }
+};
+
 const toggleLike = async (post) => {
   try {
     const token = localStorage.getItem('token');
@@ -225,8 +274,51 @@ const togglePostMenu = (postId) => {
   postMenuVisible.value = postMenuVisible.value === postId ? null : postId;
 };
 
-const editPost = async (post) => {
-  router.push({ name: 'EditPost', params: { id: post.id } });
+const editPost = (post) => {
+  editPostDescription.value = post.description || '';
+  editPostFile.value = null;
+  editPostPopup.value = true;
+};
+
+const handleEditFileUpload = (files) => {
+  editPostFile.value = files ? files[0] : null;
+};
+
+const cancelEditPost = () => {
+  editPostPopup.value = false;
+  editPostDescription.value = '';
+  editPostFile.value = null;
+};
+
+const saveEditPost = async () => {
+  if (!selectedPost.value) return;
+
+  try {
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('description', editPostDescription.value);
+    formData.append('_method', 'PUT');
+    if (editPostFile.value) {
+      formData.append('file', editPostFile.value);
+    }
+
+    const response = await axios.post(
+      `${API_BASE_URL}/api/posts/${selectedPost.value.id}`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        }
+      }
+    );
+
+    selectedPost.value = response.data.post || response.data.data; // Adjust based on API response structure
+    editPostPopup.value = false;
+  } catch (error) {
+    console.error('Error updating post:', error);
+    alert('Error: ' + (error.response?.data?.message || error.message));
+  }
 };
 
 const deletePost = async (postId) => {
@@ -312,17 +404,16 @@ h1 {
   animation: highlight 2s ease-out;
 }
 
-@keyframes highlight {
-  0% { background-color: #ffff99; }
-  100% { background-color: #ffffff; }
-}
-
 .post-header {
   display: flex;
   gap: 10px;
   align-items: center;
   margin-bottom: 15px;
   position: relative;
+}
+
+.post-profile-link {
+  cursor: pointer;
 }
 
 .profile-pic {
@@ -339,6 +430,15 @@ h1 {
 .post-info p {
   font-size: 12px;
   margin: 0;
+}
+
+.post-username {
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.post-username:hover {
+  text-decoration: underline;
 }
 
 .post-menu {
@@ -438,6 +538,10 @@ h1 {
   position: relative;
 }
 
+.comment-profile-link {
+  cursor: pointer;
+}
+
 .comment-profile-pic {
   width: 40px;
   height: 40px;
@@ -449,8 +553,13 @@ h1 {
   flex: 1;
 }
 
-.comment-content strong {
+.comment-username {
   font-size: 14px;
+  cursor: pointer;
+}
+
+.comment-username:hover {
+  text-decoration: underline;
 }
 
 .comment-content p {
