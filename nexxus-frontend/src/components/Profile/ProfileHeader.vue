@@ -105,12 +105,6 @@ const props = defineProps({
   },
 });
 
-const getImageUrl = (filePath) => {
-  const baseUrl = 'http://localhost:8000'; // Adjust according to your server
-  if (filePath && filePath.startsWith('/')) return `${baseUrl}${filePath}`;
-  return filePath ? `${baseUrl}/storage/${filePath}` : '/default-profile.jpg';
-};
-
 onMounted(() => {
   console.log('isCurrentUser in ProfileHeader:', props.isCurrentUser);
 });

@@ -38,7 +38,7 @@ export function useChat() {
       chats.value = response.data.data.map(user => ({
         id: user.id,
         name: user.name,
-        email: user.email,
+        username: user.username,
         profile_photo_url: user.profile_photo_url,
       }));
     } catch (error) {

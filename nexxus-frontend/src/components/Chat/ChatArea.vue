@@ -1,8 +1,8 @@
 <template>
-  <div class="flex-1 bg-gray-900 rounded-lg shadow-md p-5 flex flex-col max-h-[calc(100vh-150px)] overflow-hidden">
-    <div class="flex items-center gap-3 border-b pb-3 border-gray-700 flex-shrink-0">
+  <div class="flex-1 bg-white rounded-lg shadow-md p-5 flex flex-col max-h-[calc(100vh-150px)] overflow-hidden">
+    <div class="flex items-center gap-3 border-b pb-3 border-gray-300 flex-shrink-0">
       <img :src="chat.avatar" alt="Avatar" class="w-12 h-12 rounded-full">
-      <h3 class="text-lg font-semibold text-white">{{ chat.name }}</h3>
+      <h3 class="text-lg font-semibold text-black">{{ chat.name }}</h3>
     </div>
 
     <div ref="chatMessages" class="flex-1 overflow-y-auto my-3 space-y-2 break-words" @scroll="handleScroll">
