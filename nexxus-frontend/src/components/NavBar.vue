@@ -288,7 +288,7 @@ const notifications = ref([
 const menuItems = ref([
   { text: 'Messages', to: '/chat', icon: 'mdi-message-text' },
   { text: 'Communities', to: '/servers', icon: 'mdi-account-group' },
-  { text: 'Live Streams', to: '/live', icon: 'mdi-video' },
+  { text: 'Live Streams', to: '/live-streams', icon: 'mdi-video' },
   { text: 'Video Content', to: '/videos', icon: 'mdi-play-circle' },
   { text: 'Store', to: '/shop', icon: 'mdi-store' },
   { text: 'My Profile', to: '/profile', icon: 'mdi-account-circle' },

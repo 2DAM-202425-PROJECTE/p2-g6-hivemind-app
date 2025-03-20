@@ -17,6 +17,7 @@
                 <strong class="video-username" @click="goToUserProfile(getUsernameById(selectedVideo.id_user))">
                   {{ getUserNameById(selectedVideo.id_user) }}
                 </strong>
+                <p class="post-date">{{ formatDate(selectedVideo.created_at) }}</p>
                 <span class="username-handle">{{ getUsernameById(selectedVideo.id_user) }}</span>
               </div>
             </div>
@@ -54,11 +55,14 @@
               <i class="mdi mdi-share-outline"></i>
               <span>{{ shares }} Shares</span>
             </div>
-
           </div>
           <!-- Comment Section -->
           <div class="comments-section">
             <h3>Comments</h3>
+            <div class="comment-input">
+              <input v-model="newComment" placeholder="Add a comment..." @keyup.enter="addComment" />
+              <button @click="addComment">Post</button>
+            </div>
             <div v-if="comments.length === 0" class="no-comments">
               <p>No comments yet</p>
             </div>
@@ -77,10 +81,6 @@
                   </button>
                 </div>
               </div>
-            </div>
-            <div class="comment-input">
-              <input v-model="newComment" placeholder="Add a comment..." @keyup.enter="addComment" />
-              <button @click="addComment">Post</button>
             </div>
           </div>
         </div>
@@ -405,6 +405,11 @@ const shareVideo = (video) => {
     })
     .catch(err => console.error('Error copying URL:', err));
 };
+
+const formatDate = (dateString) => {
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString(undefined, options);
+};
 </script>
 
 <style scoped>
@@ -412,6 +417,7 @@ const shareVideo = (video) => {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
+  padding-bottom: 60px;
   background-color: #f0f2f5;
   min-height: 100vh;
   color: black;
@@ -482,6 +488,11 @@ h1 {
 
 .video-username:hover {
   text-decoration: underline;
+}
+
+.post-date {
+  font-size: 12px;
+  color: #666;
 }
 
 .username-handle {
@@ -568,12 +579,11 @@ h1 {
 
 .comments-section h3 {
   font-size: 18px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 .comments-list {
-  max-height: 300px;
-  overflow-y: auto;
+  /* No max-height or overflow-y, flows naturally */
 }
 
 .comment {
@@ -635,12 +645,13 @@ h1 {
 .no-comments {
   text-align: center;
   color: #666;
+  padding: 10px 0;
 }
 
 .comment-input {
   display: flex;
   gap: 10px;
-  margin-top: 15px;
+  margin-bottom: 15px;
 }
 
 .comment-input input {

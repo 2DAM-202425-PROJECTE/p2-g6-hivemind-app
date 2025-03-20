@@ -15,6 +15,7 @@
               <strong class="post-username" @click.stop="goToUserProfile(post.id_user)">
                 {{ getUserNameById(post.id_user) }}
               </strong>
+              <p class="post-date">{{ formatDate(post.created_at) }}</p>
               <h5>{{ post.description }}</h5>
               <template v-if="post.file_path && post.file_path.includes('.mp4')">
                 <video :src="getImageUrl(post.file_path)" alt="file Video" class="post-content" controls />
@@ -265,6 +266,11 @@ const deletePost = async (postId) => {
 
 const reportPost = (post) => alert(`Reported post with ID: ${post.id}`);
 const sharePost = (post) => {}; // Implement if needed
+
+const formatDate = (dateString) => {
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString(undefined, options);
+};
 </script>
 
 <style scoped>
@@ -300,29 +306,29 @@ h1 {
 
 .post-header {
   display: flex;
-  justify-content: space-between; /* Ensures profile pic is left, menu is right */
-  align-items: flex-start; /* Aligns items to the top */
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 15px;
   position: relative;
 }
 
 .post-profile-link {
   cursor: pointer;
-  flex-shrink: 0; /* Prevents the profile pic container from shrinking */
+  flex-shrink: 0;
 }
 
 .profile-pic {
   width: 50px;
   height: 50px;
-  min-width: 50px; /* Ensures it doesn't shrink below this size */
-  min-height: 50px; /* Ensures it doesn't shrink below this size */
+  min-width: 50px;
+  min-height: 50px;
   border-radius: 50%;
-  object-fit: cover; /* Ensures the image fills the space consistently */
+  object-fit: cover;
 }
 
 .post-info {
-  flex-grow: 1; /* Takes up available space between profile pic and menu */
-  margin-left: 10px; /* Adds spacing between profile pic and content */
+  flex-grow: 1;
+  margin-left: 10px;
 }
 
 .post-info h3 {
@@ -344,19 +350,26 @@ h1 {
   text-decoration: underline;
 }
 
+.post-date {
+  font-size: 12px;
+  color: #666;
+}
+
 .post-menu {
-  flex-shrink: 0; /* Prevents the menu from shrinking */
+  position: relative; /* Ensures dropdown is positioned relative to this */
+  flex-shrink: 0;
 }
 
 .post-menu button {
   background: none;
   border: none;
   cursor: pointer;
+  padding: 5px; /* Adds some clickable area around the icon */
 }
 
 .dropdown-menu {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 5px); /* Places it just below the button with a small gap */
   right: 0;
   background: white;
   border: 1px solid #d3d3d3;
@@ -372,8 +385,9 @@ h1 {
 }
 
 .dropdown-menu li {
-  padding: 10px;
+  padding: 10px 15px; /* Increased padding for better usability */
   cursor: pointer;
+  white-space: nowrap; /* Prevents text wrapping */
 }
 
 .dropdown-menu li:hover {
@@ -404,10 +418,10 @@ h1 {
 
 .post-content {
   width: 100%;
-  height: 400px; /* Fixed height for all posts */
-  max-width: 760px; /* Matches max-width of post-card minus padding (800px - 20px * 2) */
-  max-height: 400px; /* Ensures no overflow */
-  object-fit: contain; /* Scales content to fit without clipping */
+  height: 400px;
+  max-width: 760px;
+  max-height: 400px;
+  object-fit: contain;
   border-radius: 20px;
   margin-bottom: 15px;
 }

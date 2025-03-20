@@ -18,6 +18,7 @@
                 <strong class="video-username" @click.stop="goToUserProfile(getUsernameById(video.id_user))">
                   {{ getUserNameById(video.id_user) }}
                 </strong>
+                <p class="post-date">{{ formatDate(video.created_at) }}</p>
                 <span class="username-handle">{{ getUsernameById(video.id_user) }}</span>
               </div>
             </div>
@@ -47,13 +48,13 @@
               <i class="mdi" :class="video.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
               <span>{{ video.likes_count }} Likes</span>
             </div>
-            <div class="action-item" @click.stop="shareVideo(video)">
-              <i class="mdi mdi-share-outline"></i>
-              <span>{{ video.shares || 0 }} Shares</span>
-            </div>
             <div class="action-item" @click.stop="goToVideoComments(video.id)">
               <i class="mdi mdi-comment-outline"></i>
               <span>{{ video.comments_count || 0 }} Comments</span>
+            </div>
+            <div class="action-item" @click.stop="shareVideo(video)">
+              <i class="mdi mdi-share-outline"></i>
+              <span>{{ video.shares || 0 }} Shares</span>
             </div>
           </div>
         </div>
@@ -317,6 +318,11 @@ const shareVideo = (video) => {
     })
     .catch(err => console.error('Error copying URL:', err));
 };
+
+const formatDate = (dateString) => {
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString(undefined, options);
+};
 </script>
 
 <style scoped>
@@ -396,6 +402,11 @@ h1 {
 
 .video-username:hover {
   text-decoration: underline;
+}
+
+.post-date {
+  font-size: 12px;
+  color: #666;
 }
 
 .username-handle {
