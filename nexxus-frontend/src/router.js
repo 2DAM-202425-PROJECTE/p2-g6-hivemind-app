@@ -20,7 +20,8 @@ import AccountSettingsPage from "./pages/AccountSettingsPage.vue";
 import CompleteProfilePage from "./pages/CompleteProfilePage.vue";
 import UserPostsPage from "./components/Profile/UserPostsPage.vue"; // Verify this path
 import VideosPage from "./pages/VideosPage.vue"; // Updated to match file name
-import UserVideosPage from './components/Profile/UserVideosPage.vue'; // Adjust path as needed
+import UserVideosPage from './components/Profile/UserVideosPage.vue';
+import LiveStreamsPage from "./pages/LiveStreamsPage.vue"; // Adjust path as needed
 
 export const routes = [
   {
@@ -40,6 +41,7 @@ export const routes = [
   { path: "/contact", name: "Contact", component: ContactPage },
   { path: "/chat", name: "Chat", component: ChatPage },
   { path: "/servers", name: "Servers", component: ServerPage },
+  { path: "/live-streams", name: "LiveStreams", component: (LiveStreamsPage) },
   { path: "/shop", name: "Shop", component: ShopPage },
   { path: "/purchase/:id", name: "Purchase", component: PurchasePage, props: true },
   { path: "/settings", name: "Settings", component: AppSettingsPage },

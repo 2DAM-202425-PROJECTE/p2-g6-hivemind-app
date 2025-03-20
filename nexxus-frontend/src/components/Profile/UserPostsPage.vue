@@ -16,6 +16,7 @@
               <strong class="post-username" @click="goToUserProfile(getUsernameById(selectedPost.id_user))">
                 {{ getUserNameById(selectedPost.id_user) }}
               </strong>
+              <p class="post-date">{{ formatDate(selectedPost.created_at) }}</p>
               <h5>{{ selectedPost.description || 'No description' }}</h5>
               <template v-if="selectedPost.file_path && selectedPost.file_path.includes('.mp4')">
                 <video :src="getImageUrl(selectedPost.file_path)" alt="Post Video" class="post-content" controls />
@@ -97,6 +98,10 @@
           <!-- Comment Section -->
           <div class="comments-section">
             <h3>Comments</h3>
+            <div class="comment-input">
+              <input v-model="newComment" placeholder="Add a comment..." @keyup.enter="addComment" />
+              <button @click="addComment">Post</button>
+            </div>
             <div v-if="comments.length === 0" class="no-comments">
               <p>No comments yet</p>
             </div>
@@ -115,10 +120,6 @@
                   </button>
                 </div>
               </div>
-            </div>
-            <div class="comment-input">
-              <input v-model="newComment" placeholder="Add a comment..." @keyup.enter="addComment" />
-              <button @click="addComment">Post</button>
             </div>
           </div>
         </div>
@@ -407,6 +408,11 @@ const sharePost = (post) => {
     })
     .catch(err => console.error('Error copying URL:', err));
 };
+
+const formatDate = (dateString) => {
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString(undefined, options);
+};
 </script>
 
 <style scoped>
@@ -414,6 +420,7 @@ const sharePost = (post) => {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
+  padding-bottom: 60px;
   background-color: #f0f2f5;
   min-height: 100vh;
   color: black;
@@ -450,29 +457,29 @@ h1 {
 
 .post-header {
   display: flex;
-  justify-content: space-between; /* Ensures profile pic is left, menu is right */
-  align-items: flex-start; /* Aligns items to the top */
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 15px;
   position: relative;
 }
 
 .post-profile-link {
   cursor: pointer;
-  flex-shrink: 0; /* Prevents shrinking of profile pic container */
+  flex-shrink: 0;
 }
 
 .profile-pic {
   width: 50px;
   height: 50px;
-  min-width: 50px; /* Ensures consistent size */
-  min-height: 50px; /* Ensures consistent size */
+  min-width: 50px;
+  min-height: 50px;
   border-radius: 50%;
-  object-fit: cover; /* Ensures image fills the space consistently */
+  object-fit: cover;
 }
 
 .post-info {
-  flex-grow: 1; /* Takes up available space between profile pic and menu */
-  margin-left: 10px; /* Adds spacing between profile pic and content */
+  flex-grow: 1;
+  margin-left: 10px;
 }
 
 .post-info h3 {
@@ -494,8 +501,13 @@ h1 {
   text-decoration: underline;
 }
 
+.post-date {
+  font-size: 12px;
+  color: #666;
+}
+
 .post-menu {
-  flex-shrink: 0; /* Prevents shrinking of menu */
+  flex-shrink: 0;
 }
 
 .post-menu button {
@@ -574,12 +586,11 @@ h1 {
 
 .comments-section h3 {
   font-size: 18px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 .comments-list {
-  max-height: 300px;
-  overflow-y: auto;
+  /* No max-height or overflow-y for natural flow */
 }
 
 .comment {
@@ -641,12 +652,13 @@ h1 {
 .no-comments {
   text-align: center;
   color: #666;
+  padding: 10px 0;
 }
 
 .comment-input {
   display: flex;
   gap: 10px;
-  margin-top: 15px;
+  margin-bottom: 15px;
 }
 
 .comment-input input {
