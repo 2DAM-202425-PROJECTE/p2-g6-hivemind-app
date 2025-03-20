@@ -18,7 +18,6 @@
                 <strong class="video-username" @click.stop="goToUserProfile(getUsernameById(video.id_user))">
                   {{ getUserNameById(video.id_user) }}
                 </strong>
-                <p class="post-date">{{ formatDate(video.created_at) }}</p>
                 <span class="username-handle">{{ getUsernameById(video.id_user) }}</span>
               </div>
             </div>
@@ -50,7 +49,7 @@
             </div>
             <div class="action-item" @click.stop="goToVideoComments(video.id)">
               <i class="mdi mdi-comment-outline"></i>
-              <span>{{ video.comments_count || 0 }} Comments</span>
+              <span>{{ video.comments_count }} Comments</span>
             </div>
             <div class="action-item" @click.stop="shareVideo(video)">
               <i class="mdi mdi-share-outline"></i>
@@ -158,21 +157,43 @@ const fetchVideos = async () => {
     const postsResult = await axios.get(`${API_BASE_URL}/api/posts`, {
       headers: { Authorization: `Bearer ${token}` }
     });
+    console.log('Raw API posts response:', postsResult.data.data); // Debug API response
     const allPosts = postsResult.data.data || [];
     const videoPosts = allPosts.filter(post =>
       post.file_path && VIDEO_EXTENSIONS.some(ext => post.file_path.toLowerCase().endsWith(ext))
     );
 
-    // Ensure comments_count is initialized
-    videos.value = videoPosts.map(post => ({
-      ...post,
-      comments_count: post.comments_count ?? 0 // Default to 0 if undefined
-    })).sort(() => Math.random() - 0.5);
+    // Fallback: Fetch comments if comments_count isn’t in the response
+    const videosWithComments = await Promise.all(videoPosts.map(async (post) => {
+      let commentsCount = post.comments_count ?? null;
+      if (commentsCount === null) {
+        console.log(`Comments_count missing for post ${post.id}, fetching comments...`);
+        commentsCount = await fetchCommentCountFallback(post.id);
+      }
+      return { ...post, comments_count: commentsCount };
+    }));
 
-    console.log('Randomized video posts:', videos.value);
+    videos.value = videosWithComments.sort(() => Math.random() - 0.5);
+    console.log('Randomized video posts with comment counts:', videos.value);
   } catch (error) {
     console.error('Error fetching videos:', error.response?.data || error.message);
     videos.value = [];
+  }
+};
+
+const fetchCommentCountFallback = async (videoId) => {
+  try {
+    const token = localStorage.getItem('token');
+    console.log(`Fetching comments for video ${videoId} from /api/posts/${videoId}/comments`);
+    const response = await axios.get(`${API_BASE_URL}/api/posts/${videoId}/comments`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    console.log(`Comments response for video ${videoId}:`, response.data);
+    const comments = response.data.data || response.data || [];
+    return Array.isArray(comments) ? comments.length : 0;
+  } catch (error) {
+    console.error(`Error fetching comments for video ${videoId}:`, error.response?.data || error.message);
+    return 0; // Fallback to 0 if the request fails
   }
 };
 
@@ -200,9 +221,16 @@ const goToUserVideoPage = (video) => {
   }
 };
 
-const goToVideoComments = (videoId) => {
+const goToVideoComments = async (videoId) => {
   const username = getUsernameById(videos.value.find(v => v.id === videoId)?.id_user);
-  if (username) router.push(`/users/username/${username}/videos?postId=${videoId}`);
+  if (username) {
+    await router.push(`/users/username/${username}/videos?postId=${videoId}`);
+    const video = videos.value.find(v => v.id === videoId);
+    if (video) {
+      video.comments_count = await fetchCommentCountFallback(videoId);
+      console.log(`Updated comments_count for video ${videoId}: ${video.comments_count}`);
+    }
+  }
 };
 
 const toggleLike = async (video) => {
@@ -228,7 +256,7 @@ const toggleLike = async (video) => {
     });
     video.liked_by_user = postResult.data.data.liked_by_user;
     video.likes_count = postResult.data.data.likes_count;
-    video.comments_count = postResult.data.data.comments_count ?? 0; // Update comments_count too
+    video.comments_count = postResult.data.data.comments_count ?? await fetchCommentCountFallback(video.id);
   }
 };
 
@@ -271,10 +299,9 @@ const saveEditVideo = async () => {
     );
 
     const updatedVideo = response.data.post || response.data.data;
+    updatedVideo.comments_count = updatedVideo.comments_count ?? await fetchCommentCountFallback(updatedVideo.id);
     const index = videos.value.findIndex(v => v.id === selectedVideo.value.id);
-    if (index !== -1) {
-      videos.value[index] = { ...updatedVideo, comments_count: updatedVideo.comments_count ?? 0 };
-    }
+    if (index !== -1) videos.value[index] = updatedVideo;
     editVideoPopup.value = false;
     selectedVideo.value = null;
   } catch (error) {
@@ -318,7 +345,7 @@ const reportVideo = async (video) => {
     }, { headers: { Authorization: `Bearer ${token}` } });
     alert('Video reported successfully');
     videoMenuVisible.value = null;
-    await fetchVideos(); // Refresh videos to update comment count if affected
+    video.comments_count = await fetchCommentCountFallback(video.id);
   } catch (error) {
     console.error('Error reporting video:', error);
   }
@@ -334,11 +361,6 @@ const shareVideo = (video) => {
     })
     .catch(err => console.error('Error copying URL:', err));
 };
-
-const formatDate = (dateString) => {
-  const options = { year: 'numeric', month: 'long', day: 'numeric' };
-  return new Date(dateString).toLocaleDateString(undefined, options);
-};
 </script>
 
 <style scoped>
@@ -346,7 +368,7 @@ const formatDate = (dateString) => {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
-  padding-bottom: 80px; /* Add padding to prevent overlap with footer */
+  padding-bottom: 80px;
   background-color: #f0f2f5;
   min-height: 100vh;
   color: black;
@@ -418,11 +440,6 @@ h1 {
 
 .video-username:hover {
   text-decoration: underline;
-}
-
-.post-date {
-  font-size: 12px;
-  color: #666;
 }
 
 .username-handle {
