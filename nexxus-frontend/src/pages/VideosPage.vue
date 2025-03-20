@@ -127,6 +127,10 @@ const API_BASE_URL = 'http://localhost:8000';
 const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
 
 onMounted(async () => {
+  await fetchVideos();
+});
+
+const fetchVideos = async () => {
   try {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -135,6 +139,7 @@ onMounted(async () => {
       return;
     }
 
+    // Fetch users
     const usersResult = await axios.get(`${API_BASE_URL}/api/users`, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -143,11 +148,13 @@ onMounted(async () => {
       return acc;
     }, {});
 
+    // Fetch current user
     const currentUserResult = await axios.get(`${API_BASE_URL}/api/user`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     currentUser.value = currentUserResult.data;
 
+    // Fetch posts and filter videos
     const postsResult = await axios.get(`${API_BASE_URL}/api/posts`, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -156,13 +163,18 @@ onMounted(async () => {
       post.file_path && VIDEO_EXTENSIONS.some(ext => post.file_path.toLowerCase().endsWith(ext))
     );
 
-    videos.value = videoPosts.sort(() => Math.random() - 0.5);
+    // Ensure comments_count is initialized
+    videos.value = videoPosts.map(post => ({
+      ...post,
+      comments_count: post.comments_count ?? 0 // Default to 0 if undefined
+    })).sort(() => Math.random() - 0.5);
+
     console.log('Randomized video posts:', videos.value);
   } catch (error) {
     console.error('Error fetching videos:', error.response?.data || error.message);
     videos.value = [];
   }
-});
+};
 
 const getImageUrl = (path) => path ? `${API_BASE_URL}/storage/${path}` : generateAvatar('User');
 const getProfilePhotoById = (id) => {
@@ -216,6 +228,7 @@ const toggleLike = async (video) => {
     });
     video.liked_by_user = postResult.data.data.liked_by_user;
     video.likes_count = postResult.data.data.likes_count;
+    video.comments_count = postResult.data.data.comments_count ?? 0; // Update comments_count too
   }
 };
 
@@ -259,7 +272,9 @@ const saveEditVideo = async () => {
 
     const updatedVideo = response.data.post || response.data.data;
     const index = videos.value.findIndex(v => v.id === selectedVideo.value.id);
-    if (index !== -1) videos.value[index] = updatedVideo;
+    if (index !== -1) {
+      videos.value[index] = { ...updatedVideo, comments_count: updatedVideo.comments_count ?? 0 };
+    }
     editVideoPopup.value = false;
     selectedVideo.value = null;
   } catch (error) {
@@ -303,6 +318,7 @@ const reportVideo = async (video) => {
     }, { headers: { Authorization: `Bearer ${token}` } });
     alert('Video reported successfully');
     videoMenuVisible.value = null;
+    await fetchVideos(); // Refresh videos to update comment count if affected
   } catch (error) {
     console.error('Error reporting video:', error);
   }
