@@ -153,10 +153,24 @@ onMounted(async () => {
   }
 });
 
-const getImageUrl = (path) => path ? `http://localhost:8000/storage/${path}` : generateAvatar('User');
+const getImageUrl = (path) => {
+  if (!path) return generateAvatar('User');
+  // Si ya es una URL completa, devolverla tal cual
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  // Si es una ruta local, añadir el prefijo de storage
+  return `http://localhost:8000/storage/${path}`;
+};
 const getProfilePhotoById = (id) => {
   const user = users.value[id];
-  return user?.profile_photo_path ? `http://localhost:8000/storage/${user.profile_photo_path}` : generateAvatar(user?.name || 'User');
+  if (user?.profile_photo_path) {
+    // Si es una URL completa, devolverla sin cambios
+    if (user.profile_photo_path.startsWith('http://') || user.profile_photo_path.startsWith('https://')) {
+      return user.profile_photo_path;
+    }
+    // Si es una ruta local, añadir el prefijo
+    return `http://localhost:8000/storage/${user.profile_photo_path}`;
+  }
+  return generateAvatar(user?.name || 'User');
 };
 const getUserNameById = (id) => users.value[id]?.name || 'Usuario desconocido';
 const getUsernameById = (id) => users.value[id]?.username || null;
