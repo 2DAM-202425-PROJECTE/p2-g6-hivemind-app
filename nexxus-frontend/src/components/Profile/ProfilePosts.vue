@@ -8,13 +8,17 @@
         @click="viewPost(post.id)"
         class="relative bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
       >
-        <!-- Imagen del post -->
-        <div class="w-full h-48">
+        <!-- Fixed height container for consistency -->
+        <div class="w-full h-48 flex items-center justify-center">
           <img
+            v-if="post.file_path"
             :src="getImageUrl(post.file_path)"
             :alt="`Post ${post.id}`"
-            class="w-full h-48 object-contain"
+            class="w-full h-full object-contain"
           />
+          <p v-else class="text-gray-800 dark:text-gray-200 text-center px-4">
+            {{ post.description || 'No description' }}
+          </p>
         </div>
         <!-- Botón de tres puntos -->
         <div class="absolute top-2 right-2" @click.stop>
@@ -54,9 +58,9 @@
             </ul>
           </div>
         </div>
-        <!-- Descripción del post -->
-        <div class="p-4">
-          <p class="text-gray-800 dark:text-gray-200">{{ post.description }}</p>
+        <!-- Descripción del post (shown below image if image exists) -->
+        <div v-if="post.file_path" class="p-4">
+          <p class="text-gray-800 dark:text-gray-200">{{ post.description || 'No description' }}</p>
         </div>
       </div>
     </div>
@@ -65,8 +69,8 @@
     <div v-if="showEditPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
         <h3 class="text-lg font-bold mb-4">Edit Post</h3>
-        <!-- Imagen actual -->
-        <div v-if="selectedPost" class="mb-4">
+        <!-- Imagen actual (only if it exists) -->
+        <div v-if="selectedPost && selectedPost.file_path" class="mb-4">
           <p class="text-sm text-gray-600 dark:text-gray-300">Current Image:</p>
           <img
             :src="getImageUrl(selectedPost.file_path)"
@@ -154,6 +158,7 @@ onBeforeUnmount(() => {
 
 const getImageUrl = (filePath) => {
   const baseUrl = 'http://localhost:8000';
+  if (!filePath) return ''; // Return empty string if no file_path
   if (filePath.startsWith('/')) {
     return `${baseUrl}${filePath}`;
   }
@@ -171,16 +176,13 @@ const viewPost = async (postId) => {
     }
 
     let username = post.username;
-    console.log('Post data:', post); // Debug: Check what data is available
+    console.log('Post data:', post);
 
-    // If username isn’t in the post, try to fetch it using the current user’s username or adjust based on your API
     if (!username) {
-      // Assuming ProfilePage provides the username via route params or parent component
       const currentUsername = router.currentRoute.value.params.username;
       if (currentUsername) {
-        username = currentUsername; // Use the profile’s username if available
+        username = currentUsername;
       } else {
-        // Fallback: Fetch user data (adjust endpoint based on your API)
         const userResponse = await axios.get(`http://localhost:8000/api/users/id/${post.id_user}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -297,3 +299,14 @@ const reportPost = async (post) => {
   }
 };
 </script>
+
+<style scoped>
+/* Add styles to ensure text-only posts look good */
+.h-48 {
+  height: 12rem; /* Ensure consistent height */
+}
+
+.text-gray-800 {
+  word-break: break-word; /* Prevent text overflow */
+}
+</style>

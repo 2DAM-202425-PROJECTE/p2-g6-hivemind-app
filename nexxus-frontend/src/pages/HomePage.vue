@@ -81,7 +81,7 @@
       </div>
     </div>
 
-    <div class="post-card" v-for="post in posts.data" :key="post.id" @click="navigateToPost(post)">
+    <div class="post-card" v-for="post in sortedPosts" :key="post.id" @click="navigateToPost(post)">
       <div class="post-header">
         <div class="post-profile-link" @click.stop="goToUserProfile(post.id_user)">
           <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
@@ -170,7 +170,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
@@ -234,6 +234,11 @@ const currentUser = ref({
   id: null,
   name: 'Current User',
   profile_photo_path: null,
+});
+
+// Computed property to sort posts by created_at in descending order
+const sortedPosts = computed(() => {
+  return [...posts.value.data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 });
 
 const fetchPosts = async () => {
@@ -401,7 +406,7 @@ const renderPostDescription = (description) => {
 const getImageUrl = (path) => path ? `http://localhost:8000/storage/${path}` : generateAvatar('User');
 const getProfilePhotoById = (id) => {
   const user = users.value[id];
-  return user?.profile_photo_path ? `http://localhost:8000/storage/${user.profile_photo_path}` : generateAvatar(user?.name || 'User');
+  return user?.profile_photo_path ? `http://localhost:8000/api/storage/${user.profile_photo_path}` : generateAvatar(user?.name || 'User');
 };
 const getUserNameById = (id) => users.value[id]?.name || 'Usuario desconocido';
 const getUsernameById = (id) => users.value[id]?.username || null;
