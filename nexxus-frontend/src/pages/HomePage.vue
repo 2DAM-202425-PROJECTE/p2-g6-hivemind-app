@@ -4,6 +4,83 @@
     <h1>Home</h1>
     <StoriesBar :stories="stories.data" />
 
+    <!-- Post Input Section -->
+    <div class="post-section">
+      <div class="post-input-container">
+        <img :src="getProfilePhotoById(currentUser.id)" class="profile-pic" alt="Profile" />
+        <div class="post-input-wrapper">
+          <textarea
+            v-model="newPostContent"
+            placeholder="What's happening?"
+            class="post-input"
+            rows="2"
+            @input="adjustTextareaHeight"
+          ></textarea>
+
+          <!-- Preview for uploaded file -->
+          <div v-if="newPostFile" class="file-preview">
+            <div class="preview-container">
+              <img
+                v-if="!newPostFile.type.includes('video')"
+                :src="previewUrl"
+                alt="Image Preview"
+                class="preview-media"
+              />
+              <video
+                v-else
+                :src="previewUrl"
+                controls
+                class="preview-media"
+              ></video>
+              <button class="remove-file-btn" @click="removeFile">X</button>
+            </div>
+          </div>
+
+          <!-- Preview for location -->
+          <div v-if="selectedLocation" class="location-preview">
+            <i class="mdi mdi-map-marker"></i>
+            <span>{{ selectedLocation }}</span>
+            <button class="remove-btn" @click="removeLocation">Remove</button>
+          </div>
+
+          <div class="post-actions">
+            <div class="action-buttons">
+              <label for="media-upload" class="action-btn" title="Add Image/Video">
+                <i class="mdi mdi-image"></i>
+              </label>
+              <input
+                id="media-upload"
+                type="file"
+                accept=".png, .jpg, .jpeg, .mp4"
+                @change="handleNewPostFileUpload"
+                style="display: none"
+              />
+              <button class="action-btn" @click="toggleEmojiPicker" title="Add Emoji">
+                <i class="mdi mdi-emoticon-outline"></i>
+              </button>
+              <button class="action-btn" @click="getLocation" title="Add Location">
+                <i class="mdi mdi-map-marker-outline"></i>
+              </button>
+            </div>
+            <button class="post-btn" :disabled="!newPostContent && !newPostFile && !selectedLocation" @click="submitPost">
+              Post
+            </button>
+          </div>
+
+          <!-- Emoji Picker -->
+          <div v-if="showEmojiPicker" class="emoji-picker" ref="emojiPicker">
+            <span
+              v-for="emoji in emojis"
+              :key="emoji"
+              class="emoji-item"
+              @click="addEmoji(emoji)"
+              v-html="emoji"
+            ></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="post-card" v-for="post in posts.data" :key="post.id" @click="navigateToPost(post)">
       <div class="post-header">
         <div class="post-profile-link" @click.stop="goToUserProfile(post.id_user)">
@@ -16,7 +93,7 @@
                 {{ getUserNameById(post.id_user) }}
               </strong>
               <p class="post-date">{{ formatDate(post.created_at) }}</p>
-              <h5>{{ post.description }}</h5>
+              <div class="post-description" v-html="renderPostDescription(post.description)"></div>
               <template v-if="post.file_path && post.file_path.includes('.mp4')">
                 <video :src="getImageUrl(post.file_path)" alt="file Video" class="post-content" controls />
               </template>
@@ -46,10 +123,18 @@
           <v-card-text>
             <div v-if="selectedPost && selectedPost.file_path" class="current-image">
               <p>Current File:</p>
-              <img v-if="!selectedPost.file_path.includes('.mp4')" :src="getImageUrl(selectedPost.file_path)"
-                   alt="Current post image" style="max-width: 100%; max-height: 200px; margin-bottom: 10px;" />
-              <video v-else :src="getImageUrl(selectedPost.file_path)" controls
-                     style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
+              <img
+                v-if="!selectedPost.file_path.includes('.mp4')"
+                :src="getImageUrl(selectedPost.file_path)"
+                alt="Current post image"
+                style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"
+              />
+              <video
+                v-else
+                :src="getImageUrl(selectedPost.file_path)"
+                controls
+                style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"
+              ></video>
             </div>
             <v-file-input label="Replace Image/Video (.png, .jpg, .jpeg, .mp4)" accept=".png, .jpg, .jpeg, .mp4"
                           @update:modelValue="handleEditFileUpload" outlined></v-file-input>
@@ -85,7 +170,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
@@ -93,6 +178,23 @@ import UserRecommendation from '@/components/UserRecommendation.vue';
 import StoriesBar from '@/components/StoriesBar.vue';
 import axios from 'axios';
 import { generateAvatar } from '@/utils/avatar';
+
+const loadTwemoji = () => {
+  const script = document.createElement('script');
+  script.src = 'https://twemoji.maxcdn.com/v/latest/twemoji.min.js';
+  script.crossOrigin = 'anonymous';
+  document.head.appendChild(script);
+};
+
+onMounted(() => {
+  loadTwemoji();
+  fetchPosts();
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 
 const router = useRouter();
 const posts = ref({ data: [] });
@@ -106,6 +208,27 @@ const editPostDescription = ref('');
 const editPostFile = ref(null);
 const stories = ref({ data: [] });
 const shares = ref(0);
+const newPostContent = ref('');
+const newPostFile = ref(null);
+const previewUrl = ref(null);
+const showEmojiPicker = ref(false);
+const selectedLocation = ref(null);
+const emojiPicker = ref(null); // Reference to the emoji picker DOM element
+
+const emojis = ref([
+  '😀', '😂', '😍', '😢', '😡', '👍', '👎', '❤️', '🔥', '🎉',
+  '🤓', '😎', '🤗', '🙌', '💡', '🌟', '🍕', '🍔', '🍎', '🏈',
+  '⚽', '🎸', '🎨', '🏆', '🚀', '💯', '🔞', '🆒', '🆕', '🆙',
+  '🆓', '🆖', '🅿️', '🅰️', '🅱️', '🅾️', '🎵', '🎶', '🎼', '🎤',
+  '🎧', '🎦', '🎥', '🎬', '📺', '📻', '🎮', '🎲', '🃏', '🎯',
+  '🏹', '🎳', '🎰', '🚗', '🚕', '🚙', '🚌', '🚎', '🏎', '🚓',
+  '🚒', '🚑', '🚚', '🚛', '🚜', '🏍', '🚲', '🛴', '🚏', '🛵',
+  '🚀', '🚁', '🛩', '✈️', '🛫', '🛬', '🚦', '🚧', '⚓', '⛽',
+  '🚢', '🚤', '🛳', '⛵', '🚡', '🚠', '🚟', '🚝', '🚄', '🚅',
+  '🚈', '🚞', '🚋', '🚆', '🚇', '🚊', '🚉', '🚁', '🚂', '🚃',
+  '🚄', '🚅', '🚆', '🚇', '🚈', '🚉', '🚊', '🚋', '🚌', '🚍',
+  '🚎', '🚏', '🚐', '🚑', '🚒', '🚓', '🚔', '🚕', '🚖', '🚗',
+]);
 
 const currentUser = ref({
   id: null,
@@ -113,7 +236,7 @@ const currentUser = ref({
   profile_photo_path: null,
 });
 
-onMounted(async () => {
+const fetchPosts = async () => {
   try {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -152,7 +275,128 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error al obtener datos', error.response?.data || error.message);
   }
-});
+};
+
+const adjustTextareaHeight = (event) => {
+  const textarea = event.target;
+  textarea.style.height = 'auto';
+  textarea.style.height = `${textarea.scrollHeight}px`;
+};
+
+const handleNewPostFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    newPostFile.value = file;
+    previewUrl.value = URL.createObjectURL(file);
+  }
+};
+
+const removeFile = () => {
+  newPostFile.value = null;
+  previewUrl.value = null;
+  document.getElementById('media-upload').value = '';
+};
+
+const toggleEmojiPicker = (event) => {
+  event.stopPropagation(); // Prevent the click from immediately closing the picker
+  showEmojiPicker.value = !showEmojiPicker.value;
+};
+
+const handleClickOutside = (event) => {
+  if (showEmojiPicker.value && emojiPicker.value && !emojiPicker.value.contains(event.target)) {
+    showEmojiPicker.value = false;
+  }
+};
+
+const addEmoji = (emoji) => {
+  newPostContent.value += emoji;
+  showEmojiPicker.value = false;
+};
+
+const getLocation = () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+          const data = await response.json();
+          selectedLocation.value = data.display_name || `Lat: ${latitude}, Lon: ${longitude}`;
+        } catch (error) {
+          console.error('Error fetching location name:', error);
+          selectedLocation.value = `Lat: ${latitude}, Lon: ${longitude}`;
+        }
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        alert('Unable to get location. Please allow location access.');
+      }
+    );
+  } else {
+    alert('Geolocation is not supported by your browser.');
+  }
+};
+
+const removeLocation = () => {
+  selectedLocation.value = null;
+};
+
+const submitPost = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token available');
+      return;
+    }
+
+    if (!currentUser.value.id) {
+      console.error('Current user ID is not available');
+      alert('Error: User ID not found. Please log in again.');
+      return;
+    }
+
+    const now = new Date();
+    const publishDate = now.toISOString().slice(0, 19).replace('T', ' ');
+
+    let finalDescription = newPostContent.value;
+    if (selectedLocation.value) {
+      finalDescription += `\n📍 ${selectedLocation.value}`;
+    }
+
+    const formData = new FormData();
+    formData.append('description', finalDescription);
+    formData.append('publish_date', publishDate);
+    formData.append('id_user', currentUser.value.id);
+    if (newPostFile.value) formData.append('file', newPostFile.value);
+
+    const response = await axios.post(
+      'http://localhost:8000/api/posts',
+      formData,
+      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
+    );
+
+    await fetchPosts();
+    newPostContent.value = '';
+    newPostFile.value = null;
+    previewUrl.value = null;
+    selectedLocation.value = null;
+    document.getElementById('media-upload').value = '';
+  } catch (error) {
+    console.error('Error creating post:', error.response?.data || error.message);
+    alert('Failed to create post: ' + (error.response?.data?.message || error.message));
+  }
+};
+
+const renderPostDescription = (description) => {
+  if (!description) return '';
+
+  let html = description;
+  html = html.replace(/\n/g, '<br>');
+  const locationRegex = /📍 (.*?)(<br>|$)/g;
+  html = html.replace(locationRegex, '<div class="post-location"><i class="mdi mdi-map-marker"></i><span>$1</span></div>');
+
+  return html;
+};
 
 const getImageUrl = (path) => path ? `http://localhost:8000/storage/${path}` : generateAvatar('User');
 const getProfilePhotoById = (id) => {
@@ -176,10 +420,8 @@ const navigateToPost = (post) => {
   }
 
   if (post.file_path && post.file_path.includes('.mp4')) {
-    console.log('Navigating to user videos with username:', username, 'postId:', post.id);
     router.push(`/users/username/${username}/videos?postId=${post.id}`);
   } else {
-    console.log('Navigating to user posts with username:', username, 'postId:', post.id);
     router.push(`/users/username/${username}/posts?postId=${post.id}`);
   }
 };
@@ -255,7 +497,6 @@ const deletePost = async (postId) => {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     });
     posts.value.data = posts.value.data.filter(post => post.id !== postId);
-    location.reload();
   } catch (error) {
     console.error('Error deleting post:', error.response?.data || error.message);
     alert('Failed to delete post: ' + (error.response?.data?.message || error.message));
@@ -265,7 +506,7 @@ const deletePost = async (postId) => {
 };
 
 const reportPost = (post) => alert(`Reported post with ID: ${post.id}`);
-const sharePost = (post) => {}; // Implement if needed
+const sharePost = (post) => {};
 
 const formatDate = (dateString) => {
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -286,6 +527,199 @@ const formatDate = (dateString) => {
 h1 {
   font-size: 24px;
   padding-bottom: 20px;
+}
+
+.post-section {
+  max-width: 800px;
+  margin: 0 auto 20px auto;
+  background: #ffffff;
+  border: 1px solid #d3d3d3;
+  border-radius: 10px;
+  padding: 15px;
+}
+
+.post-input-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.post-input-wrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+.post-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  font-size: 16px;
+  font-family: Arial, sans-serif;
+  padding: 5px;
+  line-height: 1.5;
+  background: transparent;
+}
+
+.post-input::placeholder {
+  color: #666;
+}
+
+.file-preview {
+  margin-top: 10px;
+}
+
+.preview-container {
+  position: relative;
+  display: inline-block;
+}
+
+.preview-media {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.remove-file-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.remove-file-btn:hover {
+  background: #cc0000;
+}
+
+.location-preview {
+  margin-top: 10px;
+  padding: 10px;
+  background: #e6f3ff;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.location-preview i {
+  color: #1da1f2;
+}
+
+.location-preview span {
+  font-size: 14px;
+  color: #333;
+}
+
+.remove-btn {
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.remove-btn:hover {
+  background: #cc0000;
+}
+
+.post-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  color: #1da1f2;
+}
+
+.action-btn i {
+  font-size: 20px;
+}
+
+.action-btn:hover {
+  color: #0d91e2;
+}
+
+.post-btn {
+  background-color: #1da1f2;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 5px 15px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.post-btn:disabled {
+  background-color: #a1d2f7;
+  cursor: not-allowed;
+}
+
+.post-btn:hover:not(:disabled) {
+  background-color: #0d91e2;
+}
+
+.emoji-picker {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #d3d3d3;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  padding: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.emoji-item {
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.emoji-item:hover {
+  background: #f0f0f0;
+  border-radius: 5px;
+}
+
+.post-description {
+  font-size: 16px;
+}
+
+.post-location {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #1da1f2;
 }
 
 .post-card {
@@ -356,7 +790,7 @@ h1 {
 }
 
 .post-menu {
-  position: relative; /* Ensures dropdown is positioned relative to this */
+  position: relative;
   flex-shrink: 0;
 }
 
@@ -364,12 +798,12 @@ h1 {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 5px; /* Adds some clickable area around the icon */
+  padding: 5px;
 }
 
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 5px); /* Places it just below the button with a small gap */
+  top: calc(100% + 5px);
   right: 0;
   background: white;
   border: 1px solid #d3d3d3;
@@ -385,9 +819,9 @@ h1 {
 }
 
 .dropdown-menu li {
-  padding: 10px 15px; /* Increased padding for better usability */
+  padding: 10px 15px;
   cursor: pointer;
-  white-space: nowrap; /* Prevents text wrapping */
+  white-space: nowrap;
 }
 
 .dropdown-menu li:hover {
