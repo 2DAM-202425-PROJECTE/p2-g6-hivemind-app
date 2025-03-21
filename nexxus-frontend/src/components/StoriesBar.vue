@@ -17,7 +17,7 @@
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn text @click="showStoryModal = false">Close</v-btn>
-                <v-btn color="red" text @click="deleteStory(selectedStory.id)">Delete</v-btn>
+                <v-btn v-if="isStoryFromUser(selectedStory)" color="red" text @click="deleteStory(selectedStory.id)">Delete</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -31,6 +31,12 @@ const users = ref([]);
 const showStoryModal = ref(false);
 const selectedStory = ref(null);
 const story = ref([]);
+
+const currentUser = ref({
+    id: null,
+    name: 'Current User',
+    profile_photo_path: null,
+})
 
 const props = defineProps({
     stories: {
@@ -48,6 +54,11 @@ onMounted(async () => {
         }
     });
     users.value = usersResult.data.data;
+
+    const userResult = await axios.get('http://localhost:8000/api/user', {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+    });
+    currentUser.value = userResult.data;
 
     // Fetch stories data
     const storiesResult = await axios.get('http://localhost:8000/api/stories', {
@@ -69,6 +80,8 @@ const viewStory = (story) => {
     showStoryModal.value = true;
 
 }
+
+const isStoryFromUser = (story) =>  story.id_user === currentUser.value.id;
 
 const getProfilePhotoById = (id) => {
   const position = users.value.findIndex(user => user.id === id);
