@@ -155,6 +155,7 @@ const shares = ref(0);
 const deleteDialog = ref(false);
 const deleteType = ref(''); // 'post' or 'comment'
 const itemToDelete = ref(null); // Stores postId or commentId
+const previousRoute = ref(''); // To store the previous route
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -166,6 +167,11 @@ onMounted(async () => {
       router.push('/login');
       return;
     }
+
+    // Store the previous route from document.referrer or fallback to home
+    previousRoute.value = document.referrer.includes(window.location.origin)
+      ? new URL(document.referrer).pathname
+      : '/'; // Default to home if referrer is unreliable
 
     const usersResult = await axios.get(`${API_BASE_URL}/api/users`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -316,7 +322,8 @@ const confirmDelete = async () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       selectedPost.value = null;
-      router.push(`/profile/${username}`);
+      // Redirect to the previous route instead of the user's profile
+      router.push(previousRoute.value || '/'); // Fallback to home if no previous route
     } else if (deleteType.value === 'comment') {
       await axios.delete(`${API_BASE_URL}/api/comments/${itemToDelete.value}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -508,23 +515,26 @@ h1 {
 
 .post-menu {
   flex-shrink: 0;
+  position: relative;
 }
 
 .post-menu button {
   background: none;
   border: none;
   cursor: pointer;
+  padding: 5px;
 }
 
 .dropdown-menu {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 5px);
   right: 0;
   background: white;
   border: 1px solid #d3d3d3;
   border-radius: 5px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   z-index: 1000;
+  min-width: 120px;
 }
 
 .dropdown-menu ul {
