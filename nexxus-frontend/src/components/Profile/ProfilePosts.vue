@@ -116,6 +116,7 @@
 import { ref, defineProps, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
+import {generateAvatar} from "@/utils/avatar.js";
 
 const router = useRouter();
 const props = defineProps({
@@ -156,13 +157,12 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside);
 });
 
-const getImageUrl = (filePath) => {
-  const baseUrl = 'http://localhost:8000';
-  if (!filePath) return ''; // Return empty string if no file_path
-  if (filePath.startsWith('/')) {
-    return `${baseUrl}${filePath}`;
-  }
-  return `${baseUrl}/storage/${filePath}`;
+const getImageUrl = (path) => {
+  if (!path) return generateAvatar('User');
+  // Si ya es una URL completa, devolverla tal cual
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  // Si es una ruta local, añadir el prefijo de storage
+  return `http://localhost:8000/storage/${path}`;
 };
 
 const viewPost = async (postId) => {
