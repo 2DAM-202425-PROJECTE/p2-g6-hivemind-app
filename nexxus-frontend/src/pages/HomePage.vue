@@ -505,9 +505,9 @@ const navigateToPost = (post) => {
   }
 
   if (post.file_path && post.file_path.includes('.mp4')) {
-    router.push(`/users/username/${username}/videos?postId=${post.id}`);
+    router.push(`/user/${username}/videos?postId=${post.id}`);
   } else {
-    router.push(`/users/username/${username}/posts?postId=${post.id}`);
+    router.push(`/user/${username}/posts?postId=${post.id}`);
   }
 };
 

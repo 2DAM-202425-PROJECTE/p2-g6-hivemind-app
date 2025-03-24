@@ -48,14 +48,14 @@ export const routes = [
   { path: "/account-settings", name: "AccountSettings", component: AccountSettingsPage },
   { path: "/complete-profile", name: "CompleteProfile", component: CompleteProfilePage },
   {
-    path: "/users/username/:username/posts",
+    path: "/user/:username/posts",
     name: "UserPostsPage",
     component: UserPostsPage,
     props: true
   },
   {
-    path: '/users/username/:username/videos',
-    name: 'UserVideosPage',
+    path: "/user/:username/videos",
+    name: "UserVideosPage",
     component: UserVideosPage,
     props: true
   },
