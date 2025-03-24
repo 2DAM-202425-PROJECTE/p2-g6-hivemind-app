@@ -20,7 +20,7 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
-
+  </div>
 </template>
 
 <script setup>
@@ -50,26 +50,6 @@ const props = defineProps({
 });
 
 onMounted(async () => {
-
-    const token = localStorage.getItem('token');
-    const usersResult = await axios.get('http://localhost:8000/api/users', {
-        headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json'
-        }
-    });
-    users.value = usersResult.data.data;
-    console.log(users.value);
-
-    // Fetch stories data
-    const storiesResult = await axios.get('http://localhost:8000/api/stories', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json'
-      }
-    });
-    story.value = storiesResult.data;
-})
 
   const token = localStorage.getItem('token');
   const usersResult = await axios.get('http://localhost:8000/api/users', {
