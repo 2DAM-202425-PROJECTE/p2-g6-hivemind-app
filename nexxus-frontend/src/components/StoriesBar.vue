@@ -5,6 +5,7 @@
             <p>{{ getUserNameById(story.id_user) }}</p>
         </div>
     </div>
+    
 
     <!-- Modal para mostrar la historia -->
     <v-dialog v-model="showStoryModal" max-width="500">
@@ -48,6 +49,7 @@ onMounted(async () => {
         }
     });
     users.value = usersResult.data.data;
+    console.log(users.value);
 
     // Fetch stories data
     const storiesResult = await axios.get('http://localhost:8000/api/stories', {
@@ -73,7 +75,7 @@ const viewStory = (story) => {
 const getProfilePhotoById = (id) => {
   const position = users.value.findIndex(user => user.id === id);
   const user = users.value[position];
-  return user && user.profile_photo_path ? user.profile_photo_path : 'https://via.placeholder.com/50';
+  return user && user.profile_photo_path ? user.profile_photo_path : user.profile_photo_url;
 };
 
 const getUserNameById = (id) => {
