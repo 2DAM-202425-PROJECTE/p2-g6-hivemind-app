@@ -4,7 +4,7 @@
     <div class="relative w-full h-48 bg-gray-200 dark:bg-gray-700">
       <img
         v-if="user.banner_photo_path"
-        :src="getImageUrl(user.banner_photo_path)"
+        :src="user.banner_photo_path"
         alt="Profile Banner"
         class="w-full h-full object-cover"
       />
@@ -21,7 +21,7 @@
       <!-- Foto de perfil -->
       <div class="absolute -top-16 left-6">
         <img
-          :src="user.profile_photo_url || '/default-profile.jpg'"
+          :src="user.profile_photo_url"
           alt="Profile Pic"
           class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-md object-cover"
         />
@@ -104,12 +104,6 @@ const props = defineProps({
     required: true,
   },
 });
-
-const getImageUrl = (filePath) => {
-  const baseUrl = 'http://localhost:8000'; // Adjust according to your server
-  if (filePath && filePath.startsWith('/')) return `${baseUrl}${filePath}`;
-  return filePath ? `${baseUrl}/storage/${filePath}` : '/default-profile.jpg';
-};
 
 onMounted(() => {
   console.log('isCurrentUser in ProfileHeader:', props.isCurrentUser);

@@ -73,9 +73,38 @@ cd "$SCRIPT_DIR"
 
 cd nexxus-backend || exit 1
 if [ -f composer.json ]; then
-  composer install &> /dev/null
+  composer update &> /dev/null
 else
   echo -e "${RED}composer.json not found in nexxus-backend.${NC}"
+  exit 1
+fi
+cd "$SCRIPT_DIR"
+
+# Check and install PHP extensions (for Debian/Ubuntu)
+echo -e "${YELLOW}🔍 Checking required PHP extensions...${NC}"
+PHP_EXTENSIONS=("gd" "curl" "json" "mbstring" "openssl" "pdo" "tokenizer" "xml" "pdo_mysql")
+for ext in "${PHP_EXTENSIONS[@]}"; do
+  if ! php -r "exit(extension_loaded('$ext') ? 0 : 1);" > /dev/null 2>&1; then
+    echo -e "${YELLOW}Installing php-$ext...${NC}"
+    sudo apt-get update -y &> /dev/null
+    sudo apt-get install -y "php-$ext" &> /dev/null
+    if [ $? -ne 0 ]; then
+      echo -e "${RED}Failed to install php-$ext. Please install it manually.${NC}"
+      exit 1
+    fi
+  fi
+done
+echo -e "${GREEN}✅ PHP extensions are installed.${NC}"
+
+# Create storage link for Laravel
+echo -e "${YELLOW}🔗 Creating storage link...${NC}"
+cd nexxus-backend || exit 1
+if [ -f artisan ]; then
+  # Run storage:link and suppress output, checking the exit code
+  php artisan storage:link > /dev/null 2>&1
+  echo -e "${GREEN}✅ Storage link created successfully.${NC}"
+else
+  echo -e "${RED}artisan file not found in nexxus-backend.${NC}"
   exit 1
 fi
 cd "$SCRIPT_DIR"
@@ -114,7 +143,6 @@ if [ "$RUN_SEEDERS" = true ]; then
   cd "$SCRIPT_DIR"
 fi
 
-
 if [ "$ONLY_FRONTEND" = true ]; then
   if [ "$SKIP_WORKERS" = false ]; then
     echo -e "${YELLOW}🚨 Warning: --skip_workers can't work with --only-frontend, so --skip-workers will be set to true.${NC}"
@@ -150,11 +178,8 @@ if [ "$SKIP_WORKERS" = false ]; then
   echo -e "${GREEN}🛠️  Starting workers...${NC}"
   cd nexxus-backend || exit 1
   if [ -f artisan ]; then
-    # Iniciar queue:work en segundo plano
     php artisan queue:work &  
     WORKER_PID=$!
-    
-    # Iniciar reverb:start en segundo plano
     php artisan reverb:start &  
     REVERB_PID=$!
   else

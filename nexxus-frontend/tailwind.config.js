@@ -7,7 +7,9 @@ export default {
   ],
   darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {
+      opacity: ['group-hover'],
+    },
   },
   plugins: [],
 }

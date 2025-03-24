@@ -2,31 +2,123 @@
   <div class="home-container">
     <Navbar />
     <h1>Home</h1>
-    <StoriesBar :stories="stories.data"/> <!-- Añade el componente StoriesBar -->
+    <StoriesBar :stories="stories.data" />
 
-    <div class="post-card" v-for="post in posts.data" :key="post.id">
+    <!-- Post Input Section -->
+    <div class="post-section">
+      <div class="post-input-container">
+        <img :src="getProfilePhotoById(currentUser.id)" class="profile-pic" alt="Profile" />
+        <div class="post-input-wrapper">
+          <textarea
+            v-model="newPostContent"
+            placeholder="What's happening?"
+            class="post-input"
+            rows="2"
+            @input="adjustTextareaHeight"
+          ></textarea>
+
+          <!-- Preview for uploaded file -->
+          <div v-if="newPostFile" class="file-preview">
+            <div class="preview-container">
+              <img
+                v-if="!newPostFile.type.includes('video')"
+                :src="previewUrl"
+                alt="Image Preview"
+                class="preview-media"
+              />
+              <video
+                v-else
+                :src="previewUrl"
+                controls
+                class="preview-media"
+              ></video>
+              <button class="remove-file-btn" @click="removeFile">X</button>
+            </div>
+          </div>
+
+          <!-- Preview for location -->
+          <div v-if="selectedLocation" class="location-preview">
+            <i class="mdi mdi-map-marker"></i>
+            <a
+              :href="`https://www.google.com/maps?q=${selectedLocation.lat},${selectedLocation.lon}`"
+              target="_blank"
+              class="location-btn"
+            >
+              {{ selectedLocation.name }}
+            </a>
+            <button class="remove-btn" @click="removeLocation">Remove</button>
+          </div>
+
+          <div class="post-actions">
+            <div class="action-buttons">
+              <label for="media-upload" class="action-btn" title="Add Image/Video">
+                <i class="mdi mdi-image"></i>
+              </label>
+              <input
+                id="media-upload"
+                type="file"
+                accept=".png, .jpg, .jpeg, .mp4"
+                @change="handleNewPostFileUpload"
+                style="display: none"
+              />
+              <button class="action-btn" @click="toggleEmojiPicker" title="Add Emoji">
+                <i class="mdi mdi-emoticon-outline"></i>
+              </button>
+              <button class="action-btn" @click="getLocation" title="Add Location">
+                <i class="mdi mdi-map-marker-outline"></i>
+              </button>
+            </div>
+            <button class="post-btn" :disabled="!newPostContent && !newPostFile && !selectedLocation" @click="submitPost">
+              Post
+            </button>
+          </div>
+
+          <!-- Emoji Picker -->
+          <div v-if="showEmojiPicker" class="emoji-picker" ref="emojiPicker">
+            <span
+              v-for="emoji in emojis"
+              :key="emoji"
+              class="emoji-item"
+              @click="addEmoji(emoji)"
+              v-html="emoji"
+            ></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="post-card" v-for="post in sortedPosts" :key="post.id" @click="navigateToPost(post)">
       <div class="post-header">
-        <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
+        <div class="post-profile-link" @click.stop="goToUserProfile(post.id_user)">
+          <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
+        </div>
         <div class="post-info">
-          <strong>{{ getUserNameById(post.id_user) }}</strong>
-          <h5>{{ post.description }}</h5>
-          <img :src="getImageUrl(post.file_path)" alt="file Image" class="post-content" />
           <ul>
             <li>
-              <strong>{{ getUserNameById(post.id_user) }}</strong>
-              <h5>{{ post.description }}</h5>
-              <template v-if="post.file_path.includes('.mp4')">
+              <strong class="post-username" @click.stop="goToUserProfile(post.id_user)">
+                {{ getUserNameById(post.id_user) }}
+              </strong>
+              <p class="post-date">{{ formatDate(post.created_at) }}</p>
+              <div class="post-description" v-html="renderPostDescription(post.description)"></div>
+              <template v-if="post.file_path && post.file_path.includes('.mp4')">
                 <video :src="getImageUrl(post.file_path)" alt="file Video" class="post-content" controls />
               </template>
-              <template v-else>
+              <template v-else-if="post.file_path">
                 <img :src="getImageUrl(post.file_path)" alt="file Image" class="post-content" />
               </template>
             </li>
           </ul>
         </div>
         <div class="post-menu">
+          <button @click.stop="togglePostMenu(post.id)">
+            <i class="mdi mdi-dots-vertical"></i>
+          </button>
           <div v-if="postMenuVisible === post.id" class="dropdown-menu">
-            <!-- Menu items here -->
+            <ul>
+              <li v-show="isPostFromUser(post)" @click.stop="editPost(post)">Edit</li>
+              <li v-show="isPostFromUser(post)" @click.stop="deletePost(post.id)" :disabled="isDeleting">Delete</li>
+              <li @click.stop="reportPost(post)">Report</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -35,19 +127,25 @@
         <v-card>
           <v-card-title>Edit Post</v-card-title>
           <v-card-text>
-            <div v-if="selectedPost && selectedPost.image_url" class="current-image">
-              <p>Current Image:</p>
-              <img :src="'http://localhost:8000/' + selectedPost.image_url" alt="Current post image"
-                style="max-width: 100%; max-height: 200px; margin-bottom: 10px;">
+            <div v-if="selectedPost && selectedPost.file_path" class="current-image">
+              <p>Current File:</p>
+              <img
+                v-if="!selectedPost.file_path.includes('.mp4')"
+                :src="getImageUrl(selectedPost.file_path)"
+                alt="Current post image"
+                style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"
+              />
+              <video
+                v-else
+                :src="getImageUrl(selectedPost.file_path)"
+                controls
+                style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"
+              ></video>
             </div>
-
             <v-file-input label="Replace Image/Video (.png, .jpg, .jpeg, .mp4)" accept=".png, .jpg, .jpeg, .mp4"
-              @update:modelValue="handleEditFileUpload" outlined></v-file-input>
-
-            <v-text-field v-model="editPostDescription" label="Description" outlined>
-            </v-text-field>
+                          @update:modelValue="handleEditFileUpload" outlined></v-file-input>
+            <v-text-field v-model="editPostDescription" label="Description" outlined></v-text-field>
           </v-card-text>
-
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn text @click="cancelEditPost">Cancel</v-btn>
@@ -57,23 +155,20 @@
       </v-dialog>
 
       <div class="post-actions">
-        <div class="action-item" @click="toggleLike(post)">
+        <div class="action-item" @click.stop="toggleLike(post)">
           <i class="mdi" :class="post.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
           <span>{{ post.likes_count }} Likes</span>
         </div>
-        <div class="action-item" @click="openCommentModal(post)">
+        <div class="action-item" @click.stop="navigateToPost(post)">
           <i class="mdi mdi-comment-outline"></i>
           <span>{{ post.comments ? post.comments.length : 0 }} Comments</span>
         </div>
-        <div class="action-item" @click="sharePost">
+        <div class="action-item" @click.stop="sharePost(post)">
           <i class="mdi mdi-share-outline"></i>
           <span>{{ shares }} Shares</span>
         </div>
       </div>
     </div>
-
-    <CommentModal :visible="isCommentModalVisible" :comments="selectedPostComments" @close="closeCommentModal"
-    :currentUser="currentUser"    @add-comment="addComment" :post="selectedPost" />
 
     <UserRecommendation />
     <Footer />
@@ -81,56 +176,97 @@
 </template>
 
 <script setup>
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import UserRecommendation from '@/components/UserRecommendation.vue';
-import CommentModal from '@/components/CommentModal.vue';
-import StoriesBar from '@/components/StoriesBar.vue'; // Importa el componente StoriesBar
-import { ref } from 'vue';
-import { onMounted } from 'vue';
+import StoriesBar from '@/components/StoriesBar.vue';
 import axios from 'axios';
+import { generateAvatar } from '@/utils/avatar';
 
-const posts = ref([]);
+const loadTwemoji = () => {
+  const script = document.createElement('script');
+  script.src = 'https://twemoji.maxcdn.com/v/latest/twemoji.min.js';
+  script.crossOrigin = 'anonymous';
+  document.head.appendChild(script);
+};
+
+onMounted(() => {
+  loadTwemoji();
+  fetchPosts();
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+
+const router = useRouter();
+const posts = ref({ data: [] });
 const users = ref({});
-const isCommentModalVisible = ref(false);
-const selectedPostComments = ref([]);
 const selectedPostId = ref(null);
 const selectedPost = ref(null);
 const isDeleting = ref(false);
 const postMenuVisible = ref(null);
-const stories = ref([]); // Añade el array de historias
 const editPostPopup = ref(false);
 const editPostDescription = ref('');
 const editPostFile = ref(null);
-const stories = ref([]);
+const stories = ref({ data: [] });
+const shares = ref(0);
+const newPostContent = ref('');
+const newPostFile = ref(null);
+const previewUrl = ref(null);
+const showEmojiPicker = ref(false);
+const selectedLocation = ref(null);
+const emojiPicker = ref(null);
+
+const emojis = ref([
+  '😀', '😂', '😍', '😢', '😡', '👍', '👎', '❤️', '🔥', '🎉',
+  '🤓', '😎', '🤗', '🙌', '💡', '🌟', '🍕', '🍔', '🍎', '🏈',
+  '⚽', '🎸', '🎨', '🏆', '🚀', '💯', '🔞', '🆒', '🆕', '🆙',
+  '🆓', '🆖', '🅿️', '🅰️', '🅱️', '🅾️', '🎵', '🎶', '🎼', '🎤',
+  '🎧', '🎦', '🎥', '🎬', '📺', '📻', '🎮', '🎲', '🃏', '🎯',
+  '🏹', '🎳', '🎰', '🚗', '🚕', '🚙', '🚌', '🚎', '🏎', '🚓',
+  '🚒', '🚑', '🚚', '🚛', '🚜', '🏍', '🚲', '🛴', '🚏', '🛵',
+  '🚀', '🚁', '🛩', '✈️', '🛫', '🛬', '🚦', '🚧', '⚓', '⛽',
+  '🚢', '🚤', '🛳', '⛵', '🚡', '🚠', '🚟', '🚝', '🚄', '🚅',
+  '🚈', '🚞', '🚋', '🚆', '🚇', '🚊', '🚉', '🚁', '🚂', '🚃',
+  '🚄', '🚅', '🚆', '🚇', '🚈', '🚉', '🚊', '🚋', '🚌', '🚍',
+  '🚎', '🚏', '🚐', '🚑', '🚒', '🚓', '🚔', '🚕', '🚖', '🚗',
+  '🚘', '🚙', '🚚', '🚛', '🚜', '🚝', '🚞', '🚟', '🚠', '🚡',
+  '🚢', '🚣', '🚤', '🚥', '🚦', '🚧', '🚨', '🚩', '🚪', '🚫',
+  '🚬', '🚭', '🚮', '🚯', '🚰', '🚱', '🚲', '🚳', '🚴', '🚵',
+  '🚶', '🚷', '🚸', '🚹', '🚺', '🚻', '🚼', '🚽', '🚾', '🚿',
+  '🛀', '🛁', '🛂', '🛃', '🛄', '🛅', '🛋', '🛌', '🛍', '🛎',
+  '🛏', '🛐', '🛑', '🛒', '🛓', '🛔', '🛕', '🛖', '🛗', '🛘',
+]);
 
 const currentUser = ref({
-  name: 'Current User', // Replace with actual user data
-  profile_photo_path: 'https://via.placeholder.com/50' // Replace with actual user profile photo URL
+  id: null,
+  name: 'Current User',
+  profile_photo_path: null,
 });
 
-onMounted(async () => {
+const sortedPosts = computed(() => {
+  return [...posts.value.data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+});
+
+const fetchPosts = async () => {
   try {
     const token = localStorage.getItem('token');
-
     if (!token) {
       console.error('No hay token disponible');
       return;
     }
 
     const result = await axios.get('http://localhost:8000/api/posts', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json'
-      }
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
     posts.value = result.data;
 
     const usersResult = await axios.get('http://localhost:8000/api/users', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json'
-      }
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
 
     if (!usersResult.data || !usersResult.data.data) {
@@ -139,114 +275,208 @@ onMounted(async () => {
     }
 
     users.value = usersResult.data.data.reduce((acc, user) => {
-      acc[user.id] = {
-        name: user.name,
-        profile_photo_path: user.profile_photo_path
-      };
+      acc[user.id] = { name: user.name, username: user.username, profile_photo_path: user.profile_photo_path };
       return acc;
     }, {});
 
-    console.log('Usuarios:', users.value);
-
-    // Fetch current user data
     const userResult = await axios.get('http://localhost:8000/api/user', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json'
-      }
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
     currentUser.value = userResult.data;
 
-    // Fetch stories data
     const storiesResult = await axios.get('http://localhost:8000/api/stories', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json'
-      }
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
     stories.value = storiesResult.data;
-
   } catch (error) {
     console.error('Error al obtener datos', error.response?.data || error.message);
   }
-});
-
-const getImageUrl = (path) => {
-  if (!path) return 'https://via.placeholder.com/150';
-  return `http://localhost:8000/storage/${path}`;
 };
 
+const adjustTextareaHeight = (event) => {
+  const textarea = event.target;
+  textarea.style.height = 'auto';
+  textarea.style.height = `${textarea.scrollHeight}px`;
+};
+
+const handleNewPostFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    newPostFile.value = file;
+    previewUrl.value = URL.createObjectURL(file);
+  }
+};
+
+const removeFile = () => {
+  newPostFile.value = null;
+  previewUrl.value = null;
+  document.getElementById('media-upload').value = '';
+};
+
+const toggleEmojiPicker = (event) => {
+  event.stopPropagation();
+  showEmojiPicker.value = !showEmojiPicker.value;
+};
+
+const handleClickOutside = (event) => {
+  if (showEmojiPicker.value && emojiPicker.value && !emojiPicker.value.contains(event.target)) {
+    showEmojiPicker.value = false;
+  }
+};
+
+const addEmoji = (emoji) => {
+  newPostContent.value += emoji;
+  showEmojiPicker.value = false;
+};
+
+const getLocation = () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+          const data = await response.json();
+          selectedLocation.value = {
+            name: data.display_name || `Lat: ${latitude}, Lon: ${longitude}`,
+            lat: latitude,
+            lon: longitude
+          };
+        } catch (error) {
+          console.error('Error fetching location name:', error);
+          selectedLocation.value = {
+            name: `Lat: ${latitude}, Lon: ${longitude}`,
+            lat: latitude,
+            lon: longitude
+          };
+        }
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        alert('Unable to get location. Please allow location access.');
+      }
+    );
+  } else {
+    alert('Geolocation is not supported by your browser.');
+  }
+};
+
+const removeLocation = () => {
+  selectedLocation.value = null;
+};
+
+const submitPost = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token available');
+      return;
+    }
+
+    if (!currentUser.value.id) {
+      console.error('Current user ID is not available');
+      alert('Error: User ID not found. Please log in again.');
+      return;
+    }
+
+    const now = new Date();
+    const publishDate = now.toISOString().slice(0, 19).replace('T', ' ');
+
+    let finalDescription = newPostContent.value;
+    if (selectedLocation.value) {
+      finalDescription += `\n📍 ${selectedLocation.value.name}`;
+    }
+
+    const formData = new FormData();
+    formData.append('description', finalDescription);
+    formData.append('publish_date', publishDate);
+    formData.append('id_user', currentUser.value.id);
+    if (newPostFile.value) formData.append('file', newPostFile.value);
+
+    const response = await axios.post(
+      'http://localhost:8000/api/posts',
+      formData,
+      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
+    );
+
+    await fetchPosts();
+    newPostContent.value = '';
+    newPostFile.value = null;
+    previewUrl.value = null;
+    selectedLocation.value = null;
+    document.getElementById('media-upload').value = '';
+  } catch (error) {
+    console.error('Error creating post:', error.response?.data || error.message);
+    alert('Failed to create post: ' + (error.response?.data?.message || error.message));
+  }
+};
+
+const renderPostDescription = (description) => {
+  if (!description) return '';
+
+  let html = description;
+  html = html.replace(/\n/g, '<br>');
+  const locationRegex = /📍 (.*?)(<br>|$)/g;
+  html = html.replace(locationRegex, (match, locationName) => {
+    // Split the location string by commas and trim whitespace
+    const parts = locationName.split(',').map(part => part.trim());
+    // Typically, the city is one of the middle parts, and the country is the last part
+    // This is a simplified approach; Nominatim's format can vary
+    const country = parts[parts.length - 1];
+    // Try to find the city; often it's the part before the region or postal code
+    let city = parts[0]; // Default to first part
+    if (parts.length >= 3) {
+      // If there are enough parts, the city might be the second-to-last or third-to-last
+      city = parts[parts.length - 3] || parts[parts.length - 2];
+    }
+    const simplifiedLocation = `${city}, ${country}`;
+    return `<div class="post-location"><i class="mdi mdi-earth location-icon"></i><a href="https://www.google.com/maps?q=${encodeURIComponent(locationName)}" target="_blank" class="location-link">${simplifiedLocation}</a></div>`;
+  });
+
+  return html;
+};
+
+const getImageUrl = (path) => path ? `http://localhost:8000/storage/${path}` : generateAvatar('User');
 const getProfilePhotoById = (id) => {
   const user = users.value[id];
-  return user && user.profile_photo_path ? user.profile_photo_path : 'https://via.placeholder.com/50';
+  return user?.profile_photo_path ? `http://localhost:8000/api/storage/${user.profile_photo_path}` : generateAvatar(user?.name || 'User');
+};
+const getUserNameById = (id) => users.value[id]?.name || 'Usuario desconocido';
+const getUsernameById = (id) => users.value[id]?.username || null;
+
+const goToUserProfile = (userId) => {
+  const username = getUsernameById(userId);
+  if (username) router.push(`/profile/${username}`);
+  else console.warn('No username found for userId:', userId);
 };
 
-const getUserNameById = (id) => {
-  const user = users.value[id];
-  return user && user.name ? user.name : 'usuario desconocido';
+const navigateToPost = (post) => {
+  const username = getUsernameById(post.id_user);
+  if (!username) {
+    console.warn('No username found for userId:', post.id_user);
+    return;
+  }
+
+  if (post.file_path && post.file_path.includes('.mp4')) {
+    router.push(`/users/username/${username}/videos?postId=${post.id}`);
+  } else {
+    router.push(`/users/username/${username}/posts?postId=${post.id}`);
+  }
 };
 
 const toggleLike = async (post) => {
-  console.log('Toggling like for post:', post);
   const token = localStorage.getItem('token');
-  if (!token) {
-    console.error('No token available');
-    return;
-  }
+  if (!token) return console.error('No token available');
 
   const url = `http://localhost:8000/api/posts/${post.id}/like`;
   const method = post.liked_by_user ? 'delete' : 'post';
 
   try {
-    await axios({
-      method,
-      url,
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
+    await axios({ method, url, headers: { Authorization: `Bearer ${token}` } });
     post.liked_by_user = !post.liked_by_user;
     post.likes_count += post.liked_by_user ? 1 : -1;
   } catch (error) {
-    console.error('Error toggling like for post:', error.response?.data || error.message);
-  }
-};
-
-const openCommentModal = async (post) => {
-  selectedPost.value = post;
-  selectedPostId.value = post.id;
-  isCommentModalVisible.value = true;
-
-  try {
-    const response = await axios.get(
-      `http://localhost:8000/api/posts/${post.id}/comments`,
-      { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-    );
-    selectedPostComments.value = response.data;
-    isCommentModalVisible.value = true;
-  } catch (error) {
-    console.error('Error:', error.response.data);
-  }
-};
-
-const closeCommentModal = () => {
-  isCommentModalVisible.value = false;
-};
-
-const addComment = async (comment) => {
-  try {
-    const response = await axios.post(`http://localhost:8000/api/posts/${selectedPostId.value}/comments`, {
-      content: comment,
-    }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-
-    selectedPostComments.value.push(response.data);
-  } catch (error) {
-    console.error('Error adding comment:', error.response?.data || error.message);
+    console.error('Error toggling like:', error.response?.data || error.message);
   }
 };
 
@@ -254,7 +484,7 @@ const togglePostMenu = (postId) => {
   postMenuVisible.value = postMenuVisible.value === postId ? null : postId;
 };
 
-const editPost = async (post) => {
+const editPost = (post) => {
   selectedPost.value = post;
   editPostDescription.value = post.description || '';
   editPostFile.value = null;
@@ -262,7 +492,7 @@ const editPost = async (post) => {
 };
 
 const handleEditFileUpload = (files) => {
-  editPostFile.value = files ? files[0] : null; // Handle single file upload
+  editPostFile.value = files ? files[0] : null;
 };
 
 const cancelEditPost = () => {
@@ -274,73 +504,51 @@ const cancelEditPost = () => {
 const saveEditPost = async () => {
   if (!selectedPost.value) return;
 
+  const formData = new FormData();
+  formData.append('description', editPostDescription.value);
+  formData.append('_method', 'PUT');
+  if (editPostFile.value) formData.append('file', editPostFile.value);
+
   try {
-    const formData = new FormData();
-    formData.append('description', editPostDescription.value);
-    formData.append('_method', 'PUT'); // Add method override
-
-    if (editPostFile.value) {
-      formData.append('file', editPostFile.value);
-    }
-
-    const response = await axios.post( // Use POST instead of PUT
+    const response = await axios.post(
       `http://localhost:8000/api/posts/${selectedPost.value.id}`,
       formData,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'multipart/form-data',
-        }
-      }
+      { headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' } }
     );
 
-    // Update frontend data with response
-    const updatedPost = response.data.post; // Access nested post data
+    const updatedPost = response.data.post;
     const index = posts.value.data.findIndex(p => p.id === selectedPost.value.id);
-    if (index !== -1) {
-      posts.value.data.splice(index, 1, updatedPost); // Ensure reactivity
-    }
-
+    if (index !== -1) posts.value.data.splice(index, 1, updatedPost);
     editPostPopup.value = false;
   } catch (error) {
     console.error('Error updating post:', error);
     alert('Error: ' + (error.response?.data?.message || error.message));
   }
 };
-const isPostFromUser = (post) => {
-  return post.id_user === currentUser.value.id;
-};
+
+const isPostFromUser = (post) => post.id_user === currentUser.value.id;
 
 const deletePost = async (postId) => {
   isDeleting.value = true;
   try {
-    const response = await axios.delete(`http://localhost:8000/api/posts/${postId}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
+    await axios.delete(`http://localhost:8000/api/posts/${postId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     });
-
-    if (Array.isArray(posts.value)) {
-      posts.value = posts.value.filter(post => post.id !== postId);
-    }
-
-    location.reload();
-
+    posts.value.data = posts.value.data.filter(post => post.id !== postId);
   } catch (error) {
     console.error('Error deleting post:', error.response?.data || error.message);
-    alert('Failed to delete post. ' + (error.response?.data?.message || error.message));
+    alert('Failed to delete post: ' + (error.response?.data?.message || error.message));
   } finally {
     isDeleting.value = false;
   }
 };
 
-const reportPost = (post) => {
-  // Implement report post logic
-  alert(`Reported post with ID: ${post.id}`);
-};
+const reportPost = (post) => alert(`Reported post with ID: ${post.id}`);
+const sharePost = (post) => {};
 
-const sharePost = (post) => {
-  // Implement share post logic
+const formatDate = (dateString) => {
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString(undefined, options);
 };
 </script>
 
@@ -359,26 +567,220 @@ h1 {
   padding-bottom: 20px;
 }
 
-.stories {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+.post-section {
+  max-width: 800px;
+  margin: 0 auto 20px auto;
+  background: #ffffff;
+  border: 1px solid #d3d3d3;
+  border-radius: 10px;
+  padding: 15px;
 }
 
-.story {
+.post-input-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.post-input-wrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+.post-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  font-size: 16px;
+  font-family: Arial, sans-serif;
+  padding: 5px;
+  line-height: 1.5;
+  background: transparent;
+}
+
+.post-input::placeholder {
+  color: #666;
+}
+
+.file-preview {
+  margin-top: 10px;
+}
+
+.preview-container {
+  position: relative;
+  display: inline-block;
+}
+
+.preview-media {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.remove-file-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 20px;
   text-align: center;
 }
 
-.story img {
-  width: 80px;
-  height: 80px;
-  border-radius: 10px;
-  border: 2px solid #7f7f7f;
+.remove-file-btn:hover {
+  background: #cc0000;
 }
 
-.story p {
-  margin-top: 5px;
-  font-size: 12px;
+.location-preview {
+  margin-top: 10px;
+  padding: 10px;
+  background: #e6f3ff;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.location-preview i {
+  color: #1da1f2;
+}
+
+.location-btn {
+  display: inline-block;
+  padding: 5px 10px;
+  background-color: #1da1f2;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.location-btn:hover {
+  background-color: #0d91e2;
+}
+
+.remove-btn {
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.remove-btn:hover {
+  background: #cc0000;
+}
+
+.post-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  color: #1da1f2;
+}
+
+.action-btn i {
+  font-size: 20px;
+}
+
+.action-btn:hover {
+  color: #0d91e2;
+}
+
+.post-btn {
+  background-color: #1da1f2;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 5px 15px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.post-btn:disabled {
+  background-color: #a1d2f7;
+  cursor: not-allowed;
+}
+
+.post-btn:hover:not(:disabled) {
+  background-color: #0d91e2;
+}
+
+.emoji-picker {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #d3d3d3;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  padding: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.emoji-item {
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.emoji-item:hover {
+  background: #f0f0f0;
+  border-radius: 5px;
+}
+
+.post-description {
+  font-size: 16px;
+}
+
+.post-location {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.location-icon {
+  color: #1da1f2;
+  font-size: 16px;
+}
+
+.location-link {
+  color: #1da1f2;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.location-link:hover {
+  text-decoration: underline;
 }
 
 .post-card {
@@ -390,20 +792,38 @@ h1 {
   margin: 0 auto;
   margin-bottom: 20px;
   width: 100%;
+  cursor: pointer;
+}
+
+.post-card:hover {
+  background: #f9f9f9;
 }
 
 .post-header {
   display: flex;
-  gap: 10px;
-  align-items: center;
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 15px;
   position: relative;
+}
+
+.post-profile-link {
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .profile-pic {
   width: 50px;
   height: 50px;
+  min-width: 50px;
+  min-height: 50px;
   border-radius: 50%;
+  object-fit: cover;
+}
+
+.post-info {
+  flex-grow: 1;
+  margin-left: 10px;
 }
 
 .post-info h3 {
@@ -416,20 +836,35 @@ h1 {
   margin: 0;
 }
 
+.post-username {
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.post-username:hover {
+  text-decoration: underline;
+}
+
+.post-date {
+  font-size: 12px;
+  color: #666;
+}
+
 .post-menu {
-  margin-left: auto;
   position: relative;
+  flex-shrink: 0;
 }
 
 .post-menu button {
   background: none;
   border: none;
   cursor: pointer;
+  padding: 5px;
 }
 
 .dropdown-menu {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 5px);
   right: 0;
   background: white;
   border: 1px solid #d3d3d3;
@@ -445,18 +880,13 @@ h1 {
 }
 
 .dropdown-menu li {
-  padding: 10px;
+  padding: 10px 15px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .dropdown-menu li:hover {
   background: #f0f0f0;
-}
-
-.post-image {
-  width: 100%;
-  border-radius: 20px;
-  margin-bottom: 15px;
 }
 
 .post-actions {
@@ -483,6 +913,10 @@ h1 {
 
 .post-content {
   width: 100%;
+  height: 400px;
+  max-width: 760px;
+  max-height: 400px;
+  object-fit: contain;
   border-radius: 20px;
   margin-bottom: 15px;
 }

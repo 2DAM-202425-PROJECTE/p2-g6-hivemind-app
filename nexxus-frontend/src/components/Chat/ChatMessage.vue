@@ -1,17 +1,17 @@
 <template>
-  <div class="flex items-start gap-3 p-3 rounded-lg bg-gray-800">
+  <div class="flex items-start gap-3 p-3 rounded-lg bg-gray-100">
     <img :src="message.user.profile_photo_url" alt="Avatar" class="w-10 h-10 rounded-full">
     <div class="flex-1">
       <div class="flex items-center gap-2">
-        <h4 class="text-sm font-semibold text-white">{{ message.user.name }}</h4>
-        <span class="text-xs text-gray-400">{{ message.timestamp }}</span>
+        <h4 class="text-sm font-semibold text-black">{{ message.user.name }}</h4>
+        <span class="text-xs text-gray-600">{{ message.timestamp }}</span>
       </div>
       <div v-if="isEditing">
-        <textarea v-model="editedContent" @blur="saveEdit" @keydown.enter="saveEdit" class="w-full mt-2 p-2 bg-gray-700 rounded-lg text-white resize-none" maxlength="5000"></textarea>
+        <textarea v-model="editedContent" @blur="saveEdit" @keydown.enter="saveEdit" class="w-full mt-2 p-2 bg-gray-200 rounded-lg text-black resize-none" maxlength="5000"></textarea>
       </div>
-      <p v-else class="text-white break-words">
+      <p v-else class="text-black break-words">
         {{ message.text }}
-        <span v-if="message.is_edited" class="text-xs text-gray-400">(edited)</span>
+        <span v-if="message.is_edited" class="text-xs text-gray-600">(edited)</span>
       </p>
     </div>
     <button v-if="message.isMine && !isEditing" @click="startEditing">✏️</button>

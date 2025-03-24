@@ -42,11 +42,13 @@ Route::middleware('auth:sanctum')->group(function ()
     Route::get('/posts', [PostController::class, 'index']);
     Route::post('/posts', [PostController::class, 'store']);
     Route::put('/posts/{post}', [PostController::class, 'update']);
+    Route::get('/posts/{id}', [PostController::class, 'show']);
     Route::delete('/posts/{id}', [PostController::class, 'destroy']);
 
     // posts likes routes
     Route::post('/posts/{id}/like', [LikeController::class, 'store']);
     Route::delete('/posts/{id}/like', [LikeController::class, 'destroy']);
+
 
     // comments routes
     Route::post('/posts/{post}/comments', [CommentController::class, 'store']);
@@ -55,8 +57,6 @@ Route::middleware('auth:sanctum')->group(function ()
     Route::delete('/posts/{post}/comments/{comment}', [CommentController::class, 'destroy']);
     Route::delete('/comments/{id}', [CommentController::class, 'destroy']);
     Route::put('/comments/{id}', [CommentController::class, 'update']);
-
-    Route::get('/stories', [StoryController::class, 'index']);
 
     Route::get('/stories', [StoryController::class, 'index']);
     Route::post('/stories', [StoryController::class, 'store']);

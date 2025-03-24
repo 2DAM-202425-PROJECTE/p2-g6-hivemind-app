@@ -12,13 +12,24 @@
     <ProfileEditModal :is-open="isEditModalVisible" :user="user" @close="isEditModalVisible = false" @save="updateUserProfile" />
     <ShareModal v-if="isModalVisible" :share-url="shareUrl" @close="isModalVisible = false"/>
     <Footer/>
+
+    <!-- Snackbar para el mensaje de copia -->
+    <v-snackbar
+      v-model="snackbar"
+      :timeout="2000"
+      color="green darken-2"
+      bottom
+      class="d-flex justify-end"
+    >
+      Profile URL copied to clipboard!
+    </v-snackbar>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import { useProfile } from '@/composables/profile/useProfile';
+import {ref, onMounted, watch} from 'vue';
+import {useRoute} from 'vue-router';
+import {useProfile} from '@/composables/profile/useProfile';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import ShareModal from '@/components/ShareModal.vue';
@@ -28,9 +39,12 @@ import ProfilePosts from '@/components/Profile/ProfilePosts.vue';
 import ProfileEditModal from '@/components/Profile/ProfileEditModal.vue';
 
 const route = useRoute();
-const { user, userPosts, isCurrentUser, fetchUser, fetchUserProfileByUsername } = useProfile();
+const {user, userPosts, isCurrentUser, fetchUser, fetchUserProfileByUsername} = useProfile();
 
 const isEditModalVisible = ref(false);
+const isModalVisible = ref(false);
+const shareUrl = ref('');
+const snackbar = ref(false);
 
 const editProfile = () => {
   isEditModalVisible.value = true;
@@ -43,9 +57,10 @@ const updateUserProfile = (updatedUser) => {
 const shareProfile = () => {
   const url = `${window.location.origin}/profile/${user.value.username}`;
   navigator.clipboard.writeText(url).then(() => {
-    alert('Profile URL copied to clipboard!');
+    snackbar.value = true;
   }).catch(err => {
     console.error('Failed to copy: ', err);
+    snackbar.value = true;
   });
 };
 
@@ -55,5 +70,11 @@ onMounted(async () => {
   await fetchUserProfileByUsername(route.params.username);
   console.log('Profile loaded, isCurrentUser:', isCurrentUser.value);
   console.log('userPosts en Profile.vue:', userPosts.value);
+});
+
+watch(() => route.params.username, (newUsername, oldUsername) => {
+  if (newUsername !== oldUsername) {
+    fetchUserProfileByUsername(newUsername);
+  }
 });
 </script>

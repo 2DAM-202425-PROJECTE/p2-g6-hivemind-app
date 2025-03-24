@@ -12,20 +12,33 @@
 
         <button type="submit">Login</button>
       </form>
-      <p v-if="error" style="color: red">{{ error }}</p>
       <p>
         You don't have an account?
         <router-link to="/register">Register here</router-link>
       </p>
     </div>
 
-    <!-- Success Popup -->
-    <div v-if="showPopup" class="popup">
-      <div class="popup-content">
-        <p>✅ Signed in successfully!</p>
-        <button @click="closePopup">OK</button>
-      </div>
-    </div>
+    <!-- Success Snackbar -->
+    <v-snackbar
+      v-model="showSuccessSnackbar"
+      :timeout="3000"
+      color="black"
+      class="white--text custom-snackbar"
+    >
+      <v-icon color="green" class="mr-2">mdi-check-circle</v-icon>
+      Signed in successfully!
+    </v-snackbar>
+
+    <!-- Error Snackbar -->
+    <v-snackbar
+      v-model="showErrorSnackbar"
+      :timeout="3000"
+      color="black"
+      class="white--text custom-snackbar"
+    >
+      <v-icon color="red" class="mr-2">mdi-alert-circle</v-icon>
+      {{ error }}
+    </v-snackbar>
 
     <div class="icons">
       <i class="icon network-icon"></i>
@@ -44,7 +57,8 @@ export default {
       password: '',
       deviceName: 'web',
       error: null,
-      showPopup: false, // Controls popup visibility
+      showSuccessSnackbar: false, // Controls success snackbar visibility
+      showErrorSnackbar: false,   // Controls error snackbar visibility
     };
   },
   methods: {
@@ -58,19 +72,22 @@ export default {
 
         localStorage.setItem('token', response.data.token);
         this.error = null;
-        this.showPopup = true; // Show the popup
+        this.showSuccessSnackbar = true; // Show success snackbar
 
-        // Automatically redirect after 1.5 seconds
+        // Automatically redirect after 3 seconds
         setTimeout(() => {
+          this.showSuccessSnackbar = false;
           this.$router.push('/home');
-        }, 1500);
+        }, 3000);
       } catch (err) {
         this.error = 'Login failed. Please check your credentials.';
+        this.showErrorSnackbar = true; // Show error snackbar
+
+        // Automatically hide error snackbar after 3 seconds
+        setTimeout(() => {
+          this.showErrorSnackbar = false;
+        }, 3000);
       }
-    },
-    closePopup() {
-      this.showPopup = false;
-      this.$router.push('/home'); // Ensure redirection on manual close
     },
   },
 };
@@ -83,7 +100,7 @@ export default {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #f9f9f9;
+  background-color: #f0f2f5; /* Updated background color */
   border: 5px solid #ccc;
   border-radius: 10px;
   position: relative;
@@ -92,27 +109,27 @@ export default {
 
 .login-box {
   text-align: center;
-  background: #7f7f7f;
-  padding: 2rem;
-  border-radius: 10px;
+  background: #ffffff; /* Updated container background color */
+  padding: 3rem;
+  border-radius: 24px; /* Updated border radius */
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  width: 90%;
-  max-width: 400px;
+  width: 100%;
+  max-width: 800px; /* Updated max-width */
 }
 
 .logo {
-  width: 50px;
-  height: 50px;
-  margin-bottom: 1rem;
+  width: 60px; /* Slightly larger logo */
+  height: 60px;
+  margin-bottom: 1.5rem;
   display: block;
   margin-left: auto;
   margin-right: auto;
 }
 
 h1 {
-  font-size: 1.5rem;
+  font-size: 2rem; /* Larger font size for the heading */
   font-weight: bold;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   color: black;
 }
 
@@ -123,29 +140,31 @@ form {
 
 label {
   font-weight: bold;
-  margin-top: 1rem;
+  margin-top: 1.5rem; /* Increased spacing */
   margin-bottom: 0.5rem;
 }
 
 input {
-  padding: 0.5rem;
+  padding: 0.75rem; /* Increased padding for larger inputs */
   border: 1px solid #ccc;
   border-radius: 5px;
-  font-size: 1rem;
+  font-size: 1.1rem; /* Slightly larger font size */
+  color: black; /* Text color when typing */
 }
+
 input::placeholder {
-  color: white;
+  color: black; /* Placeholder text color */
 }
 
 button {
-  margin-top: 1rem;
-  padding: 0.7rem;
+  margin-top: 1.5rem; /* Increased spacing */
+  padding: 0.9rem; /* Larger button */
   background-color: #555;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.1rem; /* Slightly larger font size */
 }
 
 button:hover {
@@ -153,8 +172,8 @@ button:hover {
 }
 
 p {
-  margin-top: 1rem;
-  font-size: 0.9rem;
+  margin-top: 1.5rem; /* Increased spacing */
+  font-size: 1rem; /* Slightly larger font size */
 }
 
 a {
@@ -189,35 +208,20 @@ a:hover {
   height: 24px;
 }
 
-/* Popup styles */
-.popup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #7f7f7f;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  text-align: center;
-  z-index: 1000;
+.custom-snackbar {
+  z-index: 10000; /* Ensure it appears above other elements */
+  margin-bottom: 16px; /* Offset from the bottom */
+  margin-right: 200px; /* Offset from the right edge */
+  position: fixed; /* Fixed positioning */
+  bottom: 0; /* Stick to the bottom */
+  right: 0; /* Stick to the right */
+  left: auto; /* Prevent centering */
+  transform: none; /* Override any default transform */
+  max-width: calc(100% - 32px); /* Ensure it doesn't exceed viewport width */
 }
 
-.popup-content {
-  font-size: 1.2rem;
-}
-
-.popup button {
-  margin-top: 10px;
-  padding: 5px 15px;
-  border: none;
-  background: #28a745;
-  color: white;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.popup button:hover {
-  background: #218838;
+/* Ensure white text for snackbars */
+.white--text {
+  color: white !important;
 }
 </style>
