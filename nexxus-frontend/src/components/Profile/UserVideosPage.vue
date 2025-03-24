@@ -154,6 +154,7 @@ const shares = ref(0);
 const deleteDialog = ref(false);
 const deleteType = ref('');
 const itemToDelete = ref(null);
+const previousRoute = ref(''); // To store the previous route
 
 const API_BASE_URL = 'http://localhost:8000';
 const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
@@ -166,6 +167,11 @@ onMounted(async () => {
       router.push('/login');
       return;
     }
+
+    // Store the previous route from document.referrer or fallback to home
+    previousRoute.value = document.referrer.includes(window.location.origin)
+      ? new URL(document.referrer).pathname
+      : '/'; // Default to home if referrer is unreliable
 
     const usersResult = await axios.get(`${API_BASE_URL}/api/users`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -320,7 +326,8 @@ const confirmDelete = async () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       selectedVideo.value = null;
-      router.push(`/profile/${username}`);
+      // Redirect to the previous route instead of the user's profile
+      router.push(previousRoute.value || '/'); // Fallback to home if no previous route
     } else if (deleteType.value === 'comment') {
       await axios.delete(`${API_BASE_URL}/api/comments/${itemToDelete.value}`, {
         headers: { Authorization: `Bearer ${token}` }
