@@ -39,7 +39,13 @@
           <!-- Preview for location -->
           <div v-if="selectedLocation" class="location-preview">
             <i class="mdi mdi-map-marker"></i>
-            <span>{{ selectedLocation }}</span>
+            <a
+              :href="`https://www.google.com/maps?q=${selectedLocation.lat},${selectedLocation.lon}`"
+              target="_blank"
+              class="location-btn"
+            >
+              {{ selectedLocation.name }}
+            </a>
             <button class="remove-btn" @click="removeLocation">Remove</button>
           </div>
 
@@ -213,7 +219,7 @@ const newPostFile = ref(null);
 const previewUrl = ref(null);
 const showEmojiPicker = ref(false);
 const selectedLocation = ref(null);
-const emojiPicker = ref(null); // Reference to the emoji picker DOM element
+const emojiPicker = ref(null);
 
 const emojis = ref([
   '😀', '😂', '😍', '😢', '😡', '👍', '👎', '❤️', '🔥', '🎉',
@@ -242,7 +248,6 @@ const currentUser = ref({
   profile_photo_path: null,
 });
 
-// Computed property to sort posts by created_at in descending order
 const sortedPosts = computed(() => {
   return [...posts.value.data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 });
@@ -309,7 +314,7 @@ const removeFile = () => {
 };
 
 const toggleEmojiPicker = (event) => {
-  event.stopPropagation(); // Prevent the click from immediately closing the picker
+  event.stopPropagation();
   showEmojiPicker.value = !showEmojiPicker.value;
 };
 
@@ -332,10 +337,18 @@ const getLocation = () => {
         try {
           const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
           const data = await response.json();
-          selectedLocation.value = data.display_name || `Lat: ${latitude}, Lon: ${longitude}`;
+          selectedLocation.value = {
+            name: data.display_name || `Lat: ${latitude}, Lon: ${longitude}`,
+            lat: latitude,
+            lon: longitude
+          };
         } catch (error) {
           console.error('Error fetching location name:', error);
-          selectedLocation.value = `Lat: ${latitude}, Lon: ${longitude}`;
+          selectedLocation.value = {
+            name: `Lat: ${latitude}, Lon: ${longitude}`,
+            lat: latitude,
+            lon: longitude
+          };
         }
       },
       (error) => {
@@ -371,7 +384,7 @@ const submitPost = async () => {
 
     let finalDescription = newPostContent.value;
     if (selectedLocation.value) {
-      finalDescription += `\n📍 ${selectedLocation.value}`;
+      finalDescription += `\n📍 ${selectedLocation.value.name}`;
     }
 
     const formData = new FormData();
@@ -404,7 +417,21 @@ const renderPostDescription = (description) => {
   let html = description;
   html = html.replace(/\n/g, '<br>');
   const locationRegex = /📍 (.*?)(<br>|$)/g;
-  html = html.replace(locationRegex, '<div class="post-location"><i class="mdi mdi-map-marker"></i><span>$1</span></div>');
+  html = html.replace(locationRegex, (match, locationName) => {
+    // Split the location string by commas and trim whitespace
+    const parts = locationName.split(',').map(part => part.trim());
+    // Typically, the city is one of the middle parts, and the country is the last part
+    // This is a simplified approach; Nominatim's format can vary
+    const country = parts[parts.length - 1];
+    // Try to find the city; often it's the part before the region or postal code
+    let city = parts[0]; // Default to first part
+    if (parts.length >= 3) {
+      // If there are enough parts, the city might be the second-to-last or third-to-last
+      city = parts[parts.length - 3] || parts[parts.length - 2];
+    }
+    const simplifiedLocation = `${city}, ${country}`;
+    return `<div class="post-location"><i class="mdi mdi-earth location-icon"></i><a href="https://www.google.com/maps?q=${encodeURIComponent(locationName)}" target="_blank" class="location-link">${simplifiedLocation}</a></div>`;
+  });
 
   return html;
 };
@@ -629,9 +656,18 @@ h1 {
   color: #1da1f2;
 }
 
-.location-preview span {
+.location-btn {
+  display: inline-block;
+  padding: 5px 10px;
+  background-color: #1da1f2;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
   font-size: 14px;
-  color: #333;
+}
+
+.location-btn:hover {
+  background-color: #0d91e2;
 }
 
 .remove-btn {
@@ -730,7 +766,21 @@ h1 {
   display: flex;
   align-items: center;
   gap: 5px;
+}
+
+.location-icon {
   color: #1da1f2;
+  font-size: 16px;
+}
+
+.location-link {
+  color: #1da1f2;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.location-link:hover {
+  text-decoration: underline;
 }
 
 .post-card {
