@@ -100,6 +100,12 @@
               </strong>
               <p class="post-date">{{ formatDate(post.created_at) }}</p>
               <div class="post-description" v-html="renderPostDescription(post.description)"></div>
+              <div v-if="post.location" class="post-location">
+                <i class="mdi mdi-earth location-icon"></i>
+                <a :href="`https://www.google.com/maps?q=${encodeURIComponent(post.location)}`" target="_blank" class="location-link">
+                  {{ simplifyLocation(post.location) }}
+                </a>
+              </div>
               <template v-if="post.file_path && post.file_path.includes('.mp4')">
                 <video :src="getImageUrl(post.file_path)" alt="file Video" class="post-content" controls />
               </template>
@@ -145,6 +151,20 @@
             <v-file-input label="Replace Image/Video (.png, .jpg, .jpeg, .mp4)" accept=".png, .jpg, .jpeg, .mp4"
                           @update:modelValue="handleEditFileUpload" outlined></v-file-input>
             <v-text-field v-model="editPostDescription" label="Description" outlined></v-text-field>
+            <div v-if="editPostLocation" class="location-preview">
+              <i class="mdi mdi-map-marker"></i>
+              <a
+                :href="`https://www.google.com/maps?q=${editPostLocation.lat},${editPostLocation.lon}`"
+                target="_blank"
+                class="location-btn"
+              >
+                {{ editPostLocation.name }}
+              </a>
+              <button class="remove-btn" @click="removeEditLocation">Remove</button>
+            </div>
+            <button v-else class="action-btn" @click="getEditLocation" title="Add Location">
+              <i class="mdi mdi-map-marker-outline"></i> Add Location
+            </button>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -211,6 +231,7 @@ const isDeleting = ref(false);
 const postMenuVisible = ref(null);
 const editPostPopup = ref(false);
 const editPostDescription = ref('');
+const editPostLocation = ref(null); // For editing location
 const editPostFile = ref(null);
 const stories = ref({ data: [] });
 const shares = ref(0);
@@ -365,6 +386,42 @@ const removeLocation = () => {
   selectedLocation.value = null;
 };
 
+const getEditLocation = () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+          const data = await response.json();
+          editPostLocation.value = {
+            name: data.display_name || `Lat: ${latitude}, Lon: ${longitude}`,
+            lat: latitude,
+            lon: longitude
+          };
+        } catch (error) {
+          console.error('Error fetching location name:', error);
+          editPostLocation.value = {
+            name: `Lat: ${latitude}, Lon: ${longitude}`,
+            lat: latitude,
+            lon: longitude
+          };
+        }
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        alert('Unable to get location. Please allow location access.');
+      }
+    );
+  } else {
+    alert('Geolocation is not supported by your browser.');
+  }
+};
+
+const removeEditLocation = () => {
+  editPostLocation.value = null;
+};
+
 const submitPost = async () => {
   try {
     const token = localStorage.getItem('token');
@@ -382,16 +439,12 @@ const submitPost = async () => {
     const now = new Date();
     const publishDate = now.toISOString().slice(0, 19).replace('T', ' ');
 
-    let finalDescription = newPostContent.value;
-    if (selectedLocation.value) {
-      finalDescription += `\n📍 ${selectedLocation.value.name}`;
-    }
-
     const formData = new FormData();
-    formData.append('description', finalDescription);
+    formData.append('description', newPostContent.value);
     formData.append('publish_date', publishDate);
     formData.append('id_user', currentUser.value.id);
     if (newPostFile.value) formData.append('file', newPostFile.value);
+    if (selectedLocation.value) formData.append('location', selectedLocation.value.name);
 
     const response = await axios.post(
       'http://localhost:8000/api/posts',
@@ -416,24 +469,18 @@ const renderPostDescription = (description) => {
 
   let html = description;
   html = html.replace(/\n/g, '<br>');
-  const locationRegex = /📍 (.*?)(<br>|$)/g;
-  html = html.replace(locationRegex, (match, locationName) => {
-    // Split the location string by commas and trim whitespace
-    const parts = locationName.split(',').map(part => part.trim());
-    // Typically, the city is one of the middle parts, and the country is the last part
-    // This is a simplified approach; Nominatim's format can vary
-    const country = parts[parts.length - 1];
-    // Try to find the city; often it's the part before the region or postal code
-    let city = parts[0]; // Default to first part
-    if (parts.length >= 3) {
-      // If there are enough parts, the city might be the second-to-last or third-to-last
-      city = parts[parts.length - 3] || parts[parts.length - 2];
-    }
-    const simplifiedLocation = `${city}, ${country}`;
-    return `<div class="post-location"><i class="mdi mdi-earth location-icon"></i><a href="https://www.google.com/maps?q=${encodeURIComponent(locationName)}" target="_blank" class="location-link">${simplifiedLocation}</a></div>`;
-  });
-
   return html;
+};
+
+const simplifyLocation = (location) => {
+  if (!location) return '';
+  const parts = location.split(',').map(part => part.trim());
+  const country = parts[parts.length - 1];
+  let city = parts[0];
+  if (parts.length >= 3) {
+    city = parts[parts.length - 3] || parts[parts.length - 2];
+  }
+  return `${city}, ${country}`;
 };
 
 const getImageUrl = (path) => path ? `http://localhost:8000/storage/${path}` : generateAvatar('User');
@@ -487,6 +534,7 @@ const togglePostMenu = (postId) => {
 const editPost = (post) => {
   selectedPost.value = post;
   editPostDescription.value = post.description || '';
+  editPostLocation.value = post.location ? { name: post.location, lat: null, lon: null } : null;
   editPostFile.value = null;
   editPostPopup.value = true;
 };
@@ -498,6 +546,7 @@ const handleEditFileUpload = (files) => {
 const cancelEditPost = () => {
   editPostPopup.value = false;
   editPostDescription.value = '';
+  editPostLocation.value = null;
   editPostFile.value = null;
 };
 
@@ -506,6 +555,7 @@ const saveEditPost = async () => {
 
   const formData = new FormData();
   formData.append('description', editPostDescription.value);
+  formData.append('location', editPostLocation.value ? editPostLocation.value.name : '');
   formData.append('_method', 'PUT');
   if (editPostFile.value) formData.append('file', editPostFile.value);
 

@@ -17,7 +17,13 @@
                 {{ getUserNameById(selectedPost.id_user) }}
               </strong>
               <p class="post-date">{{ formatDate(selectedPost.created_at) }}</p>
-              <h5>{{ selectedPost.description || 'No description' }}</h5>
+              <div class="post-description" v-html="renderPostDescription(selectedPost.description)"></div>
+              <div v-if="selectedPost.location" class="post-location">
+                <i class="mdi mdi-earth location-icon"></i>
+                <a :href="`https://www.google.com/maps?q=${encodeURIComponent(selectedPost.location)}`" target="_blank" class="location-link">
+                  {{ simplifyLocation(selectedPost.location) }}
+                </a>
+              </div>
               <template v-if="selectedPost.file_path && selectedPost.file_path.includes('.mp4')">
                 <video :src="getImageUrl(selectedPost.file_path)" alt="Post Video" class="post-content" controls />
               </template>
@@ -61,6 +67,20 @@
                 <v-file-input label="Replace Image/Video (.png, .jpg, .jpeg, .mp4)" accept=".png, .jpg, .jpeg, .mp4"
                               @update:modelValue="handleEditFileUpload" outlined></v-file-input>
                 <v-text-field v-model="editPostDescription" label="Description" outlined></v-text-field>
+                <div v-if="editPostLocation" class="location-preview">
+                  <i class="mdi mdi-map-marker"></i>
+                  <a
+                    :href="`https://www.google.com/maps?q=${editPostLocation.lat},${editPostLocation.lon}`"
+                    target="_blank"
+                    class="location-btn"
+                  >
+                    {{ editPostLocation.name }}
+                  </a>
+                  <button class="remove-btn" @click="removeEditLocation">Remove</button>
+                </div>
+                <button v-else class="action-btn" @click="getEditLocation" title="Add Location">
+                  <i class="mdi mdi-map-marker-outline"></i> Add Location
+                </button>
               </v-card-text>
               <v-card-actions>
                 <v-spacer></v-spacer>
@@ -148,6 +168,7 @@ const isDeleting = ref(false);
 const postMenuVisible = ref(null);
 const editPostPopup = ref(false);
 const editPostDescription = ref('');
+const editPostLocation = ref(null); // For editing location
 const editPostFile = ref(null);
 const currentUser = ref({});
 const users = ref({});
@@ -233,6 +254,25 @@ onMounted(async () => {
     selectedPost.value = null;
   }
 });
+
+const renderPostDescription = (description) => {
+  if (!description) return 'No description';
+
+  let html = description;
+  html = html.replace(/\n/g, '<br>');
+  return html;
+};
+
+const simplifyLocation = (location) => {
+  if (!location) return '';
+  const parts = location.split(',').map(part => part.trim());
+  const country = parts[parts.length - 1];
+  let city = parts[0];
+  if (parts.length >= 3) {
+    city = parts[parts.length - 3] || parts[parts.length - 2];
+  }
+  return `${city}, ${country}`;
+};
 
 const getImageUrl = (path) => path ? `${API_BASE_URL}/storage/${path}` : generateAvatar('User');
 const getProfilePhotoById = (id) => {
@@ -322,8 +362,7 @@ const confirmDelete = async () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       selectedPost.value = null;
-      // Redirect to the previous route instead of the user's profile
-      router.push(previousRoute.value || '/'); // Fallback to home if no previous route
+      router.push(previousRoute.value || '/');
     } else if (deleteType.value === 'comment') {
       await axios.delete(`${API_BASE_URL}/api/comments/${itemToDelete.value}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -346,8 +385,45 @@ const togglePostMenu = (postId) => {
 
 const editPost = (post) => {
   editPostDescription.value = post.description || '';
+  editPostLocation.value = post.location ? { name: post.location, lat: null, lon: null } : null;
   editPostFile.value = null;
   editPostPopup.value = true;
+};
+
+const getEditLocation = () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+          const data = await response.json();
+          editPostLocation.value = {
+            name: data.display_name || `Lat: ${latitude}, Lon: ${longitude}`,
+            lat: latitude,
+            lon: longitude
+          };
+        } catch (error) {
+          console.error('Error fetching location name:', error);
+          editPostLocation.value = {
+            name: `Lat: ${latitude}, Lon: ${longitude}`,
+            lat: latitude,
+            lon: longitude
+          };
+        }
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        alert('Unable to get location. Please allow location access.');
+      }
+    );
+  } else {
+    alert('Geolocation is not supported by your browser.');
+  }
+};
+
+const removeEditLocation = () => {
+  editPostLocation.value = null;
 };
 
 const handleEditFileUpload = (files) => {
@@ -357,6 +433,7 @@ const handleEditFileUpload = (files) => {
 const cancelEditPost = () => {
   editPostPopup.value = false;
   editPostDescription.value = '';
+  editPostLocation.value = null;
   editPostFile.value = null;
 };
 
@@ -367,6 +444,7 @@ const saveEditPost = async () => {
     const token = localStorage.getItem('token');
     const formData = new FormData();
     formData.append('description', editPostDescription.value);
+    formData.append('location', editPostLocation.value ? editPostLocation.value.name : '');
     formData.append('_method', 'PUT');
     if (editPostFile.value) {
       formData.append('file', editPostFile.value);
@@ -489,16 +567,6 @@ h1 {
   margin-left: 10px;
 }
 
-.post-info h3 {
-  font-size: 16px;
-  margin: 0;
-}
-
-.post-info p {
-  font-size: 12px;
-  margin: 0;
-}
-
 .post-username {
   font-size: 16px;
   cursor: pointer;
@@ -511,6 +579,93 @@ h1 {
 .post-date {
   font-size: 12px;
   color: #666;
+}
+
+.post-description {
+  font-size: 16px;
+}
+
+.post-location {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.location-icon {
+  color: #1da1f2;
+  font-size: 16px;
+}
+
+.location-link {
+  color: #1da1f2;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.location-link:hover {
+  text-decoration: underline;
+}
+
+.location-preview {
+  margin-top: 10px;
+  padding: 10px;
+  background: #e6f3ff;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.location-preview i {
+  color: #1da1f2;
+}
+
+.location-btn {
+  display: inline-block;
+  padding: 5px 10px;
+  background-color: #1da1f2;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.location-btn:hover {
+  background-color: #0d91e2;
+}
+
+.remove-btn {
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.remove-btn:hover {
+  background: #cc0000;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  color: #1da1f2;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.action-btn i {
+  font-size: 20px;
+}
+
+.action-btn:hover {
+  color: #0d91e2;
 }
 
 .post-menu {
