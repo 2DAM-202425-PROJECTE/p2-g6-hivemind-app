@@ -129,7 +129,7 @@
             outlined
           ></v-file-input>
           <v-text-field v-model="editMediaDescription" label="Description" outlined></v-text-field>
-          <div v-if="!isVideo && editMediaLocation" class="location-preview">
+          <div v-if="editMediaLocation" class="location-preview">
             <i class="mdi mdi-map-marker"></i>
             <a
               :href="`https://www.google.com/maps?q=${editMediaLocation.lat},${editMediaLocation.lon}`"
@@ -140,7 +140,7 @@
             </a>
             <button class="remove-btn" @click="removeEditLocation">Remove</button>
           </div>
-          <button v-if="!isVideo && !editMediaLocation" class="action-btn" @click="getEditLocation" title="Add Location">
+          <button v-if="!editMediaLocation" class="action-btn" @click="getEditLocation" title="Add Location">
             <i class="mdi mdi-map-marker-outline"></i> Add Location
           </button>
         </v-card-text>
