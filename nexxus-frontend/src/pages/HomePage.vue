@@ -503,12 +503,7 @@ const navigateToPost = (post) => {
     console.warn('No username found for userId:', post.id_user);
     return;
   }
-
-  if (post.file_path && post.file_path.includes('.mp4')) {
-    router.push(`/user/${username}/videos?postId=${post.id}`);
-  } else {
-    router.push(`/user/${username}/posts?postId=${post.id}`);
-  }
+  router.push(`/users/${username}/media?postId=${post.id}`);
 };
 
 const toggleLike = async (post) => {

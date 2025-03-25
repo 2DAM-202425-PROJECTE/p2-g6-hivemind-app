@@ -1,116 +1,72 @@
 <template>
-  <div class="user-posts-container">
+  <div class="user-media-container">
     <Navbar />
-    <h1>{{ user.name || 'User' }}'s Post</h1>
-    <div class="posts-and-comments">
-      <div class="posts-column">
-        <div v-if="!selectedPost" class="no-posts">
-          <p>No post available</p>
+    <h1>{{ user.name || 'User' }}'s {{ isVideo ? 'Video' : 'Post' }}</h1>
+    <div class="media-and-comments">
+      <div class="media-column">
+        <div v-if="!selectedMedia" class="no-media">
+          <p>No media available</p>
         </div>
-        <div v-else :id="`post-${selectedPost.id}`" class="post-card">
-          <div class="post-header">
-            <div class="post-profile-link" @click="goToUserProfile(getUsernameById(selectedPost.id_user))">
-              <img :src="getProfilePhotoById(selectedPost.id_user)" class="profile-pic" alt="Profile" />
-            </div>
-            <div class="post-info">
-              <strong class="post-username" @click="goToUserProfile(getUsernameById(selectedPost.id_user))">
-                {{ getUserNameById(selectedPost.id_user) }}
-              </strong>
-              <p class="post-date">{{ formatDate(selectedPost.created_at) }}</p>
-              <div class="post-description" v-html="renderPostDescription(selectedPost.description)"></div>
-              <div v-if="selectedPost.location" class="post-location">
-                <i class="mdi mdi-earth location-icon"></i>
-                <a :href="`https://www.google.com/maps?q=${encodeURIComponent(selectedPost.location)}`" target="_blank" class="location-link">
-                  {{ simplifyLocation(selectedPost.location) }}
-                </a>
+        <div v-else :id="`media-${selectedMedia.id}`" class="media-card">
+          <div class="media-header">
+            <div class="profile-section">
+              <div class="media-profile-link" @click="goToUserProfile(getUsernameById(selectedMedia.id_user))">
+                <img :src="getProfilePhotoById(selectedMedia.id_user)" class="profile-pic" alt="Profile" />
               </div>
-              <template v-if="selectedPost.file_path && selectedPost.file_path.includes('.mp4')">
-                <video :src="getImageUrl(selectedPost.file_path)" alt="Post Video" class="post-content" controls />
-              </template>
-              <template v-else-if="selectedPost.file_path">
-                <img :src="getImageUrl(selectedPost.file_path)" alt="Post Image" class="post-content" />
-              </template>
-              <template v-else>
-                <p>No media available</p>
-              </template>
+              <div class="media-info">
+                <strong class="media-username" @click="goToUserProfile(getUsernameById(selectedMedia.id_user))">
+                  {{ getUserNameById(selectedMedia.id_user) }}
+                </strong>
+                <p class="post-date">{{ formatDate(selectedMedia.created_at) }}</p>
+                <span class="username-handle">{{ getUsernameById(selectedMedia.id_user) }}</span>
+              </div>
             </div>
-            <div class="post-menu">
-              <button @click.stop="togglePostMenu(selectedPost.id)">
+            <div class="media-menu">
+              <button @click.stop="toggleMediaMenu(selectedMedia.id)">
                 <i class="mdi mdi-dots-vertical"></i>
               </button>
-              <div v-if="postMenuVisible === selectedPost.id" class="dropdown-menu">
+              <div v-if="mediaMenuVisible === selectedMedia.id" class="dropdown-menu">
                 <ul>
-                  <template v-if="isPostFromUser(selectedPost)">
-                    <li @click.stop="editPost(selectedPost)">Edit</li>
-                    <li @click.stop="openDeletePostDialog(selectedPost.id)" :disabled="isDeleting">Delete</li>
+                  <template v-if="isMediaFromUser(selectedMedia)">
+                    <li @click.stop="editMedia(selectedMedia)">Edit</li>
+                    <li @click.stop="openDeleteMediaDialog(selectedMedia.id)" :disabled="isDeleting">Delete</li>
                   </template>
                   <template v-else>
-                    <li @click.stop="reportPost(selectedPost)">Report</li>
+                    <li @click.stop="reportMedia(selectedMedia)">Report</li>
                   </template>
                 </ul>
               </div>
             </div>
           </div>
-
-          <!-- Edit Post Dialog -->
-          <v-dialog v-model="editPostPopup" max-width="500">
-            <v-card>
-              <v-card-title>Edit Post</v-card-title>
-              <v-card-text>
-                <div v-if="selectedPost && selectedPost.file_path" class="current-image">
-                  <p>Current File:</p>
-                  <img v-if="!selectedPost.file_path.includes('.mp4')" :src="getImageUrl(selectedPost.file_path)"
-                       alt="Current post image" style="max-width: 100%; max-height: 200px; margin-bottom: 10px;" />
-                  <video v-else :src="getImageUrl(selectedPost.file_path)" controls
-                         style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
-                </div>
-                <v-file-input label="Replace Image/Video (.png, .jpg, .jpeg, .mp4)" accept=".png, .jpg, .jpeg, .mp4"
-                              @update:modelValue="handleEditFileUpload" outlined></v-file-input>
-                <v-text-field v-model="editPostDescription" label="Description" outlined></v-text-field>
-                <div v-if="editPostLocation" class="location-preview">
-                  <i class="mdi mdi-map-marker"></i>
-                  <a
-                    :href="`https://www.google.com/maps?q=${editPostLocation.lat},${editPostLocation.lon}`"
-                    target="_blank"
-                    class="location-btn"
-                  >
-                    {{ editPostLocation.name }}
-                  </a>
-                  <button class="remove-btn" @click="removeEditLocation">Remove</button>
-                </div>
-                <button v-else class="action-btn" @click="getEditLocation" title="Add Location">
-                  <i class="mdi mdi-map-marker-outline"></i> Add Location
-                </button>
-              </v-card-text>
-              <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn text @click="cancelEditPost">Cancel</v-btn>
-                <v-btn color="primary" @click="saveEditPost">Update Post</v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-dialog>
-
-          <!-- Delete Confirmation Dialog -->
-          <v-dialog v-model="deleteDialog" max-width="400">
-            <v-card>
-              <v-card-title class="headline">Confirm Deletion</v-card-title>
-              <v-card-text>
-                Are you sure you want to delete this {{ deleteType === 'post' ? 'post' : 'comment' }}? This action cannot be undone.
-              </v-card-text>
-              <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn text @click="cancelDelete">Cancel</v-btn>
-                <v-btn color="error" @click="confirmDelete">Delete</v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-dialog>
-
-          <div class="post-actions">
-            <div class="action-item" @click.stop="toggleLike(selectedPost)">
-              <i class="mdi" :class="selectedPost.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
-              <span>{{ selectedPost.likes_count }} Likes</span>
+          <div class="media-description">
+            <h5 v-if="isVideo">{{ selectedMedia.description || 'No description' }}</h5>
+            <div v-else class="post-description" v-html="renderPostDescription(selectedMedia.description)"></div>
+            <div v-if="selectedMedia.location" class="post-location">
+              <i class="mdi mdi-earth location-icon"></i>
+              <a :href="`https://www.google.com/maps?q=${encodeURIComponent(selectedMedia.location)}`" target="_blank" class="location-link">
+                {{ simplifyLocation(selectedMedia.location) }}
+              </a>
             </div>
-            <div class="action-item" @click.stop="sharePost(selectedPost)">
+            <template v-if="selectedMedia.file_path && isVideo">
+              <video :src="getImageUrl(selectedMedia.file_path)" alt="Media Video" class="media-content" controls />
+            </template>
+            <template v-else-if="selectedMedia.file_path">
+              <img :src="getImageUrl(selectedMedia.file_path)" alt="Media Image" class="media-content" />
+            </template>
+            <template v-else>
+              <p>No media file available</p>
+            </template>
+          </div>
+          <div class="media-actions">
+            <div class="action-item" @click.stop="toggleLike(selectedMedia)">
+              <i class="mdi" :class="selectedMedia.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
+              <span>{{ selectedMedia.likes_count }} Likes</span>
+            </div>
+            <div class="action-item">
+              <i class="mdi mdi-comment-outline"></i>
+              <span>{{ comments.length }} Comments</span>
+            </div>
+            <div class="action-item" @click.stop="shareMedia(selectedMedia)">
               <i class="mdi mdi-share-outline"></i>
               <span>{{ shares }} Shares</span>
             </div>
@@ -135,7 +91,7 @@
                     {{ comment.user?.name || 'Unknown User' }}
                   </strong>
                   <p>{{ comment.content }}</p>
-                  <button v-if="isPostFromUser(selectedPost)" @click="openDeleteCommentDialog(comment.id)" class="delete-comment-btn">
+                  <button v-if="isMediaFromUser(selectedMedia)" @click="openDeleteCommentDialog(comment.id)" class="delete-comment-btn">
                     <i class="mdi mdi-delete"></i>
                   </button>
                 </div>
@@ -145,12 +101,78 @@
         </div>
       </div>
     </div>
+
+    <!-- Edit Media Dialog -->
+    <v-dialog v-model="editMediaPopup" max-width="500">
+      <v-card>
+        <v-card-title>Edit {{ isVideo ? 'Video' : 'Post' }}</v-card-title>
+        <v-card-text>
+          <div v-if="selectedMedia && selectedMedia.file_path" class="current-media">
+            <p>Current {{ isVideo ? 'Video' : 'Image' }}:</p>
+            <img
+              v-if="!isVideo"
+              :src="getImageUrl(selectedMedia.file_path)"
+              alt="Current media image"
+              style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"
+            />
+            <video
+              v-else
+              :src="getImageUrl(selectedMedia.file_path)"
+              controls
+              style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"
+            ></video>
+          </div>
+          <v-file-input
+            :label="`Replace ${isVideo ? 'Video (.mp4, .mov)' : 'Image/Video (.png, .jpg, .jpeg, .mp4)'}`"
+            :accept="isVideo ? '.mp4, .mov' : '.png, .jpg, .jpeg, .mp4'"
+            @update:modelValue="handleEditFileUpload"
+            outlined
+          ></v-file-input>
+          <v-text-field v-model="editMediaDescription" label="Description" outlined></v-text-field>
+          <div v-if="!isVideo && editMediaLocation" class="location-preview">
+            <i class="mdi mdi-map-marker"></i>
+            <a
+              :href="`https://www.google.com/maps?q=${editMediaLocation.lat},${editMediaLocation.lon}`"
+              target="_blank"
+              class="location-btn"
+            >
+              {{ editMediaLocation.name }}
+            </a>
+            <button class="remove-btn" @click="removeEditLocation">Remove</button>
+          </div>
+          <button v-if="!isVideo && !editMediaLocation" class="action-btn" @click="getEditLocation" title="Add Location">
+            <i class="mdi mdi-map-marker-outline"></i> Add Location
+          </button>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="cancelEditMedia">Cancel</v-btn>
+          <v-btn color="primary" @click="saveEditMedia">Update {{ isVideo ? 'Video' : 'Post' }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <v-dialog v-model="deleteDialog" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Confirm Deletion</v-card-title>
+        <v-card-text>
+          Are you sure you want to delete this {{ deleteType === 'media' ? (isVideo ? 'video' : 'post') : 'comment' }}? This action cannot be undone.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="cancelDelete">Cancel</v-btn>
+          <v-btn color="error" @click="confirmDelete">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <Footer />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
@@ -161,24 +183,29 @@ const route = useRoute();
 const router = useRouter();
 const username = route.params.username;
 const user = ref({});
-const selectedPost = ref(null);
+const selectedMedia = ref(null);
 const comments = ref([]);
 const newComment = ref('');
 const isDeleting = ref(false);
-const postMenuVisible = ref(null);
-const editPostPopup = ref(false);
-const editPostDescription = ref('');
-const editPostLocation = ref(null); // For editing location
-const editPostFile = ref(null);
+const mediaMenuVisible = ref(null);
+const editMediaPopup = ref(false);
+const editMediaDescription = ref('');
+const editMediaLocation = ref(null);
+const editMediaFile = ref(null);
 const currentUser = ref({});
 const users = ref({});
 const shares = ref(0);
 const deleteDialog = ref(false);
-const deleteType = ref(''); // 'post' or 'comment'
-const itemToDelete = ref(null); // Stores postId or commentId
-const previousRoute = ref(''); // To store the previous route
+const deleteType = ref('');
+const itemToDelete = ref(null);
+const previousRoute = ref('');
 
 const API_BASE_URL = 'http://localhost:8000';
+const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
+
+const isVideo = computed(() => {
+  return selectedMedia.value?.file_path && VIDEO_EXTENSIONS.some(ext => selectedMedia.value.file_path.toLowerCase().endsWith(ext));
+});
 
 onMounted(async () => {
   try {
@@ -189,20 +216,15 @@ onMounted(async () => {
       return;
     }
 
-    // Store the previous route from document.referrer or fallback to home
     previousRoute.value = document.referrer.includes(window.location.origin)
       ? new URL(document.referrer).pathname
-      : '/'; // Default to home if referrer is unreliable
+      : '/';
 
     const usersResult = await axios.get(`${API_BASE_URL}/api/users`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     users.value = usersResult.data.data.reduce((acc, user) => {
-      acc[user.id] = {
-        name: user.name,
-        username: user.username,
-        profile_photo_path: user.profile_photo_path,
-      };
+      acc[user.id] = { name: user.name, username: user.username, profile_photo_path: user.profile_photo_path };
       return acc;
     }, {});
 
@@ -218,14 +240,14 @@ onMounted(async () => {
       console.error('No postId provided in query');
       return;
     }
-    console.log('Fetching post with ID:', postId);
+    console.log('Fetching media with ID:', postId);
     const postResult = await axios.get(`${API_BASE_URL}/api/posts/${postId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    console.log('Post data:', postResult.data);
-    selectedPost.value = postResult.data.data;
+    console.log('Media data:', postResult.data);
+    selectedMedia.value = postResult.data.data;
 
-    console.log('Fetching comments for post ID:', postId);
+    console.log('Fetching comments for media ID:', postId);
     const commentsResult = await axios.get(`${API_BASE_URL}/api/posts/${postId}/comments`, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -240,24 +262,23 @@ onMounted(async () => {
     currentUser.value = currentUserResult.data;
 
     await nextTick();
-    const postElement = document.getElementById(`post-${postId}`);
-    if (postElement) {
-      postElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      postElement.classList.add('highlight');
-      setTimeout(() => postElement.classList.remove('highlight'), 2000);
+    const mediaElement = document.getElementById(`media-${postId}`);
+    if (mediaElement) {
+      mediaElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      mediaElement.classList.add('highlight');
+      setTimeout(() => mediaElement.classList.remove('highlight'), 2000);
     } else {
-      console.warn(`Post element with ID post-${postId} not found`);
+      console.warn(`Media element with ID media-${postId} not found`);
     }
   } catch (error) {
-    console.error('Error fetching post or comments:', error.response?.data || error.message);
+    console.error('Error fetching media or comments:', error.response?.data || error.message);
     console.error('Failed request:', error.config);
-    selectedPost.value = null;
+    selectedMedia.value = null;
   }
 });
 
 const renderPostDescription = (description) => {
   if (!description) return 'No description';
-
   let html = description;
   html = html.replace(/\n/g, '<br>');
   return html;
@@ -282,7 +303,7 @@ const getProfilePhotoById = (id) => {
 const getCommentUserPhoto = (user) => user?.profile_photo_path ? `${API_BASE_URL}/storage/${user.profile_photo_path}` : 'https://via.placeholder.com/40';
 const getUserNameById = (id) => users.value[id]?.name || 'Unknown User';
 const getUsernameById = (id) => users.value[id]?.username || null;
-const isPostFromUser = (post) => post.id_user === currentUser.value.id;
+const isMediaFromUser = (media) => media.id_user === currentUser.value.id;
 
 const goToUserProfile = (username) => {
   console.log('Navigating to profile with username:', username);
@@ -293,29 +314,29 @@ const goToUserProfile = (username) => {
   }
 };
 
-const toggleLike = async (post) => {
+const toggleLike = async (media) => {
   try {
     const token = localStorage.getItem('token');
-    if (post.liked_by_user) {
-      await axios.delete(`${API_BASE_URL}/api/posts/${post.id}/like`, {
+    if (media.liked_by_user) {
+      await axios.delete(`${API_BASE_URL}/api/posts/${media.id}/like`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      post.liked_by_user = false;
-      post.likes_count -= 1;
+      media.liked_by_user = false;
+      media.likes_count -= 1;
     } else {
-      await axios.post(`${API_BASE_URL}/api/posts/${post.id}/like`, {}, {
+      await axios.post(`${API_BASE_URL}/api/posts/${media.id}/like`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      post.liked_by_user = true;
-      post.likes_count += 1;
+      media.liked_by_user = true;
+      media.likes_count += 1;
     }
   } catch (error) {
     console.error('Error toggling like:', error.response?.data || error.message);
-    const postResult = await axios.get(`${API_BASE_URL}/api/posts/${post.id}`, {
+    const postResult = await axios.get(`${API_BASE_URL}/api/posts/${media.id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    post.liked_by_user = postResult.data.data.liked_by_user;
-    post.likes_count = postResult.data.data.likes_count;
+    media.liked_by_user = postResult.data.data.liked_by_user;
+    media.likes_count = postResult.data.data.likes_count;
   }
 };
 
@@ -323,7 +344,7 @@ const addComment = async () => {
   if (!newComment.value.trim()) return;
   try {
     const token = localStorage.getItem('token');
-    const response = await axios.post(`${API_BASE_URL}/api/posts/${selectedPost.value.id}/comments`, {
+    const response = await axios.post(`${API_BASE_URL}/api/posts/${selectedMedia.value.id}/comments`, {
       content: newComment.value
     }, {
       headers: { Authorization: `Bearer ${token}` }
@@ -341,9 +362,9 @@ const openDeleteCommentDialog = (commentId) => {
   deleteDialog.value = true;
 };
 
-const openDeletePostDialog = (postId) => {
-  deleteType.value = 'post';
-  itemToDelete.value = postId;
+const openDeleteMediaDialog = (mediaId) => {
+  deleteType.value = 'media';
+  itemToDelete.value = mediaId;
   deleteDialog.value = true;
 };
 
@@ -356,12 +377,12 @@ const cancelDelete = () => {
 const confirmDelete = async () => {
   const token = localStorage.getItem('token');
   try {
-    if (deleteType.value === 'post') {
+    if (deleteType.value === 'media') {
       isDeleting.value = true;
       await axios.delete(`${API_BASE_URL}/api/posts/${itemToDelete.value}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      selectedPost.value = null;
+      selectedMedia.value = null;
       router.push(previousRoute.value || '/');
     } else if (deleteType.value === 'comment') {
       await axios.delete(`${API_BASE_URL}/api/comments/${itemToDelete.value}`, {
@@ -379,15 +400,15 @@ const confirmDelete = async () => {
   }
 };
 
-const togglePostMenu = (postId) => {
-  postMenuVisible.value = postMenuVisible.value === postId ? null : postId;
+const toggleMediaMenu = (mediaId) => {
+  mediaMenuVisible.value = mediaMenuVisible.value === mediaId ? null : mediaId;
 };
 
-const editPost = (post) => {
-  editPostDescription.value = post.description || '';
-  editPostLocation.value = post.location ? { name: post.location, lat: null, lon: null } : null;
-  editPostFile.value = null;
-  editPostPopup.value = true;
+const editMedia = (media) => {
+  editMediaDescription.value = media.description || '';
+  editMediaLocation.value = media.location ? { name: media.location, lat: null, lon: null } : null;
+  editMediaFile.value = null;
+  editMediaPopup.value = true;
 };
 
 const getEditLocation = () => {
@@ -398,14 +419,14 @@ const getEditLocation = () => {
         try {
           const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
           const data = await response.json();
-          editPostLocation.value = {
+          editMediaLocation.value = {
             name: data.display_name || `Lat: ${latitude}, Lon: ${longitude}`,
             lat: latitude,
             lon: longitude
           };
         } catch (error) {
           console.error('Error fetching location name:', error);
-          editPostLocation.value = {
+          editMediaLocation.value = {
             name: `Lat: ${latitude}, Lon: ${longitude}`,
             lat: latitude,
             lon: longitude
@@ -423,73 +444,66 @@ const getEditLocation = () => {
 };
 
 const removeEditLocation = () => {
-  editPostLocation.value = null;
+  editMediaLocation.value = null;
 };
 
 const handleEditFileUpload = (files) => {
-  editPostFile.value = files ? files[0] : null;
+  editMediaFile.value = files ? files[0] : null;
 };
 
-const cancelEditPost = () => {
-  editPostPopup.value = false;
-  editPostDescription.value = '';
-  editPostLocation.value = null;
-  editPostFile.value = null;
+const cancelEditMedia = () => {
+  editMediaPopup.value = false;
+  editMediaDescription.value = '';
+  editMediaLocation.value = null;
+  editMediaFile.value = null;
 };
 
-const saveEditPost = async () => {
-  if (!selectedPost.value) return;
+const saveEditMedia = async () => {
+  if (!selectedMedia.value) return;
 
   try {
     const token = localStorage.getItem('token');
     const formData = new FormData();
-    formData.append('description', editPostDescription.value);
-    formData.append('location', editPostLocation.value ? editPostLocation.value.name : '');
+    formData.append('description', editMediaDescription.value);
+    formData.append('location', editMediaLocation.value ? editMediaLocation.value.name : '');
     formData.append('_method', 'PUT');
-    if (editPostFile.value) {
-      formData.append('file', editPostFile.value);
+    if (editMediaFile.value) {
+      formData.append('file', editMediaFile.value);
     }
 
     const response = await axios.post(
-      `${API_BASE_URL}/api/posts/${selectedPost.value.id}`,
+      `${API_BASE_URL}/api/posts/${selectedMedia.value.id}`,
       formData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        }
-      }
+      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
     );
 
-    selectedPost.value = response.data.post || response.data.data;
-    editPostPopup.value = false;
+    selectedMedia.value = response.data.post || response.data.data;
+    editMediaPopup.value = false;
   } catch (error) {
-    console.error('Error updating post:', error);
+    console.error('Error updating media:', error);
     alert('Error: ' + (error.response?.data?.message || error.message));
   }
 };
 
-const reportPost = async (post) => {
+const reportMedia = async (media) => {
   try {
     const token = localStorage.getItem('token');
-    await axios.post(`${API_BASE_URL}/api/posts/${post.id}/report`, {
+    await axios.post(`${API_BASE_URL}/api/posts/${media.id}/report`, {
       reason: prompt('Please enter reason for reporting:')
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    alert('Post reported successfully');
-    postMenuVisible.value = null;
+    }, { headers: { Authorization: `Bearer ${token}` } });
+    alert(`${isVideo.value ? 'Video' : 'Post'} reported successfully`);
+    mediaMenuVisible.value = null;
   } catch (error) {
-    console.error('Error reporting post:', error);
+    console.error('Error reporting media:', error);
   }
 };
 
-const sharePost = (post) => {
-  const shareUrl = `${window.location.origin}/post/${post.id}`;
+const shareMedia = (media) => {
+  const shareUrl = `${window.location.origin}/users/${username}/media?postId=${media.id}`;
   navigator.clipboard.writeText(shareUrl)
     .then(() => {
       shares.value++;
-      alert('Post URL copied to clipboard!');
+      alert(`${isVideo.value ? 'Video' : 'Post'} URL copied to clipboard!`);
     })
     .catch(err => console.error('Error copying URL:', err));
 };
@@ -501,7 +515,7 @@ const formatDate = (dateString) => {
 </script>
 
 <style scoped>
-.user-posts-container {
+.user-media-container {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
@@ -514,71 +528,82 @@ const formatDate = (dateString) => {
 h1 {
   font-size: 24px;
   padding-bottom: 20px;
+  text-align: center;
 }
 
-.posts-and-comments {
+.media-and-comments {
   display: flex;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-.posts-column {
+.media-column {
   flex: 2;
   margin-right: 20px;
 }
 
-.post-card {
+.media-card {
   background: #ffffff;
   border: 1px solid #ffffff;
   border-radius: 24px;
   padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
-  margin-bottom: 20px;
   width: 100%;
 }
 
-.post-card.highlight {
+.media-card.highlight {
   animation: highlight 2s ease-out;
 }
 
-.post-header {
+.media-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 15px;
-  position: relative;
 }
 
-.post-profile-link {
+.profile-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.media-profile-link {
   cursor: pointer;
-  flex-shrink: 0;
 }
 
 .profile-pic {
-  width: 50px;
-  height: 50px;
-  min-width: 50px;
-  min-height: 50px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  object-fit: cover;
 }
 
-.post-info {
-  flex-grow: 1;
-  margin-left: 10px;
+.media-info {
+  display: flex;
+  flex-direction: column;
 }
 
-.post-username {
+.media-username {
   font-size: 16px;
+  font-weight: bold;
   cursor: pointer;
 }
 
-.post-username:hover {
+.media-username:hover {
   text-decoration: underline;
 }
 
 .post-date {
   font-size: 12px;
   color: #666;
+}
+
+.username-handle {
+  font-size: 14px;
+  color: #666;
+}
+
+.media-description {
+  margin-bottom: 15px;
 }
 
 .post-description {
@@ -668,21 +693,26 @@ h1 {
   color: #0d91e2;
 }
 
-.post-menu {
-  flex-shrink: 0;
+.media-content {
+  width: 100%;
+  max-height: 600px;
+  border-radius: 20px;
+  margin-bottom: 15px;
+}
+
+.media-menu {
   position: relative;
 }
 
-.post-menu button {
+.media-menu button {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 5px;
 }
 
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 5px);
+  top: 100%;
   right: 0;
   background: white;
   border: 1px solid #d3d3d3;
@@ -707,7 +737,7 @@ h1 {
   background: #f0f0f0;
 }
 
-.post-actions {
+.media-actions {
   display: flex;
   justify-content: space-between;
   font-size: 14px;
@@ -730,18 +760,6 @@ h1 {
   font-size: 14px;
 }
 
-.post-content {
-  width: 100%;
-  border-radius: 20px;
-  margin-bottom: 15px;
-}
-
-.no-posts {
-  text-align: center;
-  color: #666;
-  padding: 20px;
-}
-
 .comments-section {
   margin-top: 20px;
   padding: 15px;
@@ -755,7 +773,7 @@ h1 {
 }
 
 .comments-list {
-  /* No max-height or overflow-y for natural flow */
+  /* No max-height or overflow-y, flows naturally */
 }
 
 .comment {
@@ -844,5 +862,11 @@ h1 {
 
 .comment-input button:hover {
   background: #0056b3;
+}
+
+.no-media {
+  text-align: center;
+  color: #666;
+  padding: 20px;
 }
 </style>
