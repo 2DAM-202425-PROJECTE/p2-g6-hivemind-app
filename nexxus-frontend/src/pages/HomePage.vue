@@ -81,6 +81,7 @@
       </div>
     </div>
 
+    <!-- Post Cards -->
     <div class="post-card" v-for="post in sortedPosts" :key="post.id" @click="navigateToPost(post)">
       <div class="post-header">
         <div class="post-profile-link" @click.stop="goToUserProfile(post.id_user)">
@@ -163,8 +164,6 @@
         </div>
       </div>
     </div>
-
-    <UserRecommendation />
     <Footer />
   </div>
 </template>
@@ -174,7 +173,6 @@ import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
-import UserRecommendation from '@/components/UserRecommendation.vue';
 import StoriesBar from '@/components/StoriesBar.vue';
 import axios from 'axios';
 import { generateAvatar } from '@/utils/avatar';
@@ -355,20 +353,8 @@ const removeLocation = () => {
 const submitPost = async () => {
   try {
     const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('No token available');
-      return;
-    }
-
-    if (!currentUser.value.id) {
-      console.error('Current user ID is not available');
-      alert('Error: User ID not found. Please log in again.');
-      return;
-    }
-
     const now = new Date();
     const publishDate = now.toISOString().slice(0, 19).replace('T', ' ');
-
     let finalDescription = newPostContent.value;
     if (selectedLocation.value) {
       finalDescription += `\n📍 ${selectedLocation.value}`;

@@ -10,19 +10,26 @@ use Illuminate\Support\Facades\Log;
 class PostController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
-        $posts = Post::with(['likes', 'comments.user']) // Incluir comentarios y usuarios
-            ->get()
-            ->map(function ($post) {
-                $post->liked_by_user = $post->likes->contains('user_id', auth()->id());
-                $post->likes_count = $post->likes->count();
-                return $post;
-            });
+        $posts = Post::with(['likes', 'comments.user'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        // Transformar los posts manteniendo la estructura del paginador
+        $posts->getCollection()->transform(function ($post) {
+            $post->liked_by_user = $post->likes->contains('user_id', auth()->id());
+            $post->likes_count = $post->likes->count();
+            return $post;
+        });
 
         return response()->json([
             'message' => 'Posts retrieved successfully',
-            'data' => $posts,
+            'data' => $posts->items(),
+            'current_page' => $posts->currentPage(),
+            'last_page' => $posts->lastPage(),
+            'per_page' => $posts->perPage(),
+            'total' => $posts->total(),
         ], 200);
     }
 
