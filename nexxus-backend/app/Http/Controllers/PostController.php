@@ -33,6 +33,7 @@ class PostController extends Controller
             'publish_date' => 'required|date',
             'id_user' => 'required|integer|exists:users,id',
             'file' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,mp4|max:100000',
+            'location' => 'nullable|string',
         ]);
 
         if ($request->hasFile('file')) {
@@ -53,9 +54,10 @@ class PostController extends Controller
 
     public function update(Request $request, $postId)
     {
-            // Debug incoming data
+        // Debug incoming data
         Log::info('Update request received', [
             'description' => $request->input('description'),
+            'location' => $request->input('location'),
             'hasFile' => $request->hasFile('file'),
             'all' => $request->all()
         ]);
@@ -63,7 +65,7 @@ class PostController extends Controller
         $post = Post::find($postId);
 
         if (!$post) {
-            Log::error('Post not found', ['post_id' => $post]);
+            Log::error('Post not found', ['post_id' => $postId]);
             return response()->json(['message' => 'Post not found'], 404);
         }
 
@@ -74,12 +76,18 @@ class PostController extends Controller
 
         $request->validate([
             'description' => 'nullable|string|max:1000',
+            'location' => 'nullable|string',
             'file' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,mp4|max:500000',
         ]);
 
         if ($request->has('description')) {
             Log::info('Updating description', ['description' => $request->description]);
             $post->description = $request->description;
+        }
+
+        if ($request->has('location')) {
+            Log::info('Updating location', ['location' => $request->location]);
+            $post->location = $request->location;
         }
 
         if ($request->hasFile('file')) {
@@ -105,6 +113,7 @@ class PostController extends Controller
             'post' => $post
         ], 200);
     }
+
     public function show($id)
     {
         $post = Post::with(['likes', 'comments.user'])->find($id);

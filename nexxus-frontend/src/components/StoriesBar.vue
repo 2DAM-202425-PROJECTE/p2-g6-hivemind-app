@@ -59,6 +59,7 @@ const props = defineProps({
 
 onMounted(async () => {
 
+
 const token = localStorage.getItem('token');
 const usersResult = await axios.get('http://localhost:8000/api/users', {
   headers: {
@@ -76,6 +77,7 @@ const storiesResult = await axios.get('http://localhost:8000/api/stories', {
   }
 });
 story.value = storiesResult.data;
+
 
   const userResult = await axios.get('http://localhost:8000/api/user', {
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },

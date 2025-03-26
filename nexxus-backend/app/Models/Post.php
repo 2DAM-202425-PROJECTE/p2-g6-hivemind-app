@@ -17,6 +17,7 @@ class Post extends Model
         'description',
         'publish_date',
         'id_user',
+        'location',
     ];
 
     public function user()
