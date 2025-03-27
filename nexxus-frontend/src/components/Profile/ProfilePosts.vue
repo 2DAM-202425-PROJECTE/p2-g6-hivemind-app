@@ -190,11 +190,10 @@ const viewPost = async (postId) => {
       }
     }
 
-    console.log('Navigating to UserPostsPage with:', { username, postId });
+    console.log('Navigating to UserMediaPage with:', { username, postId });
     if (username) {
       router.push({
-        name: 'UserPostsPage',
-        params: { username: username },
+        path: `/users/${username}/media`,
         query: { postId: postId }
       });
     } else {

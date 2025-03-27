@@ -1,57 +1,72 @@
 <template>
-  <div class="user-videos-container">
+  <div class="user-media-container">
     <Navbar />
-    <h1>{{ user.name || 'User' }}'s Video</h1>
-    <div class="videos-and-comments">
-      <div class="videos-column">
-        <div v-if="!selectedVideo" class="no-videos">
-          <p>No video available</p>
+    <h1>{{ user.name || 'User' }}'s {{ isVideo ? 'Video' : 'Post' }}</h1>
+    <div class="media-and-comments">
+      <div class="media-column">
+        <div v-if="!selectedMedia" class="no-media">
+          <p>No media available</p>
         </div>
-        <div v-else :id="`video-${selectedVideo.id}`" class="video-card">
-          <div class="video-header">
+        <div v-else :id="`media-${selectedMedia.id}`" class="media-card">
+          <div class="media-header">
             <div class="profile-section">
-              <div class="video-profile-link" @click="goToUserProfile(getUsernameById(selectedVideo.id_user))">
-                <img :src="getProfilePhotoById(selectedVideo.id_user)" class="profile-pic" alt="Profile" />
+              <div class="media-profile-link" @click="goToUserProfile(getUsernameById(selectedMedia.id_user))">
+                <img :src="getProfilePhotoById(selectedMedia.id_user)" class="profile-pic" alt="Profile" />
               </div>
-              <div class="video-info">
-                <strong class="video-username" @click="goToUserProfile(getUsernameById(selectedVideo.id_user))">
-                  {{ getUserNameById(selectedVideo.id_user) }}
+              <div class="media-info">
+                <strong class="media-username" @click="goToUserProfile(getUsernameById(selectedMedia.id_user))">
+                  {{ getUserNameById(selectedMedia.id_user) }}
                 </strong>
-                <p class="post-date">{{ formatDate(selectedVideo.created_at) }}</p>
-                <span class="username-handle">{{ getUsernameById(selectedVideo.id_user) }}</span>
+                <p class="post-date">{{ formatDate(selectedMedia.created_at) }}</p>
+                <span class="username-handle">{{ getUsernameById(selectedMedia.id_user) }}</span>
               </div>
             </div>
-            <div class="video-menu">
-              <button @click.stop="toggleVideoMenu(selectedVideo.id)">
+            <div class="media-menu">
+              <button @click.stop="toggleMediaMenu(selectedMedia.id)">
                 <i class="mdi mdi-dots-vertical"></i>
               </button>
-              <div v-if="videoMenuVisible === selectedVideo.id" class="dropdown-menu">
+              <div v-if="mediaMenuVisible === selectedMedia.id" class="dropdown-menu">
                 <ul>
-                  <template v-if="isVideoFromUser(selectedVideo)">
-                    <li @click.stop="editVideo(selectedVideo)">Edit</li>
-                    <li @click.stop="openDeleteVideoDialog(selectedVideo.id)" :disabled="isDeleting">Delete</li>
+                  <template v-if="isMediaFromUser(selectedMedia)">
+                    <li @click.stop="editMedia(selectedMedia)">Edit</li>
+                    <li @click.stop="openDeleteMediaDialog(selectedMedia.id)" :disabled="isDeleting">Delete</li>
                   </template>
                   <template v-else>
-                    <li @click.stop="reportVideo(selectedVideo)">Report</li>
+                    <li @click.stop="reportMedia(selectedMedia)">Report</li>
                   </template>
                 </ul>
               </div>
             </div>
           </div>
-          <div class="video-description">
-            <h5>{{ selectedVideo.description || 'No description' }}</h5>
+          <div class="media-description">
+            <h5 v-if="isVideo">{{ selectedMedia.description || 'No description' }}</h5>
+            <div v-else class="post-description" v-html="renderPostDescription(selectedMedia.description)"></div>
+            <div v-if="selectedMedia.location" class="post-location">
+              <i class="mdi mdi-earth location-icon"></i>
+              <a :href="`https://www.google.com/maps?q=${encodeURIComponent(selectedMedia.location)}`" target="_blank" class="location-link">
+                {{ simplifyLocation(selectedMedia.location) }}
+              </a>
+            </div>
+            <template v-if="selectedMedia.file_path && isVideo">
+              <video :src="getImageUrl(selectedMedia.file_path)" alt="Media Video" class="media-content" controls />
+            </template>
+            <template v-else-if="selectedMedia.file_path">
+              <img :src="getImageUrl(selectedMedia.file_path)" alt="Media Image" class="media-content" />
+            </template>
+            <template v-else>
+              <p>No media file available</p>
+            </template>
           </div>
-          <video :src="getImageUrl(selectedVideo.file_path)" alt="Post Video" class="video-content" controls />
-          <div class="video-actions">
-            <div class="action-item" @click.stop="toggleLike(selectedVideo)">
-              <i class="mdi" :class="selectedVideo.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
-              <span>{{ selectedVideo.likes_count }} Likes</span>
+          <div class="media-actions">
+            <div class="action-item" @click.stop="toggleLike(selectedMedia)">
+              <i class="mdi" :class="selectedMedia.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
+              <span>{{ selectedMedia.likes_count }} Likes</span>
             </div>
             <div class="action-item">
               <i class="mdi mdi-comment-outline"></i>
               <span>{{ comments.length }} Comments</span>
             </div>
-            <div class="action-item" @click.stop="shareVideo(selectedVideo)">
+            <div class="action-item" @click.stop="shareMedia(selectedMedia)">
               <i class="mdi mdi-share-outline"></i>
               <span>{{ shares }} Shares</span>
             </div>
@@ -76,7 +91,7 @@
                     {{ comment.user?.name || 'Unknown User' }}
                   </strong>
                   <p>{{ comment.content }}</p>
-                  <button v-if="isVideoFromUser(selectedVideo)" @click="openDeleteCommentDialog(comment.id)" class="delete-comment-btn">
+                  <button v-if="isMediaFromUser(selectedMedia)" @click="openDeleteCommentDialog(comment.id)" class="delete-comment-btn">
                     <i class="mdi mdi-delete"></i>
                   </button>
                 </div>
@@ -87,24 +102,52 @@
       </div>
     </div>
 
-    <!-- Edit Video Dialog -->
-    <v-dialog v-model="editVideoPopup" max-width="500">
+    <!-- Edit Media Dialog -->
+    <v-dialog v-model="editMediaPopup" max-width="500">
       <v-card>
-        <v-card-title>Edit Video</v-card-title>
+        <v-card-title>Edit {{ isVideo ? 'Video' : 'Post' }}</v-card-title>
         <v-card-text>
-          <div v-if="selectedVideo && selectedVideo.file_path" class="current-video">
-            <p>Current Video:</p>
-            <video :src="getImageUrl(selectedVideo.file_path)" controls
-                   style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
+          <div v-if="selectedMedia && selectedMedia.file_path" class="current-media">
+            <p>Current {{ isVideo ? 'Video' : 'Image' }}:</p>
+            <img
+              v-if="!isVideo"
+              :src="getImageUrl(selectedMedia.file_path)"
+              alt="Current media image"
+              style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"
+            />
+            <video
+              v-else
+              :src="getImageUrl(selectedMedia.file_path)"
+              controls
+              style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"
+            ></video>
           </div>
-          <v-file-input label="Replace Video (.mp4, .mov)" accept=".mp4, .mov"
-                        @update:modelValue="handleEditFileUpload" outlined></v-file-input>
-          <v-text-field v-model="editVideoDescription" label="Description" outlined></v-text-field>
+          <v-file-input
+            :label="`Replace ${isVideo ? 'Video (.mp4, .mov)' : 'Image/Video (.png, .jpg, .jpeg, .mp4)'}`"
+            :accept="isVideo ? '.mp4, .mov' : '.png, .jpg, .jpeg, .mp4'"
+            @update:modelValue="handleEditFileUpload"
+            outlined
+          ></v-file-input>
+          <v-text-field v-model="editMediaDescription" label="Description" outlined></v-text-field>
+          <div v-if="editMediaLocation" class="location-preview">
+            <i class="mdi mdi-map-marker"></i>
+            <a
+              :href="`https://www.google.com/maps?q=${editMediaLocation.lat},${editMediaLocation.lon}`"
+              target="_blank"
+              class="location-btn"
+            >
+              {{ editMediaLocation.name }}
+            </a>
+            <button class="remove-btn" @click="removeEditLocation">Remove</button>
+          </div>
+          <button v-if="!editMediaLocation" class="action-btn" @click="getEditLocation" title="Add Location">
+            <i class="mdi mdi-map-marker-outline"></i> Add Location
+          </button>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text @click="cancelEditVideo">Cancel</v-btn>
-          <v-btn color="primary" @click="saveEditVideo">Update Video</v-btn>
+          <v-btn text @click="cancelEditMedia">Cancel</v-btn>
+          <v-btn color="primary" @click="saveEditMedia">Update {{ isVideo ? 'Video' : 'Post' }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -114,7 +157,7 @@
       <v-card>
         <v-card-title class="headline">Confirm Deletion</v-card-title>
         <v-card-text>
-          Are you sure you want to delete this {{ deleteType === 'video' ? 'video' : 'comment' }}? This action cannot be undone.
+          Are you sure you want to delete this {{ deleteType === 'media' ? (isVideo ? 'video' : 'post') : 'comment' }}? This action cannot be undone.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -129,35 +172,40 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import axios from 'axios';
-import { generateAvatar } from '@/utils/avatar.js';
+import { generateAvatar } from '@/utils/avatar';
 
 const route = useRoute();
 const router = useRouter();
 const username = route.params.username;
 const user = ref({});
-const selectedVideo = ref(null);
+const selectedMedia = ref(null);
 const comments = ref([]);
 const newComment = ref('');
 const isDeleting = ref(false);
-const videoMenuVisible = ref(null);
-const editVideoPopup = ref(false);
-const editVideoDescription = ref('');
-const editVideoFile = ref(null);
+const mediaMenuVisible = ref(null);
+const editMediaPopup = ref(false);
+const editMediaDescription = ref('');
+const editMediaLocation = ref(null);
+const editMediaFile = ref(null);
 const currentUser = ref({});
 const users = ref({});
 const shares = ref(0);
 const deleteDialog = ref(false);
 const deleteType = ref('');
 const itemToDelete = ref(null);
-const previousRoute = ref(''); // To store the previous route
+const previousRoute = ref('');
 
 const API_BASE_URL = 'http://localhost:8000';
 const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
+
+const isVideo = computed(() => {
+  return selectedMedia.value?.file_path && VIDEO_EXTENSIONS.some(ext => selectedMedia.value.file_path.toLowerCase().endsWith(ext));
+});
 
 onMounted(async () => {
   try {
@@ -168,10 +216,9 @@ onMounted(async () => {
       return;
     }
 
-    // Store the previous route from document.referrer or fallback to home
     previousRoute.value = document.referrer.includes(window.location.origin)
       ? new URL(document.referrer).pathname
-      : '/'; // Default to home if referrer is unreliable
+      : '/';
 
     const usersResult = await axios.get(`${API_BASE_URL}/api/users`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -193,22 +240,14 @@ onMounted(async () => {
       console.error('No postId provided in query');
       return;
     }
-    console.log('Fetching video post with ID:', postId);
+    console.log('Fetching media with ID:', postId);
     const postResult = await axios.get(`${API_BASE_URL}/api/posts/${postId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    const post = postResult.data.data;
-    console.log('Post data:', post);
+    console.log('Media data:', postResult.data);
+    selectedMedia.value = postResult.data.data;
 
-    if (post.file_path && VIDEO_EXTENSIONS.some(ext => post.file_path.toLowerCase().endsWith(ext))) {
-      selectedVideo.value = post;
-    } else {
-      console.warn('Selected post is not a video');
-      selectedVideo.value = null;
-      return;
-    }
-
-    console.log('Fetching comments for video ID:', postId);
+    console.log('Fetching comments for media ID:', postId);
     const commentsResult = await axios.get(`${API_BASE_URL}/api/posts/${postId}/comments`, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -223,20 +262,38 @@ onMounted(async () => {
     currentUser.value = currentUserResult.data;
 
     await nextTick();
-    const videoElement = document.getElementById(`video-${postId}`);
-    if (videoElement) {
-      videoElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      videoElement.classList.add('highlight');
-      setTimeout(() => videoElement.classList.remove('highlight'), 2000);
+    const mediaElement = document.getElementById(`media-${postId}`);
+    if (mediaElement) {
+      mediaElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      mediaElement.classList.add('highlight');
+      setTimeout(() => mediaElement.classList.remove('highlight'), 2000);
     } else {
-      console.warn(`Video element with ID video-${postId} not found`);
+      console.warn(`Media element with ID media-${postId} not found`);
     }
   } catch (error) {
-    console.error('Error fetching video or comments:', error.response?.data || error.message);
+    console.error('Error fetching media or comments:', error.response?.data || error.message);
     console.error('Failed request:', error.config);
-    selectedVideo.value = null;
+    selectedMedia.value = null;
   }
 });
+
+const renderPostDescription = (description) => {
+  if (!description) return 'No description';
+  let html = description;
+  html = html.replace(/\n/g, '<br>');
+  return html;
+};
+
+const simplifyLocation = (location) => {
+  if (!location) return '';
+  const parts = location.split(',').map(part => part.trim());
+  const country = parts[parts.length - 1];
+  let city = parts[0];
+  if (parts.length >= 3) {
+    city = parts[parts.length - 3] || parts[parts.length - 2];
+  }
+  return `${city}, ${country}`;
+};
 
 const getImageUrl = (path) => path ? `${API_BASE_URL}/storage/${path}` : generateAvatar('User');
 const getProfilePhotoById = (id) => {
@@ -246,7 +303,7 @@ const getProfilePhotoById = (id) => {
 const getCommentUserPhoto = (user) => user?.profile_photo_path ? `${API_BASE_URL}/storage/${user.profile_photo_path}` : 'https://via.placeholder.com/40';
 const getUserNameById = (id) => users.value[id]?.name || 'Unknown User';
 const getUsernameById = (id) => users.value[id]?.username || null;
-const isVideoFromUser = (video) => video.id_user === currentUser.value.id;
+const isMediaFromUser = (media) => media.id_user === currentUser.value.id;
 
 const goToUserProfile = (username) => {
   console.log('Navigating to profile with username:', username);
@@ -257,29 +314,29 @@ const goToUserProfile = (username) => {
   }
 };
 
-const toggleLike = async (video) => {
+const toggleLike = async (media) => {
   try {
     const token = localStorage.getItem('token');
-    if (video.liked_by_user) {
-      await axios.delete(`${API_BASE_URL}/api/posts/${video.id}/like`, {
+    if (media.liked_by_user) {
+      await axios.delete(`${API_BASE_URL}/api/posts/${media.id}/like`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      video.liked_by_user = false;
-      video.likes_count -= 1;
+      media.liked_by_user = false;
+      media.likes_count -= 1;
     } else {
-      await axios.post(`${API_BASE_URL}/api/posts/${video.id}/like`, {}, {
+      await axios.post(`${API_BASE_URL}/api/posts/${media.id}/like`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      video.liked_by_user = true;
-      video.likes_count += 1;
+      media.liked_by_user = true;
+      media.likes_count += 1;
     }
   } catch (error) {
     console.error('Error toggling like:', error.response?.data || error.message);
-    const postResult = await axios.get(`${API_BASE_URL}/api/posts/${video.id}`, {
+    const postResult = await axios.get(`${API_BASE_URL}/api/posts/${media.id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    video.liked_by_user = postResult.data.data.liked_by_user;
-    video.likes_count = postResult.data.data.likes_count;
+    media.liked_by_user = postResult.data.data.liked_by_user;
+    media.likes_count = postResult.data.data.likes_count;
   }
 };
 
@@ -287,7 +344,7 @@ const addComment = async () => {
   if (!newComment.value.trim()) return;
   try {
     const token = localStorage.getItem('token');
-    const response = await axios.post(`${API_BASE_URL}/api/posts/${selectedVideo.value.id}/comments`, {
+    const response = await axios.post(`${API_BASE_URL}/api/posts/${selectedMedia.value.id}/comments`, {
       content: newComment.value
     }, {
       headers: { Authorization: `Bearer ${token}` }
@@ -305,9 +362,9 @@ const openDeleteCommentDialog = (commentId) => {
   deleteDialog.value = true;
 };
 
-const openDeleteVideoDialog = (videoId) => {
-  deleteType.value = 'video';
-  itemToDelete.value = videoId;
+const openDeleteMediaDialog = (mediaId) => {
+  deleteType.value = 'media';
+  itemToDelete.value = mediaId;
   deleteDialog.value = true;
 };
 
@@ -320,14 +377,13 @@ const cancelDelete = () => {
 const confirmDelete = async () => {
   const token = localStorage.getItem('token');
   try {
-    if (deleteType.value === 'video') {
+    if (deleteType.value === 'media') {
       isDeleting.value = true;
       await axios.delete(`${API_BASE_URL}/api/posts/${itemToDelete.value}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      selectedVideo.value = null;
-      // Redirect to the previous route instead of the user's profile
-      router.push(previousRoute.value || '/'); // Fallback to home if no previous route
+      selectedMedia.value = null;
+      router.push(previousRoute.value || '/');
     } else if (deleteType.value === 'comment') {
       await axios.delete(`${API_BASE_URL}/api/comments/${itemToDelete.value}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -344,71 +400,110 @@ const confirmDelete = async () => {
   }
 };
 
-const toggleVideoMenu = (videoId) => {
-  videoMenuVisible.value = videoMenuVisible.value === videoId ? null : videoId;
+const toggleMediaMenu = (mediaId) => {
+  mediaMenuVisible.value = mediaMenuVisible.value === mediaId ? null : mediaId;
 };
 
-const editVideo = (video) => {
-  editVideoDescription.value = video.description || '';
-  editVideoFile.value = null;
-  editVideoPopup.value = true;
+const editMedia = (media) => {
+  editMediaDescription.value = media.description || '';
+  editMediaLocation.value = media.location ? { name: media.location, lat: null, lon: null } : null;
+  editMediaFile.value = null;
+  editMediaPopup.value = true;
+};
+
+const getEditLocation = () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+          const data = await response.json();
+          editMediaLocation.value = {
+            name: data.display_name || `Lat: ${latitude}, Lon: ${longitude}`,
+            lat: latitude,
+            lon: longitude
+          };
+        } catch (error) {
+          console.error('Error fetching location name:', error);
+          editMediaLocation.value = {
+            name: `Lat: ${latitude}, Lon: ${longitude}`,
+            lat: latitude,
+            lon: longitude
+          };
+        }
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        alert('Unable to get location. Please allow location access.');
+      }
+    );
+  } else {
+    alert('Geolocation is not supported by your browser.');
+  }
+};
+
+const removeEditLocation = () => {
+  editMediaLocation.value = null;
 };
 
 const handleEditFileUpload = (files) => {
-  editVideoFile.value = files ? files[0] : null;
+  editMediaFile.value = files ? files[0] : null;
 };
 
-const cancelEditVideo = () => {
-  editVideoPopup.value = false;
-  editVideoDescription.value = '';
-  editVideoFile.value = null;
+const cancelEditMedia = () => {
+  editMediaPopup.value = false;
+  editMediaDescription.value = '';
+  editMediaLocation.value = null;
+  editMediaFile.value = null;
 };
 
-const saveEditVideo = async () => {
-  if (!selectedVideo.value) return;
+const saveEditMedia = async () => {
+  if (!selectedMedia.value) return;
 
   try {
     const token = localStorage.getItem('token');
     const formData = new FormData();
-    formData.append('description', editVideoDescription.value);
+    formData.append('description', editMediaDescription.value);
+    formData.append('location', editMediaLocation.value ? editMediaLocation.value.name : '');
     formData.append('_method', 'PUT');
-    if (editVideoFile.value) {
-      formData.append('file', editVideoFile.value);
+    if (editMediaFile.value) {
+      formData.append('file', editMediaFile.value);
     }
 
     const response = await axios.post(
-      `${API_BASE_URL}/api/posts/${selectedVideo.value.id}`,
+      `${API_BASE_URL}/api/posts/${selectedMedia.value.id}`,
       formData,
       { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
     );
 
-    selectedVideo.value = response.data.post || response.data.data;
-    editVideoPopup.value = false;
+    selectedMedia.value = response.data.post || response.data.data;
+    editMediaPopup.value = false;
   } catch (error) {
-    console.error('Error updating video:', error);
+    console.error('Error updating media:', error);
     alert('Error: ' + (error.response?.data?.message || error.message));
   }
 };
 
-const reportVideo = async (video) => {
+const reportMedia = async (media) => {
   try {
     const token = localStorage.getItem('token');
-    await axios.post(`${API_BASE_URL}/api/posts/${video.id}/report`, {
+    await axios.post(`${API_BASE_URL}/api/posts/${media.id}/report`, {
       reason: prompt('Please enter reason for reporting:')
     }, { headers: { Authorization: `Bearer ${token}` } });
-    alert('Video reported successfully');
-    videoMenuVisible.value = null;
+    alert(`${isVideo.value ? 'Video' : 'Post'} reported successfully`);
+    mediaMenuVisible.value = null;
   } catch (error) {
-    console.error('Error reporting video:', error);
+    console.error('Error reporting media:', error);
   }
 };
 
-const shareVideo = (video) => {
-  const shareUrl = `${window.location.origin}/users/username/${username}/videos?postId=${video.id}`;
+const shareMedia = (media) => {
+  const shareUrl = `${window.location.origin}/users/${username}/media?postId=${media.id}`;
   navigator.clipboard.writeText(shareUrl)
     .then(() => {
       shares.value++;
-      alert('Video URL copied to clipboard!');
+      alert(`${isVideo.value ? 'Video' : 'Post'} URL copied to clipboard!`);
     })
     .catch(err => console.error('Error copying URL:', err));
 };
@@ -420,7 +515,7 @@ const formatDate = (dateString) => {
 </script>
 
 <style scoped>
-.user-videos-container {
+.user-media-container {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
@@ -436,18 +531,18 @@ h1 {
   text-align: center;
 }
 
-.videos-and-comments {
+.media-and-comments {
   display: flex;
   max-width: 800px;
   margin: 0 auto;
 }
 
-.videos-column {
+.media-column {
   flex: 2;
   margin-right: 20px;
 }
 
-.video-card {
+.media-card {
   background: #ffffff;
   border: 1px solid #ffffff;
   border-radius: 24px;
@@ -455,11 +550,11 @@ h1 {
   width: 100%;
 }
 
-.video-card.highlight {
+.media-card.highlight {
   animation: highlight 2s ease-out;
 }
 
-.video-header {
+.media-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -472,7 +567,7 @@ h1 {
   gap: 10px;
 }
 
-.video-profile-link {
+.media-profile-link {
   cursor: pointer;
 }
 
@@ -482,18 +577,18 @@ h1 {
   border-radius: 50%;
 }
 
-.video-info {
+.media-info {
   display: flex;
   flex-direction: column;
 }
 
-.video-username {
+.media-username {
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
 }
 
-.video-username:hover {
+.media-username:hover {
   text-decoration: underline;
 }
 
@@ -507,22 +602,109 @@ h1 {
   color: #666;
 }
 
-.video-description {
+.media-description {
   margin-bottom: 15px;
 }
 
-.video-content {
+.post-description {
+  font-size: 16px;
+}
+
+.post-location {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.location-icon {
+  color: #1da1f2;
+  font-size: 16px;
+}
+
+.location-link {
+  color: #1da1f2;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.location-link:hover {
+  text-decoration: underline;
+}
+
+.location-preview {
+  margin-top: 10px;
+  padding: 10px;
+  background: #e6f3ff;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.location-preview i {
+  color: #1da1f2;
+}
+
+.location-btn {
+  display: inline-block;
+  padding: 5px 10px;
+  background-color: #1da1f2;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.location-btn:hover {
+  background-color: #0d91e2;
+}
+
+.remove-btn {
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.remove-btn:hover {
+  background: #cc0000;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  color: #1da1f2;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.action-btn i {
+  font-size: 20px;
+}
+
+.action-btn:hover {
+  color: #0d91e2;
+}
+
+.media-content {
   width: 100%;
   max-height: 600px;
   border-radius: 20px;
   margin-bottom: 15px;
 }
 
-.video-menu {
+.media-menu {
   position: relative;
 }
 
-.video-menu button {
+.media-menu button {
   background: none;
   border: none;
   cursor: pointer;
@@ -537,6 +719,7 @@ h1 {
   border-radius: 5px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   z-index: 1000;
+  min-width: 120px;
 }
 
 .dropdown-menu ul {
@@ -554,7 +737,7 @@ h1 {
   background: #f0f0f0;
 }
 
-.video-actions {
+.media-actions {
   display: flex;
   justify-content: space-between;
   font-size: 14px;
@@ -681,7 +864,7 @@ h1 {
   background: #0056b3;
 }
 
-.no-videos {
+.no-media {
   text-align: center;
   color: #666;
   padding: 20px;
