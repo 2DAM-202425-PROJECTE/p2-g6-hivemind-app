@@ -60,25 +60,36 @@ if [ ! -d "nexxus-frontend" ] || [ ! -d "nexxus-backend" ]; then
   exit 1
 fi
 
-# Update dependencies
-echo -e "${YELLOW}🚀 Updating dependencies...${NC}"
-cd nexxus-frontend || exit 1
+# 1. Install frontend dependencies
+echo -e "${YELLOW}🚀 Installing frontend dependencies...${NC}"
+cd nexxus-frontend || { echo -e "${RED}Error: No es pot accedir a nexxus-frontend${NC}"; exit 1; }
 if [ -f package.json ]; then
-  npm install &> /dev/null
+  npm install || { echo -e "${RED}Error instal·lant dependències de npm${NC}"; exit 1; }
 else
-  echo -e "${RED}package.json not found in nexxus-frontend.${NC}"
+  echo -e "${RED}package.json not found in nexxus-frontend${NC}"
   exit 1
 fi
 cd "$SCRIPT_DIR"
+echo -e "${GREEN}✅ Frontend dependencies installed${NC}"
 
-cd nexxus-backend || exit 1
+# 2. Install backend dependencies
+echo -e "${YELLOW}🚀 Managing backend dependencies...${NC}"
+cd nexxus-backend || { echo -e "${RED}Error: No es pot accedir a nexxus-backend${NC}"; exit 1; }
 if [ -f composer.json ]; then
-  composer update &> /dev/null
+  if [ -f composer.lock ] && [ composer.json -ot composer.lock ]; then
+    # If composer.lock is up-to-date, use install
+    echo -e "${YELLOW}Using composer install (composer.lock is up-to-date)...${NC}"
+    composer install --no-interaction --prefer-dist || { echo -e "${RED}Error instal·lant dependències${NC}"; exit 1; }
+  else
+    # if composer.lock is missing or outdated, use update
+    echo -e "${YELLOW}Using composer update (composer.json modified or no lock file)...${NC}"
+    composer update --no-interaction --prefer-dist || { echo -e "${RED}Error actualitzant dependències${NC}"; exit 1; }
+  fi
 else
-  echo -e "${RED}composer.json not found in nexxus-backend.${NC}"
+  echo -e "${RED}composer.json not found in nexxus-backend${NC}"
   exit 1
-fi
 cd "$SCRIPT_DIR"
+echo -e "${GREEN}✅ Backend dependencies managed${NC}"
 
 # Check and install PHP extensions (for Debian/Ubuntu)
 echo -e "${YELLOW}🔍 Checking required PHP extensions...${NC}"
