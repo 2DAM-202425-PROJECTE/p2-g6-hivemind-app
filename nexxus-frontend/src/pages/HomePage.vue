@@ -62,7 +62,7 @@
     </div>
 
     <!-- Post Cards -->
-    <div class="post-card" v-for="post in sortedPosts" :key="post.id" @click="navigateToPost(post)">
+    <div class="post-card" v-for="post in posts" :key="post.id" @click="navigateToPost(post)">
       <div class="post-header">
         <div class="post-profile-link" @click.stop="goToUserProfile(post.id_user)">
           <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
@@ -203,12 +203,24 @@
         </div>
       </div>
     </div>
+
+    <!-- Loading indicator -->
+    <div v-if="loading" class="loading-indicator">
+      <div class="spinner"></div>
+      Loading posts...
+    </div>
+
+    <!-- End of posts message -->
+    <div v-if="noMorePosts" class="end-message">
+      No posts to load
+    </div>
+
     <Footer />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
@@ -223,18 +235,28 @@ const loadTwemoji = () => {
   document.head.appendChild(script);
 };
 
+// Inicialización
 onMounted(() => {
   loadTwemoji();
-  fetchPosts();
-  document.addEventListener('click', handleClickOutside);
+  fetchPosts(1, true);
+  window.addEventListener('scroll', handleScroll);
 });
 
+// Limpieza
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('scroll', handleScroll);
+  if (scrollDebounce.value) {
+    clearTimeout(scrollDebounce.value);
+  }
 });
 
 const router = useRouter();
-const posts = ref({ data: [] });
+const posts = ref([]);
+const loading = ref(false);
+const noMorePosts = ref(false);
+const currentPage = ref(1);
+const lastPage = ref(1);
+const scrollDebounce = ref(null);
 const users = ref({});
 const selectedPostId = ref(null);
 const selectedPost = ref(null);
@@ -280,12 +302,11 @@ const currentUser = ref({
   profile_photo_path: null,
 });
 
-// Computed property to sort posts by created_at in descending order
-const sortedPosts = computed(() => {
-  return [...posts.value.data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-});
+const fetchPosts = async (page = 1, initialLoad = false) => {
+  if (loading.value || (noMorePosts.value && !initialLoad)) return;
 
-const fetchPosts = async () => {
+  loading.value = true;
+
   try {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -293,37 +314,76 @@ const fetchPosts = async () => {
       return;
     }
 
-    const result = await axios.get('http://localhost:8000/api/posts', {
+    const result = await axios.get(`http://localhost:8000/api/posts?page=${page}`, {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
-    posts.value = result.data;
+
+    if (initialLoad) {
+      posts.value = result.data.data;
+    } else {
+      posts.value = [...posts.value, ...result.data.data];
+    }
+
+    console.log("post",posts.value);
+
+    currentPage.value = result.data.current_page;
+    lastPage.value = result.data.last_page;
+
+    if (currentPage.value >= lastPage.value) {
+      noMorePosts.value = true;
+    }
+
+    // Cargar información de usuarios para los nuevos posts
+    await loadUsersInfo();
+
+  } catch (error) {
+    console.error('Error al obtener datos', error.response?.data || error.message);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const loadUsersInfo = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const userIds = [...new Set(posts.value.map(post => post.id_user))];
 
     const usersResult = await axios.get('http://localhost:8000/api/users', {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      params: { ids: userIds.join(',') }
     });
 
-    if (!usersResult.data || !usersResult.data.data) {
-      console.error('Estructura inesperada en la respuesta de usuarios:', usersResult.data);
-      return;
+    if (usersResult.data?.data) {
+      users.value = {
+        ...users.value,
+        ...usersResult.data.data.reduce((acc, user) => {
+          acc[user.id] = {
+            name: user.name,
+            username: user.username,
+            profile_photo_path: user.profile_photo_path
+          };
+          return acc;
+        }, {})
+      };
     }
-
-    users.value = usersResult.data.data.reduce((acc, user) => {
-      acc[user.id] = { name: user.name, username: user.username, profile_photo_path: user.profile_photo_path };
-      return acc;
-    }, {});
-
-    const userResult = await axios.get('http://localhost:8000/api/user', {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-    });
-    currentUser.value = userResult.data;
-
-    const storiesResult = await axios.get('http://localhost:8000/api/stories', {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-    });
-    stories.value = storiesResult.data;
   } catch (error) {
-    console.error('Error al obtener datos', error.response?.data || error.message);
+    console.error('Error loading users info:', error);
   }
+};
+
+const handleScroll = () => {
+  if (scrollDebounce.value) {
+    clearTimeout(scrollDebounce.value);
+  }
+
+  scrollDebounce.value = setTimeout(() => {
+    const { scrollTop, clientHeight, scrollHeight } = document.documentElement;
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 300;
+
+    if (isNearBottom && !loading.value && currentPage.value < lastPage.value) {
+      fetchPosts(currentPage.value + 1);
+    }
+  }, 100);
 };
 
 const adjustTextareaHeight = (event) => {
@@ -449,6 +509,7 @@ const submitPost = async () => {
     const formData = new FormData();
     formData.append('description', newPostContent.value);
     formData.append('publish_date', publishDate);
+    console.log("current user",currentUser.value);
     formData.append('id_user', currentUser.value.id);
     if (newPostFile.value) formData.append('file', newPostFile.value);
     if (selectedLocation.value) formData.append('location', selectedLocation.value.name);
@@ -1007,5 +1068,36 @@ h1 {
   object-fit: contain;
   border-radius: 20px;
   margin-bottom: 15px;
+}
+
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #666;
+}
+
+.spinner {
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 3px solid #3498db;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.end-message {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-style: italic;
 }
 </style>
