@@ -61,7 +61,8 @@
       </div>
     </div>
 
-    <div class="post-card" v-for="post in sortedPosts" :key="post.id" @click="navigateToPost(post, $event)">
+    <!-- Post Cards -->
+    <div class="post-card" v-for="post in posts" :key="post.id" @click="navigateToPost(post, $event)">
       <div class="post-header">
         <div class="post-profile-link" @click.stop="goToUserProfile(post.id_user)">
           <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
@@ -203,17 +204,26 @@
       </div>
     </div>
 
-    <UserRecommendation />
+    <!-- Loading indicator -->
+    <div v-if="loading" class="loading-indicator">
+      <div class="spinner"></div>
+      Loading posts...
+    </div>
+
+    <!-- End of posts message -->
+    <div v-if="noMorePosts" class="end-message">
+      No posts to load
+    </div>
+
     <Footer />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
-import UserRecommendation from '@/components/UserRecommendation.vue';
 import StoriesBar from '@/components/StoriesBar.vue';
 import axios from 'axios';
 import { generateAvatar } from '@/utils/avatar';
@@ -225,18 +235,29 @@ const loadTwemoji = () => {
   document.head.appendChild(script);
 };
 
+// Inicialización
 onMounted(() => {
   loadTwemoji();
-  fetchPosts();
-  document.addEventListener('click', handleClickOutside);
+  fetchPosts(1, true);
+  window.addEventListener('scroll', handleScroll, 'click', handleClickOutside);
+  window.addEventListener('click', handleClickOutside);
 });
 
+// Limpieza
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('scroll', handleScroll);
+  if (scrollDebounce.value) {
+    clearTimeout(scrollDebounce.value);
+  }
 });
 
 const router = useRouter();
-const posts = ref({ data: [] });
+const posts = ref([]);
+const loading = ref(false);
+const noMorePosts = ref(false);
+const currentPage = ref(1);
+const lastPage = ref(1);
+const scrollDebounce = ref(null);
 const users = ref({});
 const selectedPostId = ref(null);
 const selectedPost = ref(null);
@@ -282,11 +303,11 @@ const currentUser = ref({
   profile_photo_path: null,
 });
 
-const sortedPosts = computed(() => {
-  return [...posts.value.data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-});
+const fetchPosts = async (page = 1, initialLoad = false) => {
+  if (loading.value || (noMorePosts.value && !initialLoad)) return;
 
-const fetchPosts = async () => {
+  loading.value = true;
+
   try {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -294,10 +315,24 @@ const fetchPosts = async () => {
       return;
     }
 
-    const result = await axios.get('http://localhost:8000/api/posts', {
+    const result = await axios.get(`http://localhost:8000/api/posts?page=${page}`, {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
-    posts.value = result.data;
+
+    if (initialLoad) {
+      posts.value = result.data.data;
+    } else {
+      posts.value = [...posts.value, ...result.data.data];
+    }
+
+    console.log("post",posts.value);
+
+    currentPage.value = result.data.current_page;
+    lastPage.value = result.data.last_page;
+
+    if (currentPage.value >= lastPage.value) {
+      noMorePosts.value = true;
+    }
 
     const usersResult = await axios.get('http://localhost:8000/api/users', {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
@@ -320,11 +355,30 @@ const fetchPosts = async () => {
 
     const storiesResult = await axios.get('http://localhost:8000/api/stories', {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+
     });
     stories.value = storiesResult.data;
+
   } catch (error) {
     console.error('Error al obtener datos', error.response?.data || error.message);
+  } finally {
+    loading.value = false;
   }
+};
+
+const handleScroll = () => {
+  if (scrollDebounce.value) {
+    clearTimeout(scrollDebounce.value);
+  }
+
+  scrollDebounce.value = setTimeout(() => {
+    const { scrollTop, clientHeight, scrollHeight } = document.documentElement;
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 300;
+
+    if (isNearBottom && !loading.value && currentPage.value < lastPage.value) {
+      fetchPosts(currentPage.value + 1);
+    }
+  }, 100);
 };
 
 const adjustTextareaHeight = (event) => {
@@ -444,23 +498,13 @@ const removeEditLocation = () => {
 const submitPost = async () => {
   try {
     const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('No token available');
-      return;
-    }
-
-    if (!currentUser.value.id) {
-      console.error('Current user ID is not available');
-      alert('Error: User ID not found. Please log in again.');
-      return;
-    }
-
     const now = new Date();
     const publishDate = now.toISOString().slice(0, 19).replace('T', ' ');
 
     const formData = new FormData();
     formData.append('description', newPostContent.value);
     formData.append('publish_date', publishDate);
+    console.log("current user",currentUser.value);
     formData.append('id_user', currentUser.value.id);
     if (newPostFile.value) formData.append('file', newPostFile.value);
     if (selectedLocation.value) formData.append('location', selectedLocation.value.name);
@@ -471,7 +515,7 @@ const submitPost = async () => {
       { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
     );
 
-    await fetchPosts();
+    await fetchPosts(1,true);
     newPostContent.value = '';
     newPostFile.value = null;
     previewUrl.value = null;
@@ -502,10 +546,24 @@ const simplifyLocation = (location) => {
   return `${city}, ${country}`;
 };
 
-const getImageUrl = (path) => path ? `http://localhost:8000/storage/${path}` : generateAvatar('User');
+const getImageUrl = (path) => {
+  if (!path) return generateAvatar('User');
+  // Si ya es una URL completa, devolverla tal cual
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  // Si es una ruta local, añadir el prefijo de storage
+  return `http://localhost:8000/storage/${path}`;
+};
 const getProfilePhotoById = (id) => {
   const user = users.value[id];
-  return user?.profile_photo_path ? `http://localhost:8000/api/storage/${user.profile_photo_path}` : generateAvatar(user?.name || 'User');
+  if (user?.profile_photo_path) {
+    // Si es una URL completa, devolverla sin cambios
+    if (user.profile_photo_path.startsWith('http://') || user.profile_photo_path.startsWith('https://')) {
+      return user.profile_photo_path;
+    }
+    // Si es una ruta local, añadir el prefijo
+    return `http://localhost:8000/storage/${user.profile_photo_path}`;
+  }
+  return generateAvatar(user?.name || 'User');
 };
 const getUserNameById = (id) => users.value[id]?.name || 'Usuario desconocido';
 const getUsernameById = (id) => users.value[id]?.username || null;
@@ -1005,5 +1063,36 @@ h1 {
   object-fit: contain;
   border-radius: 20px;
   margin-bottom: 15px;
+}
+
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #666;
+}
+
+.spinner {
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 3px solid #3498db;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.end-message {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-style: italic;
 }
 </style>

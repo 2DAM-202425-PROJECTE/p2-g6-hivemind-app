@@ -73,6 +73,7 @@ cd "$SCRIPT_DIR"
 
 cd nexxus-backend || exit 1
 if [ -f composer.json ]; then
+  composer install &> /dev/null # Temporary fix for composer update issue
   composer update &> /dev/null
 else
   echo -e "${RED}composer.json not found in nexxus-backend.${NC}"
