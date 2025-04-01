@@ -62,7 +62,7 @@
     </div>
 
     <!-- Post Cards -->
-    <div class="post-card" v-for="post in posts" :key="post.id" @click="navigateToPost(post)">
+    <div class="post-card" v-for="post in posts" :key="post.id" @click="navigateToPost(post, $event)">
       <div class="post-header">
         <div class="post-profile-link" @click.stop="goToUserProfile(post.id_user)">
           <img :src="getProfilePhotoById(post.id_user)" class="profile-pic" alt="Profile" />
@@ -239,7 +239,8 @@ const loadTwemoji = () => {
 onMounted(() => {
   loadTwemoji();
   fetchPosts(1, true);
-  window.addEventListener('scroll', handleScroll);
+  window.addEventListener('scroll', handleScroll, 'click', handleClickOutside);
+  window.addEventListener('click', handleClickOutside);
 });
 
 // Limpieza
@@ -333,41 +334,35 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
       noMorePosts.value = true;
     }
 
-    // Cargar información de usuarios para los nuevos posts
-    await loadUsersInfo();
+    const usersResult = await axios.get('http://localhost:8000/api/users', {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+    });
+
+    if (!usersResult.data || !usersResult.data.data) {
+      console.error('Estructura inesperada en la respuesta de usuarios:', usersResult.data);
+      return;
+    }
+
+    users.value = usersResult.data.data.reduce((acc, user) => {
+      acc[user.id] = { name: user.name, username: user.username, profile_photo_path: user.profile_photo_path };
+      return acc;
+    }, {});
+
+    const userResult = await axios.get('http://localhost:8000/api/user', {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+    });
+    currentUser.value = userResult.data;
+
+    const storiesResult = await axios.get('http://localhost:8000/api/stories', {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+
+    });
+    stories.value = storiesResult.data;
 
   } catch (error) {
     console.error('Error al obtener datos', error.response?.data || error.message);
   } finally {
     loading.value = false;
-  }
-};
-
-const loadUsersInfo = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    const userIds = [...new Set(posts.value.map(post => post.id_user))];
-
-    const usersResult = await axios.get('http://localhost:8000/api/users', {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-      params: { ids: userIds.join(',') }
-    });
-
-    if (usersResult.data?.data) {
-      users.value = {
-        ...users.value,
-        ...usersResult.data.data.reduce((acc, user) => {
-          acc[user.id] = {
-            name: user.name,
-            username: user.username,
-            profile_photo_path: user.profile_photo_path
-          };
-          return acc;
-        }, {})
-      };
-    }
-  } catch (error) {
-    console.error('Error loading users info:', error);
   }
 };
 
@@ -520,7 +515,7 @@ const submitPost = async () => {
       { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
     );
 
-    await fetchPosts();
+    await fetchPosts(1,true);
     newPostContent.value = '';
     newPostFile.value = null;
     previewUrl.value = null;

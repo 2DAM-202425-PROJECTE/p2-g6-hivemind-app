@@ -26,6 +26,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import axios from 'axios';
+import {generateAvatar} from "@/utils/avatar.js";
 
 const users = ref([]);
 const showStoryModal = ref(false);
