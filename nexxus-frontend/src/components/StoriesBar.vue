@@ -1,5 +1,12 @@
 <template>
   <div class="stories-bar">
+    <!-- Botó per afegir històries -->
+    <div class="story-item add-story" @click="openCreateStoryModal">
+      <div class="add-story-icon">+</div>
+      <p>Add Story</p>
+    </div>
+
+    <!-- Històries existents -->
     <div class="story-item" v-for="(story, index) in stories" :key="index" @click="viewStory(story)">
       <img :src="getProfilePhotoById(story.id_user)" alt="Story" class="story-image" />
       <p>{{ getUserNameById(story.id_user) }}</p>
@@ -7,18 +14,18 @@
 
     <!-- Modal para mostrar la historia -->
     <v-dialog v-model="showStoryModal" max-width="500">
-        <v-card>
-            <v-card-title>{{ getUserNameById(selectedStory?.id_user) }}</v-card-title>
-            <v-card-text>
-                <img :src="getStoryImagePath(selectedStory.file_path)" alt="Story Image" class="story-modal-image" />
-                <p>{{ selectedStory?.description }}</p>
-            </v-card-text>
-            <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn text @click="showStoryModal = false">Close</v-btn>
-                <v-btn color="red" text @click="deleteStory(selectedStory.id)">Delete</v-btn>
-            </v-card-actions>
-        </v-card>
+      <v-card>
+        <v-card-title>{{ getUserNameById(selectedStory?.id_user) }}</v-card-title>
+        <v-card-text>
+          <img :src="getStoryImagePath(selectedStory.file_path)" alt="Story Image" class="story-modal-image" />
+          <p>{{ selectedStory?.description }}</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="showStoryModal = false">Close</v-btn>
+          <v-btn color="red" text @click="deleteStory(selectedStory.id)">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
     </v-dialog>
   </div>
 </template>
@@ -29,6 +36,7 @@ import axios from 'axios';
 import {generateAvatar} from "@/utils/avatar.js";
 
 const users = ref([]);
+const showCreateStoryModal = ref(false);
 const showStoryModal = ref(false);
 const showDeleteConfirm = ref(false); // For delete confirmation dialog
 const showSuccessPopup = ref(false); // For success message popup
@@ -52,28 +60,30 @@ const props = defineProps({
 
 onMounted(async () => {
 
-  const token = localStorage.getItem('token');
-  const usersResult = await axios.get('http://localhost:8000/api/users', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/json'
-    }
-  });
-  users.value = usersResult.data.data;
+
+const token = localStorage.getItem('token');
+const usersResult = await axios.get('http://localhost:8000/api/users', {
+  headers: {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/json'
+  }
+});
+users.value = usersResult.data.data;
+console.log(users.value);
+
+const storiesResult = await axios.get('http://localhost:8000/api/stories', {
+  headers: {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/json'
+  }
+});
+story.value = storiesResult.data;
+
 
   const userResult = await axios.get('http://localhost:8000/api/user', {
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
   });
   currentUser.value = userResult.data;
-
-  // Fetch stories data
-  const storiesResult = await axios.get('http://localhost:8000/api/stories', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/json'
-    }
-  });
-  story.value = storiesResult.data;
 });
 
 
@@ -113,10 +123,26 @@ const fetchStories = async () => {
   story.value = response.data;
 };
 
-const confirmDeleteStory = (id) => {
-  storyIdToDelete.value = id; // Store the ID of the story to delete
-  showDeleteConfirm.value = true; // Show the confirmation dialog
-};
+const deleteStory = async (id) => {
+  try {
+    await axios.delete(`http://localhost:8000/api/stories/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    showStoryModal.value = false;
+    showSuccessPopup.value = true;
+    await fetchStories();
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+
+  } catch (error) {
+    console.error('Error deleting story:', error);
+    showFailurePopup.value = true;
+  }
+}
 
 const deleteStoryConfirmed = async () => {
   try {
@@ -138,6 +164,37 @@ const deleteStoryConfirmed = async () => {
     showFailurePopup.value = true; // Show failure popup
   }
 };
+
+const openCreateStoryModal = () => {
+  showCreateStoryModal.value = true;
+};
+
+const submitNewStory = async () => {
+  if (!newStoryFile.value && !newStoryDescription.value) {
+    alert('Please upload a file or add a description')
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('description', newStoryDescription.value);
+  formData.append('id_user', currentUser.value.id);
+  formData.append('publish_date', new Date().toISOString());
+  if (newStoryFile.value) formData.append('file', newStoryFile.value);
+
+  try {
+    await axios.post('/api/stories', formData, {
+
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' },
+
+    });
+    showCreateStoryModal.value = false;
+    await fetchStories();
+  } catch (error) {
+    console.error('Error creating story:', error);
+
+  }
+}
+
 </script>
 
 <style scoped>
