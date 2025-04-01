@@ -210,20 +210,28 @@
       <v-card class="error-dialog">
         <v-card-title class="headline">
           <v-icon color="red" large left>mdi-alert-circle</v-icon>
-          Purchase Failed!
+          {{ errorMessage.includes('Insufficient credits') ? 'Not Enough Credits!' : 'Purchase Failed!' }}
         </v-card-title>
         <v-card-text class="dialog-text">
           <p>{{ errorMessage }}</p>
-          <p>Please try again or contact support at <a href="mailto:hivemindnexxuscontact@gmail.com">hivemindnexxuscontact@gmail.com</a>.</p>
+          <p v-if="errorMessage.includes('Insufficient credits')">
+            Please buy more credits in the shop to complete your purchase.
+          </p>
+          <p v-else>
+            Please try again or contact support at <a href="mailto:hivemindnexxuscontact@gmail.com">hivemindnexxuscontact@gmail.com</a>.
+          </p>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="closeErrorDialog">Try Again</v-btn>
+          <v-btn color="primary" text @click="closeErrorDialog">
+            {{ errorMessage.includes('Insufficient credits') ? 'Go to Shop' : 'Try Again' }}
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
   </div>
 </template>
+
 <script>
 import NavBar from '../components/NavBar.vue';
 import AppFooter from '../components/AppFooter.vue';
@@ -252,8 +260,8 @@ export default {
       selectedPaymentMethod: null,
       userCredits: 1000,
       showSuccessDialog: false,
-      showErrorDialog: false, // New state for error dialog
-      errorMessage: '', // New state for error message
+      showErrorDialog: false,
+      errorMessage: '',
       countryCodes: [
         { name: 'Spain', code: '+34', digits: 9, displayText: 'Spain (+34)' },
         { name: 'United States', code: '+1', digits: 10, displayText: 'United States (+1)' },
@@ -338,6 +346,10 @@ export default {
     async handlePurchase() {
       try {
         if (this.selectedPaymentMethod === 'credits') {
+          // Explicitly check for sufficient credits before proceeding
+          if (this.userCredits < this.item.amount) {
+            throw new Error('Insufficient credits to complete this purchase.');
+          }
           await this.processCreditPurchase();
         } else {
           const itemPrice = parseFloat(this.item.price);
@@ -351,7 +363,7 @@ export default {
         this.showSuccessDialog = true;
       } catch (error) {
         console.error('Failed to process purchase or save item to inventory:', error);
-        this.errorMessage = 'Purchase failed. Please try again or contact support.';
+        this.errorMessage = error.message || 'Purchase failed. Please try again or contact support.';
         this.showErrorDialog = true;
       }
     },
@@ -377,6 +389,7 @@ export default {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
 
+        // Double-check credits on the backend
         console.log('User ID:', this.user.id, 'Item ID:', this.item.id, 'User Credits:', this.userCredits);
         const response = await apiClient.post(
           '/api/user/process-credit-purchase',
@@ -393,16 +406,15 @@ export default {
           throw new Error(response.data.error);
         }
 
-        this.userCredits -= this.item.amount; // Adjust if using price instead
+        // Only deduct credits and proceed if the backend confirms the purchase
+        this.userCredits -= this.item.amount;
         await this.saveToInventory();
         await this.updateUserCredits();
         this.$emit('credits-updated', this.userCredits); // Emit event
-        this.showSuccessDialog = true;
         console.log('Purchase successful with credits');
       } catch (error) {
         console.error('Purchase failed:', error.message);
-        this.errorMessage = `Purchase Failed! ${error.message}`;
-        this.showErrorDialog = true;
+        throw new Error(error.message || 'Failed to process credit purchase');
       }
     },
     async updateUserCredits() {
