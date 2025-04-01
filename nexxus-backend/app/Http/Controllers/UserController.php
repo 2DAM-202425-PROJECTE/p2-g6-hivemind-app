@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Item;
+use App\Models\UserInventory;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
-    //return all users
     public function index()
     {
         $users = User::all();
@@ -60,7 +61,80 @@ class UserController extends Controller
 
         return response()->json($users);
     }
+    public function processCreditPurchase(Request $request)
+    {
+        $request->validate([
+            'userId' => 'required|integer|exists:users,id',
+            'itemId' => 'required|integer|exists:items,id',
+        ]);
 
+        $userId = $request->input('userId');
+        $itemId = $request->input('itemId');
+
+        $user = User::find($userId);
+        $item = Item::find($itemId);
+
+        if ($user->credits >= $item->price) {
+            $user->credits -= $item->price;
+            $user->save();
+
+            $inventory = new UserInventory();
+            $inventory->user_id = $userId;
+            $inventory->item_id = $itemId;
+            $inventory->save();
+
+            return response()->json(['message' => 'Purchase successful with credits'], 200);
+        } else {
+            return response()->json(['error' => 'Not enough credits'], 400);
+        }
+    }
+
+    public function updateCredits(Request $request)
+    {
+        $user = User::find($request->input('userId'));
+        $user->credits = $request->input('credits');
+        $user->save();
+
+        return response()->json(['message' => 'User credits updated successfully'], 200);
+    }
+
+    public function saveToInventory(Request $request)
+    {
+        try {
+            // Validate the request data
+            $validated = $request->validate([
+                'userId' => 'required|integer|exists:users,id',
+                'itemId' => 'required|integer|exists:items,id',
+            ]);
+
+            $userId = $validated['userId'];
+            $itemId = $validated['itemId'];
+
+            // Retrieve the user and item
+            $user = User::find($userId);
+            $item = Item::find($itemId);
+
+            // Check if the user has enough credits
+            if ($user->credits < $item->price) {
+                return response()->json(['error' => 'Not enough credits'], 400);
+            }
+
+            // Deduct the item's price from the user's credits
+            $user->credits -= $item->price;
+            $user->save();
+
+            // Save the item to the user's inventory
+            $inventory = new UserInventory();
+            $inventory->user_id = $userId;
+            $inventory->item_id = $itemId;
+            $inventory->save();
+
+            return response()->json(['message' => 'Item saved to inventory and credits updated'], 201); // 201 for created
+        } catch (\Exception $e) {
+            \Log::error('Failed to save item to inventory: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to save item to inventory', 'details' => $e->getMessage()], 500);
+        }
+    }
     // search users by username
     public function searchUsers(Request $request)
     {
@@ -88,6 +162,19 @@ class UserController extends Controller
         ], 200);
     }
 
+    public function updateEquippedProfileIcon(Request $request)
+    {
+        $request->validate([
+            'userId' => 'required|integer|exists:users,id',
+            'equippedProfileIconPath' => 'nullable|string',
+        ]);
+
+        $user = User::find($request->input('userId'));
+        $user->equipped_profile_icon_path = $request->input('equippedProfileIconPath');
+        $user->save();
+
+        return response()->json(['message' => 'Equipped profile icon updated successfully'], 200);
+    }
     public function updateProfile(Request $request)
     {
         $user = $request->user();

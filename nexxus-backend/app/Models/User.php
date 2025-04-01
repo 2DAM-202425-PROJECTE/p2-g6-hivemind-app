@@ -30,6 +30,7 @@ class User extends Authenticatable
         'password',
         'profile_photo_path',
         'banner_photo_path',
+        'credits',
     ];
 
     protected $hidden = [
@@ -101,5 +102,10 @@ class User extends Authenticatable
         }
 
         return $initials ?: 'U';
+    }
+
+    public function inventory()
+    {
+        return $this->hasMany(UserInventory::class);
     }
 }

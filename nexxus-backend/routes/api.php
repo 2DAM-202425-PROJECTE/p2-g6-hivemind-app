@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\ItemController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\UserInventoryController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\PostController;
@@ -74,6 +76,17 @@ Route::middleware('auth:sanctum')->group(function ()
     Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
 
     Route::post('/contact/submit', [ContactController::class, 'submit']);
+
+    //Shop routes
+    Route::get('/shop/categorized-items', [ItemController::class, 'categorizedItems']);
+    Route::get('/shop/items/{id}', [ItemController::class, 'show']);
+
+    //Purchase routes
+    Route::post('/user/update-equipped-profile-icon', [UserController::class, 'updateEquippedProfileIcon']);
+    Route::post('/user/process-credit-purchase', [UserController::class, 'processCreditPurchase']);
+    Route::post('/user/update-credits', [UserController::class, 'updateCredits']);
+    Route::post('/user/inventory', [UserController::class, 'saveToInventory']);
+    Route::get('/user/{id}/inventory', [UserInventoryController::class, 'index']);
 });
 
 

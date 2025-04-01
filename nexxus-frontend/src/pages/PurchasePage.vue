@@ -72,6 +72,14 @@
                 >
                   Google Pay
                 </v-btn>
+                <v-btn
+                  @click="selectPaymentMethod('credits')"
+                  :class="{ active: selectedPaymentMethod === 'credits' }"
+                  class="payment-btn"
+                  outlined
+                >
+                  Pay with Credits
+                </v-btn>
               </div>
 
               <!-- Payment Forms (Collapsible) -->
@@ -151,6 +159,19 @@
                       <v-btn type="submit" color="primary" block>Pay with Google Pay</v-btn>
                     </form>
                   </div>
+
+                  <div v-if="selectedPaymentMethod === 'credits'" class="payment-method">
+                    <h4>Pay with Credits</h4>
+                    <div class="credits-info">
+                      <p>Current Credits: <strong>{{ userCredits }}</strong></p>
+                      <p>Cost: <strong>{{ item.amount }} Credits</strong></p>
+                    </div>
+                    <form @submit.prevent="handlePurchase" class="payment-form">
+                      <v-btn type="submit" color="primary" block :disabled="userCredits < item.amount">
+                        Pay with Credits
+                      </v-btn>
+                    </form>
+                  </div>
                 </div>
               </transition>
             </div>
@@ -172,7 +193,7 @@
           <p v-if="item && item.amount">
             You've successfully added <strong>{{ item.amount }} credits</strong> to your account using <strong>{{ selectedPaymentMethod }}</strong>.
           </p>
-          <p v-else-if="item && item.price.includes('Credits')">
+          <p v-else-if="item && String(item.price).includes('Credits')">
             You've successfully purchased <strong>{{ item.name || item.title }}</strong> using <strong>{{ selectedPaymentMethod }}</strong>.
           </p>
           <p>Your current credit balance is: <strong>{{ userCredits }} credits</strong>.</p>
@@ -189,12 +210,13 @@
 <script>
 import NavBar from '../components/NavBar.vue';
 import AppFooter from '../components/AppFooter.vue';
+import apiClient from '@/axios.js';
 
 export default {
   name: 'PurchasePage',
   components: {
     NavBar,
-    AppFooter
+    AppFooter,
   },
   data() {
     return {
@@ -227,6 +249,7 @@ export default {
         { name: 'Japan', code: '+81', digits: 10, displayText: 'Japan (+81)' },
         { name: 'Mexico', code: '+52', digits: 10, displayText: 'Mexico (+52)' },
       ],
+      user: { id: null },
     };
   },
   computed: {
@@ -243,137 +266,144 @@ export default {
         v => !!v || 'Phone number is required',
         v => /^\d+$/.test(v) || 'Phone number must contain only digits',
         v => {
-          const digits = this.selectedPaymentMethod === 'bizum' ?
-            this.bizumDigitLength : this.googlePayDigitLength;
+          const digits = this.selectedPaymentMethod === 'bizum'
+            ? this.bizumDigitLength
+            : this.googlePayDigitLength;
           return v.length === digits || `Phone number must be ${digits} digits`;
-        }
+        },
       ];
-    }
+    },
   },
   created() {
     const itemId = parseInt(this.$route.params.id, 10);
     if (itemId) {
-      this.item = this.getItemById(itemId);
-      console.log('Fetched item:', this.item);
+      this.fetchItemById(itemId);
     }
+    this.fetchCurrentUser();
   },
   methods: {
-    getItemById(id) {
-      const shopData = JSON.parse(localStorage.getItem('shopData') || '{}');
-      const allItems = [
-        ...(shopData.subscriptionTiers || []),
-        ...(shopData.creditPacks || []),
-        ...(shopData.cosmeticCategories ? shopData.cosmeticCategories.flatMap(category => category.items) : []),
-      ];
-      const item = allItems.find(item => item.id === id);
-      if (!item) {
-        console.error(`Item with ID ${id} not found`);
+    async fetchItemById(id) {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+
+        const response = await apiClient.get(`/api/shop/items/${id}`, {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        });
+        this.item = response.data;
+      } catch (error) {
+        console.error(`Failed to fetch item with ID ${id}:`, error);
       }
-      return item;
+    },
+    async fetchCurrentUser() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+
+        const response = await apiClient.get('/api/user', {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        });
+        this.user = response.data;
+        this.userCredits = response.data.credits || 1000; // Update credits from server if available
+      } catch (error) {
+        console.error('Failed to fetch current user:', error);
+      }
     },
     selectPaymentMethod(method) {
       this.selectedPaymentMethod = this.selectedPaymentMethod === method ? null : method;
     },
-    handlePurchase(method) {
-      console.log(`${method} payment button clicked`);
-      console.log('Item:', this.item);
-
-      const isCreditPack = this.item && this.item.amount && this.item.price.includes('€');
-      const itemPrice = this.item.price.includes('Credits') ? parseInt(this.item.price) : null;
-
-      if (isCreditPack) {
-        switch (method) {
-          case 'card':
-            if (/^\d{16}$/.test(this.cardNumber) && /^\d{2}\/\d{2}$/.test(this.expiryDate) && /^\d{3}$/.test(this.cvv)) {
-              console.log('Card Number:', this.cardNumber);
-              console.log('Expiry Date:', this.expiryDate);
-              console.log('CVV:', this.cvv);
-              this.userCredits += parseInt(this.item.amount);
-              this.showSuccessDialog = true;
-            } else {
-              alert('Invalid card details. Please check: 16-digit card number, MM/YY expiry, 3-digit CVV.');
-            }
-            break;
-          case 'paypal':
-            if (/.+@.+\..+/.test(this.paypalEmail) && this.paypalPassword) {
-              console.log('PayPal Email:', this.paypalEmail);
-              console.log('PayPal Password:', this.paypalPassword);
-              this.userCredits += parseInt(this.item.amount);
-              this.showSuccessDialog = true;
-            } else {
-              alert('Invalid PayPal details. Email must contain @ and password is required.');
-            }
-            break;
-          case 'bizum':
-            if (this.phoneRules.every(rule => rule(this.bizumPhone) === true) && this.bizumPin) {
-              console.log('Bizum Phone:', `${this.bizumCountryCode}${this.bizumPhone}`);
-              console.log('Bizum PIN:', this.bizumPin);
-              this.userCredits += parseInt(this.item.amount);
-              this.showSuccessDialog = true;
-            } else {
-              alert(`Invalid Bizum details. Phone must be ${this.bizumDigitLength} digits and PIN is required.`);
-            }
-            break;
-          case 'googlepay':
-            if (/.+@.+\..+/.test(this.googlePayEmail) &&
-              this.phoneRules.every(rule => rule(this.googlePayPhone) === true)) {
-              console.log('Google Pay Email:', this.googlePayEmail);
-              console.log('Google Pay Phone:', `${this.googlePayCountryCode}${this.googlePayPhone}`);
-              this.userCredits += parseInt(this.item.amount);
-              this.showSuccessDialog = true;
-            } else {
-              alert(`Invalid Google Pay details. Email must contain @ and phone must be ${this.googlePayDigitLength} digits.`);
-            }
-            break;
+    async handlePurchase() {
+      try {
+        if (this.selectedPaymentMethod === 'credits') {
+          await this.processCreditPurchase();
+        } else {
+          const itemPrice = parseFloat(this.item.price);
+          if (!isNaN(itemPrice) && itemPrice > 0) {
+            await this.saveToInventory();
+            console.log('Purchase successful');
+          } else {
+            throw new Error('Invalid item price');
+          }
         }
-      } else if (itemPrice) {
-        switch (method) {
-          case 'card':
-            if (/^\d{16}$/.test(this.cardNumber) && /^\d{2}\/\d{2}$/.test(this.expiryDate) && /^\d{3}$/.test(this.cvv)) {
-              this.processCreditPurchase(itemPrice);
-            } else {
-              alert('Invalid card details. Please check: 16-digit card number, MM/YY expiry, 3-digit CVV.');
-            }
-            break;
-          case 'paypal':
-            if (/.+@.+\..+/.test(this.paypalEmail) && this.paypalPassword) {
-              this.processCreditPurchase(itemPrice);
-            } else {
-              alert('Invalid PayPal details. Email must contain @ and password is required.');
-            }
-            break;
-          case 'bizum':
-            if (this.phoneRules.every(rule => rule(this.bizumPhone) === true) && this.bizumPin) {
-              this.processCreditPurchase(itemPrice);
-            } else {
-              alert(`Invalid Bizum details. Phone must be ${this.bizumDigitLength} digits and PIN is required.`);
-            }
-            break;
-          case 'googlepay':
-            if (/.+@.+\..+/.test(this.googlePayEmail) &&
-              this.phoneRules.every(rule => rule(this.googlePayPhone) === true)) {
-              this.processCreditPurchase(itemPrice);
-            } else {
-              alert(`Invalid Google Pay details. Email must contain @ and phone must be ${this.googlePayDigitLength} digits.`);
-            }
-            break;
-        }
-      } else {
-        alert('Invalid item type.');
+        this.showSuccessDialog = true;
+      } catch (error) {
+        console.error('Failed to process purchase or save item to inventory:', error);
+        alert('Purchase failed. Please try again or contact support.');
       }
     },
-    processCreditPurchase(itemPrice) {
-      if (this.userCredits >= itemPrice) {
-        this.userCredits -= itemPrice;
+    async saveToInventory(item) {
+      try {
+        const response = await axios.post('http://localhost:8000/api/user/inventory', {
+          user_id: this.userId,
+          item_id: item.id,
+          quantity: item.quantity,
+        }, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+        console.log('Item saved to inventory:', response.data);
+      } catch (error) {
+        console.error('Failed to save item to inventory:', error.response ? error.response.data : error.message);
+      }
+    },
+    async processCreditPurchase() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+
+        console.log('User ID:', this.user.id, 'Item ID:', this.item.id, 'User Credits:', this.userCredits);
+        const response = await apiClient.post(
+          '/api/user/process-credit-purchase',
+          {
+            userId: this.user.id,
+            itemId: this.item.id,
+          },
+          {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          }
+        );
+
+        if (response.data.error) {
+          throw new Error(response.data.error);
+        }
+
+        this.userCredits -= this.item.amount; // Adjust if using price instead
+        await this.saveToInventory();
+        await this.updateUserCredits();
+        this.$emit('credits-updated', this.userCredits); // Emit event
         this.showSuccessDialog = true;
-      } else {
-        alert('Purchase Failed! Insufficient credits.');
+        console.log('Purchase successful with credits');
+      } catch (error) {
+        console.error('Purchase failed:', error.message);
+        alert('Purchase Failed! ' + error.message);
+        throw error;
+      }
+    },
+    async updateUserCredits() {
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (!token) throw new Error('No access token found. Please log in.');
+
+        await apiClient.post(
+          '/api/user/update-credits',
+          {
+            userId: this.user.id,
+            credits: this.userCredits,
+          },
+          {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          }
+        );
+        console.log('User credits updated');
+      } catch (error) {
+        console.error('Failed to update user credits:', error);
       }
     },
     closeSuccessDialog() {
       this.showSuccessDialog = false;
       this.$router.push('/shop');
-    }
+    },
   },
 };
 </script>
@@ -601,6 +631,21 @@ export default {
   flex-direction: column;
   gap: 1rem;
   width: 100%;
+}
+
+.credits-info {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.credits-info p {
+  font-size: 1rem;
+  color: #475569;
+  margin-bottom: 0.5rem;
+}
+
+.credits-info strong {
+  color: #2563eb;
 }
 
 .phone-input {
