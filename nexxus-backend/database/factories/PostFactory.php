@@ -6,22 +6,18 @@ use App\Models\Post;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Post>
- */
 class PostFactory extends Factory
 {
     protected $model = Post::class;
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
+
     public function definition(): array
     {
+        // Usar una URL directa y única de Lorem Picsum
+        $randomId = rand(1, 500);
         return [
-            'file_path' => $this->faker->imageUrl(),
-            'publish_date' => $this->faker->date(),
+            'file_path' => "https://picsum.photos/id/{$randomId}/1920/1080", // URL específica con ID
+            'description' => $this->faker->sentence(),
+            'publish_date' => $this->faker->dateTimeBetween('-1 month', 'now'),
             'id_user' => User::factory(),
         ];
     }

@@ -18,7 +18,7 @@
                   {{ getUserNameById(selectedMedia.id_user) }}
                 </strong>
                 <p class="post-date">{{ formatDate(selectedMedia.created_at) }}</p>
-                <span class="username-handle">{{ getUsernameById(selectedMedia.id_user) }}</span>
+                <span class="username-handle">@{{ getUsernameById(selectedMedia.id_user) }}</span>
               </div>
             </div>
             <div class="media-menu">
@@ -295,10 +295,24 @@ const simplifyLocation = (location) => {
   return `${city}, ${country}`;
 };
 
-const getImageUrl = (path) => path ? `${API_BASE_URL}/storage/${path}` : generateAvatar('User');
+const getImageUrl = (path) => {
+  if (!path) return generateAvatar('User');
+  // Si ya es una URL completa, devolverla tal cual
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  // Si es una ruta local, añadir el prefijo de storage
+  return `http://localhost:8000/storage/${path}`;
+};
 const getProfilePhotoById = (id) => {
   const user = users.value[id];
-  return user?.profile_photo_path ? `${API_BASE_URL}/storage/${user.profile_photo_path}` : generateAvatar(user?.name || 'User');
+  if (user?.profile_photo_path) {
+    // Si es una URL completa, devolverla sin cambios
+    if (user.profile_photo_path.startsWith('http://') || user.profile_photo_path.startsWith('https://')) {
+      return user.profile_photo_path;
+    }
+    // Si es una ruta local, añadir el prefijo
+    return `http://localhost:8000/storage/${user.profile_photo_path}`;
+  }
+  return generateAvatar(user?.name || 'User');
 };
 const getCommentUserPhoto = (user) => user?.profile_photo_path ? `${API_BASE_URL}/storage/${user.profile_photo_path}` : 'https://via.placeholder.com/40';
 const getUserNameById = (id) => users.value[id]?.name || 'Unknown User';
