@@ -204,9 +204,26 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Error Dialog -->
+    <v-dialog v-model="showErrorDialog" max-width="500px">
+      <v-card class="error-dialog">
+        <v-card-title class="headline">
+          <v-icon color="red" large left>mdi-alert-circle</v-icon>
+          Purchase Failed!
+        </v-card-title>
+        <v-card-text class="dialog-text">
+          <p>{{ errorMessage }}</p>
+          <p>Please try again or contact support at <a href="mailto:hivemindnexxuscontact@gmail.com">hivemindnexxuscontact@gmail.com</a>.</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="closeErrorDialog">Try Again</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
-
 <script>
 import NavBar from '../components/NavBar.vue';
 import AppFooter from '../components/AppFooter.vue';
@@ -235,6 +252,8 @@ export default {
       selectedPaymentMethod: null,
       userCredits: 1000,
       showSuccessDialog: false,
+      showErrorDialog: false, // New state for error dialog
+      errorMessage: '', // New state for error message
       countryCodes: [
         { name: 'Spain', code: '+34', digits: 9, displayText: 'Spain (+34)' },
         { name: 'United States', code: '+1', digits: 10, displayText: 'United States (+1)' },
@@ -288,11 +307,13 @@ export default {
         if (!token) throw new Error('No access token found. Please log in.');
 
         const response = await apiClient.get(`/api/shop/items/${id}`, {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
         this.item = response.data;
       } catch (error) {
         console.error(`Failed to fetch item with ID ${id}:`, error);
+        this.errorMessage = `Failed to fetch item: ${error.message}`;
+        this.showErrorDialog = true;
       }
     },
     async fetchCurrentUser() {
@@ -301,12 +322,14 @@ export default {
         if (!token) throw new Error('No access token found. Please log in.');
 
         const response = await apiClient.get('/api/user', {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
         this.user = response.data;
         this.userCredits = response.data.credits || 1000; // Update credits from server if available
       } catch (error) {
         console.error('Failed to fetch current user:', error);
+        this.errorMessage = `Failed to fetch user data: ${error.message}`;
+        this.showErrorDialog = true;
       }
     },
     selectPaymentMethod(method) {
@@ -328,15 +351,16 @@ export default {
         this.showSuccessDialog = true;
       } catch (error) {
         console.error('Failed to process purchase or save item to inventory:', error);
-        alert('Purchase failed. Please try again or contact support.');
+        this.errorMessage = 'Purchase failed. Please try again or contact support.';
+        this.showErrorDialog = true;
       }
     },
-    async saveToInventory(item) {
+    async saveToInventory() {
       try {
-        const response = await axios.post('http://localhost:8000/api/user/inventory', {
-          user_id: this.userId,
-          item_id: item.id,
-          quantity: item.quantity,
+        const response = await apiClient.post('/api/user/inventory', {
+          user_id: this.user.id,
+          item_id: this.item.id,
+          quantity: this.item.quantity || 1,
         }, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -345,6 +369,7 @@ export default {
         console.log('Item saved to inventory:', response.data);
       } catch (error) {
         console.error('Failed to save item to inventory:', error.response ? error.response.data : error.message);
+        throw new Error('Failed to save item to inventory');
       }
     },
     async processCreditPurchase() {
@@ -360,7 +385,7 @@ export default {
             itemId: this.item.id,
           },
           {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
           }
         );
 
@@ -376,13 +401,13 @@ export default {
         console.log('Purchase successful with credits');
       } catch (error) {
         console.error('Purchase failed:', error.message);
-        alert('Purchase Failed! ' + error.message);
-        throw error;
+        this.errorMessage = `Purchase Failed! ${error.message}`;
+        this.showErrorDialog = true;
       }
     },
     async updateUserCredits() {
       try {
-        const token = localStorage.getItem('accessToken');
+        const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
 
         await apiClient.post(
@@ -392,22 +417,27 @@ export default {
             credits: this.userCredits,
           },
           {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
           }
         );
         console.log('User credits updated');
       } catch (error) {
         console.error('Failed to update user credits:', error);
+        this.errorMessage = `Failed to update user credits: ${error.message}`;
+        this.showErrorDialog = true;
       }
     },
     closeSuccessDialog() {
       this.showSuccessDialog = false;
       this.$router.push('/shop');
     },
+    closeErrorDialog() {
+      this.showErrorDialog = false;
+      this.$router.push('/shop');
+    },
   },
 };
 </script>
-
 <style scoped>
 .purchase-container {
   min-height: 100vh;
@@ -717,8 +747,24 @@ export default {
   color: #0000ff;
 }
 
+.dialog-text a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.dialog-text a:hover {
+  color: #1d4ed8;
+}
+
 .v-card-actions {
   padding-top: 1rem;
+}
+
+/* Error Dialog Styles */
+.error-dialog {
+  background: #000000;
+  padding: 1.5rem;
+  border-radius: 12px;
 }
 
 @media (max-width: 768px) {
