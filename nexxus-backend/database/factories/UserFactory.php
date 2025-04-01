@@ -39,6 +39,7 @@ class UserFactory extends Factory
             'profile_photo_path' => null,
             'banner_photo_path' => null,
             'current_team_id' => null,
+            'credits' => 1000,
         ];
     }
 

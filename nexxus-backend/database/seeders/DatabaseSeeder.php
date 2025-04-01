@@ -19,7 +19,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(ItemsTableSeeder::class);
 
-        User::factory()->withPersonalTeam()->create([
         // Crear usuarios específicos
         $testUser = User::factory()->withPersonalTeam()->create([
             'name' => 'Test User',
