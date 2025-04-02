@@ -1,49 +1,24 @@
 <template>
-  <div class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-amber-50 to-amber-100">
-    <div class="text-center bg-white p-12 rounded-xl shadow-lg w-full max-w-3xl">
-      <!-- Logo -->
-      <img class="w-16 h-16 mb-6 mx-auto" src="/logo.png" alt="Hivemind Logo" />
-
-      <!-- Título con toque temático -->
-      <h1 class="text-amber-900 text-3xl font-bold mb-8">Connect to HiveMind Nexxus</h1>
-
+  <div class="login-container">
+    <div class="login-box">
+      <img class="logo" src="/logo.png" alt="Hivemind Logo" />
+      <h1>Log in to Hivemind Account</h1>
       <form @submit.prevent="login">
-        <label for="email" class="text-amber-800">Email:</label>
-        <input
-          id="email"
-          type="text"
-          v-model="email"
-          placeholder="Enter your email"
-          required
-          class="w-full p-3 border border-amber-300 rounded-md text-lg mt-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-        />
+        <label for="email">Email:</label>
+        <input id="email" type="text" v-model="email" placeholder="Enter your email" required />
 
-        <label for="password" class="text-amber-800 mt-4">Password:</label>
-        <input
-          id="password"
-          type="password"
-          v-model="password"
-          placeholder="Enter your password"
-          required
-          class="w-full p-3 border border-amber-300 rounded-md text-lg mt-2 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-        />
+        <label for="password">Password:</label>
+        <input id="password" type="password" v-model="password" placeholder="Enter your password" required />
 
-        <!-- Botón con estilo mejorado -->
-        <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 px-4 mt-6 rounded-md flex items-center justify-center transition-all duration-300">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-          </svg>
-          Join the Hive
-        </button>
+        <button type="submit">Login</button>
       </form>
-
-      <p class="text-amber-700 mt-6">
-        Don't have an account?
-        <router-link to="/register" class="text-amber-600 hover:underline">Register here</router-link>
+      <p>
+        You don't have an account?
+        <router-link to="/register">Register here</router-link>
       </p>
     </div>
 
-    <!-- Snackbars (manteniendo tu estructura Vuetify) -->
+    <!-- Success Snackbar -->
     <v-snackbar
       v-model="showSuccessSnackbar"
       :timeout="3000"
@@ -51,9 +26,10 @@
       class="white--text custom-snackbar"
     >
       <v-icon color="green" class="mr-2">mdi-check-circle</v-icon>
-      Connected successfully!
+      Signed in successfully!
     </v-snackbar>
 
+    <!-- Error Snackbar -->
     <v-snackbar
       v-model="showErrorSnackbar"
       :timeout="3000"
@@ -64,14 +40,12 @@
       {{ error }}
     </v-snackbar>
 
-    <!-- Iconos (opcional, puedes eliminarlos si prefieres) -->
-    <div class="absolute bottom-4 flex gap-4">
+    <div class="icons">
       <i class="icon network-icon"></i>
       <i class="icon profile-icon"></i>
     </div>
   </div>
 </template>
-
 
 <script>
 import apiClient from '../axios.js';
@@ -83,8 +57,8 @@ export default {
       password: '',
       deviceName: 'web',
       error: null,
-      showSuccessSnackbar: false,
-      showErrorSnackbar: false,
+      showSuccessSnackbar: false, // Controls success snackbar visibility
+      showErrorSnackbar: false,   // Controls error snackbar visibility
     };
   },
   methods: {
@@ -98,16 +72,18 @@ export default {
 
         localStorage.setItem('token', response.data.token);
         this.error = null;
-        this.showSuccessSnackbar = true;
+        this.showSuccessSnackbar = true; // Show success snackbar
 
+        // Automatically redirect after 3 seconds
         setTimeout(() => {
           this.showSuccessSnackbar = false;
           this.$router.push('/home');
         }, 3000);
       } catch (err) {
         this.error = 'Login failed. Please check your credentials.';
-        this.showErrorSnackbar = true;
+        this.showErrorSnackbar = true; // Show error snackbar
 
+        // Automatically hide error snackbar after 3 seconds
         setTimeout(() => {
           this.showErrorSnackbar = false;
         }, 3000);
@@ -117,23 +93,135 @@ export default {
 };
 </script>
 
-
 <style scoped>
-/* Snackbar (igual a tu versión) */
-.custom-snackbar {
-  z-index: 10000;
-  margin-bottom: 16px;
-  margin-right: 200px;
-  position: fixed;
-  bottom: 0;
-  right: 0;
-  left: auto;
-  transform: none;
-  max-width: calc(100% - 32px);
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #f0f2f5; /* Updated background color */
+  border: 5px solid #ccc;
+  border-radius: 10px;
+  position: relative;
+  color: black;
 }
 
+.login-box {
+  text-align: center;
+  background: #ffffff; /* Updated container background color */
+  padding: 3rem;
+  border-radius: 24px; /* Updated border radius */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 800px; /* Updated max-width */
+}
+
+.logo {
+  width: 60px; /* Slightly larger logo */
+  height: 60px;
+  margin-bottom: 1.5rem;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+h1 {
+  font-size: 2rem; /* Larger font size for the heading */
+  font-weight: bold;
+  margin-bottom: 2rem;
+  color: black;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: bold;
+  margin-top: 1.5rem; /* Increased spacing */
+  margin-bottom: 0.5rem;
+}
+
+input {
+  padding: 0.75rem; /* Increased padding for larger inputs */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1.1rem; /* Slightly larger font size */
+  color: black; /* Text color when typing */
+}
+
+input::placeholder {
+  color: black; /* Placeholder text color */
+}
+
+button {
+  margin-top: 1.5rem; /* Increased spacing */
+  padding: 0.9rem; /* Larger button */
+  background-color: #555;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.1rem; /* Slightly larger font size */
+}
+
+button:hover {
+  background-color: #333;
+}
+
+p {
+  margin-top: 1.5rem; /* Increased spacing */
+  font-size: 1rem; /* Slightly larger font size */
+}
+
+a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.icons {
+  position: absolute;
+  bottom: 1rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.icon {
+  font-size: 1.5rem;
+}
+
+.network-icon {
+  background: url("/network-icon.png") no-repeat center;
+  width: 24px;
+  height: 24px;
+}
+
+.profile-icon {
+  background: url("/profile-icon.png") no-repeat center;
+  width: 24px;
+  height: 24px;
+}
+
+.custom-snackbar {
+  z-index: 10000; /* Ensure it appears above other elements */
+  margin-bottom: 16px; /* Offset from the bottom */
+  margin-right: 200px; /* Offset from the right edge */
+  position: fixed; /* Fixed positioning */
+  bottom: 0; /* Stick to the bottom */
+  right: 0; /* Stick to the right */
+  left: auto; /* Prevent centering */
+  transform: none; /* Override any default transform */
+  max-width: calc(100% - 32px); /* Ensure it doesn't exceed viewport width */
+}
+
+/* Ensure white text for snackbars */
 .white--text {
   color: white !important;
 }
 </style>
-

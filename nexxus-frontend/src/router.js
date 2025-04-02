@@ -18,17 +18,11 @@ import PurchasePage from "./pages/PurchasePage.vue";
 import AppSettingsPage from "./pages/AppSettingsPage.vue";
 import AccountSettingsPage from "./pages/AccountSettingsPage.vue";
 import CompleteProfilePage from "./pages/CompleteProfilePage.vue";
-import UserMediaPage from "./components/Profile/UserMediaPage.vue";
+import UserMediaPage from "./components/Profile/UserMediaPage.vue"; // New combined component
 import VideosPage from "./pages/VideosPage.vue";
 import LiveStreamsPage from "./pages/LiveStreamsPage.vue";
-import NotFoundPage from "./pages/errors/NotFoundPage.vue";
 
 export const routes = [
-  {
-    path: "/:pathMatch(.*)*",
-    name: "NotFound",
-    component: NotFoundPage
-  },
   {
     path: "/",
     redirect: (to) => {
