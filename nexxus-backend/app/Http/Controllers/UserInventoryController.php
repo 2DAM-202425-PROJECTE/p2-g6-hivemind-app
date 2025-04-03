@@ -9,11 +9,14 @@ use Illuminate\Support\Facades\Auth;
 
 class UserInventoryController extends Controller
 {
-    public function index()
+    public function index($id)
     {
-        $user = Auth::user();
-        $inventory = UserInventory::where('user_id', $user->id)->with('item')->get();
+        $userId = Auth::id();
+        if ($userId != $id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
 
+        $inventory = UserInventory::where('user_id', $id)->with('item')->get();
         return response()->json($inventory);
     }
 

@@ -21,13 +21,19 @@
       <section class="trending-section">
         <h2 class="section-title">Trending Items</h2>
         <div class="trending-grid">
-          <div v-for="item in trendingItems" :key="item.id" class="trending-item">
+          <div v-for="item in trendingItems" :key="item.id" class="trending-item" :class="{ 'purchased': isPurchased(item.id) }">
             <div class="item-icon">
               <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" />
             </div>
             <h3 class="item-name">{{ item.name }}</h3>
             <p class="item-price">{{ formatPrice(item.price) }}</p>
-            <button @click="goToPurchase(item.id)" class="buy-button">Purchase</button>
+            <button
+              @click="goToPurchase(item.id)"
+              class="buy-button"
+              :disabled="isPurchased(item.id)"
+            >
+              {{ isPurchased(item.id) ? 'Owned' : 'Purchase' }}
+            </button>
           </div>
         </div>
       </section>
@@ -36,11 +42,17 @@
       <section class="subscriptions-section">
         <h2 class="section-title">Subscriptions</h2>
         <div class="subscription-grid">
-          <div v-for="tier in subscriptionTiers" :key="tier.id" class="subscription-card">
+          <div v-for="tier in subscriptionTiers" :key="tier.id" class="subscription-card" :class="{ 'purchased': isPurchased(tier.id) }">
             <img :src="tier.iconUrl" :alt="tier.name" class="cosmetic-icon" />
             <h3 class="tier-title">{{ tier.name }}</h3>
             <p class="tier-price">{{ formatPrice(tier.price) }}</p>
-            <button @click="goToPurchase(tier.id)" class="buy-button">Purchase</button>
+            <button
+              @click="goToPurchase(tier.id)"
+              class="buy-button"
+              :disabled="isPurchased(tier.id)"
+            >
+              {{ isPurchased(tier.id) ? 'Owned' : 'Purchase' }}
+            </button>
           </div>
         </div>
       </section>
@@ -66,11 +78,17 @@
             <h3 class="category-title">{{ category.title }}</h3>
             <p class="category-description">{{ category.description }}</p>
             <div class="items-grid">
-              <div v-for="item in category.items" :key="item.id" class="cosmetic-item">
+              <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'purchased': isPurchased(item.id) }">
                 <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" />
                 <h4 class="item-name">{{ item.name }}</h4>
                 <p class="item-price">{{ formatPrice(item.price) }}</p>
-                <button @click="goToPurchase(item.id)" class="buy-button">Purchase</button>
+                <button
+                  @click="goToPurchase(item.id)"
+                  class="buy-button"
+                  :disabled="isPurchased(item.id)"
+                >
+                  {{ isPurchased(item.id) ? 'Owned' : 'Purchase' }}
+                </button>
               </div>
             </div>
           </div>
@@ -98,6 +116,8 @@ export default {
       subscriptionTiers: [],
       creditPacks: [],
       cosmeticCategories: [],
+      userInventory: [], // Store the user's purchased item IDs
+      userId: null, // Store the current user's ID
     };
   },
   computed: {
@@ -107,13 +127,40 @@ export default {
     },
   },
   created() {
+    this.fetchCurrentUser(); // Fetch user ID and inventory first
     this.fetchCategorizedItems();
   },
   methods: {
+    async fetchCurrentUser() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+
+        const response = await apiClient.get('/api/user', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        this.userId = response.data.id;
+        await this.fetchUserInventory(); // Fetch inventory after getting user ID
+      } catch (error) {
+        console.error('Failed to fetch current user:', error);
+      }
+    },
+    async fetchUserInventory() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await apiClient.get(`/api/user/${this.userId}/inventory`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // Extract item_ids from the response (array of objects with item relationship)
+        this.userInventory = response.data.map(item => item.item_id);
+      } catch (error) {
+        console.error('Failed to fetch user inventory:', error);
+      }
+    },
     async fetchCategorizedItems() {
       try {
         const response = await apiClient.get('/api/shop/categorized-items', {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
         this.subscriptionTiers = response.data.subscriptions.map(tier => ({
           ...tier,
@@ -180,7 +227,12 @@ export default {
       return array;
     },
     goToPurchase(itemId) {
-      this.$router.push({ path: `/purchase/${itemId}` });
+      if (!this.isPurchased(itemId)) {
+        this.$router.push({ path: `/purchase/${itemId}` });
+      }
+    },
+    isPurchased(itemId) {
+      return this.userInventory.includes(itemId);
     },
   },
 };
@@ -371,6 +423,21 @@ section {
 .cosmetic-item h4,
 .cosmetic-item p {
   color: #000;
+}
+
+/* Purchased Item Styling */
+.purchased {
+  background: #e0e0e0; /* Greyed out background */
+  opacity: 0.7; /* Slightly faded */
+}
+
+.purchased .buy-button {
+  background-color: #a0a0a0; /* Darker grey for button */
+  cursor: not-allowed; /* Disable cursor */
+}
+
+.purchased .buy-button:hover {
+  background-color: #a0a0a0; /* No hover effect */
 }
 
 /* Responsive Design */
