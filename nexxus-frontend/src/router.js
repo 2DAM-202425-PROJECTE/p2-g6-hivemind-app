@@ -4,8 +4,8 @@ import { setAuthToken } from "./auth.js";
 
 // Pages
 import HomePage from "./pages/HomePage.vue";
-import Login from "./pages/Login.vue";
-import Register from "./pages/Register.vue";
+import Login from "./pages/Auth/Login.vue";
+import Register from "./pages/Auth/Register.vue";
 import ProfilePage from "./pages/ProfilePage.vue";
 import About from "./pages/About.vue";
 import PrivacyPolicy from "./pages/PrivacyPolicyPage.vue";
