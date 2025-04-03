@@ -210,12 +210,15 @@
       <v-card class="error-dialog">
         <v-card-title class="headline">
           <v-icon color="red" large left>mdi-alert-circle</v-icon>
-          {{ errorMessage.includes('Insufficient credits') ? 'Not Enough Credits!' : 'Purchase Failed!' }}
+          {{ errorTitle }}
         </v-card-title>
         <v-card-text class="dialog-text">
           <p>{{ errorMessage }}</p>
-          <p v-if="errorMessage.includes('Insufficient credits')">
+          <p v-if="errorMessage === 'Insufficient credits to complete this purchase.'">
             Please buy more credits in the shop to complete your purchase.
+          </p>
+          <p v-else-if="errorMessage === 'You already own this item'">
+            This item is already in your inventory. No need to purchase it again!
           </p>
           <p v-else>
             Please try again or contact support at <a href="mailto:hivemindnexxuscontact@gmail.com">hivemindnexxuscontact@gmail.com</a>.
@@ -224,7 +227,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="primary" text @click="closeErrorDialog">
-            {{ errorMessage.includes('Insufficient credits') ? 'Go to Shop' : 'Try Again' }}
+            {{ errorMessage === 'Insufficient credits to complete this purchase.' ? 'Go to Shop' : 'OK' }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -262,6 +265,7 @@ export default {
       showSuccessDialog: false,
       showErrorDialog: false,
       errorMessage: '',
+      errorTitle: 'Purchase Failed!', // Default title
       countryCodes: [
         { name: 'Spain', code: '+34', digits: 9, displayText: 'Spain (+34)' },
         { name: 'United States', code: '+1', digits: 10, displayText: 'United States (+1)' },
@@ -333,7 +337,7 @@ export default {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
         this.user = response.data;
-        this.userCredits = response.data.credits || 1000; // Update credits from server if available
+        this.userCredits = response.data.credits || 1000;
       } catch (error) {
         console.error('Failed to fetch current user:', error);
         this.errorMessage = `Failed to fetch user data: ${error.message}`;
@@ -343,99 +347,57 @@ export default {
     selectPaymentMethod(method) {
       this.selectedPaymentMethod = this.selectedPaymentMethod === method ? null : method;
     },
-    async handlePurchase() {
-      try {
-        if (this.selectedPaymentMethod === 'credits') {
-          // Explicitly check for sufficient credits before proceeding
-          if (this.userCredits < this.item.amount) {
-            throw new Error('Insufficient credits to complete this purchase.');
-          }
-          await this.processCreditPurchase();
-        } else {
-          const itemPrice = parseFloat(this.item.price);
-          if (!isNaN(itemPrice) && itemPrice > 0) {
-            await this.saveToInventory();
-            console.log('Purchase successful');
-          } else {
-            throw new Error('Invalid item price');
-          }
-        }
-        this.showSuccessDialog = true;
-      } catch (error) {
-        console.error('Failed to process purchase or save item to inventory:', error);
-        this.errorMessage = error.message || 'Purchase failed. Please try again or contact support.';
-        this.showErrorDialog = true;
-      }
-    },
-    async saveToInventory() {
-      try {
-        const response = await apiClient.post('/api/user/inventory', {
-          user_id: this.user.id,
-          item_id: this.item.id,
-          quantity: this.item.quantity || 1,
-        }, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        console.log('Item saved to inventory:', response.data);
-      } catch (error) {
-        console.error('Failed to save item to inventory:', error.response ? error.response.data : error.message);
-        throw new Error('Failed to save item to inventory');
-      }
-    },
     async processCreditPurchase() {
       try {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
 
-        // Double-check credits on the backend
-        console.log('User ID:', this.user.id, 'Item ID:', this.item.id, 'User Credits:', this.userCredits);
+        console.log('Sending payload:', { userId: this.user.id, itemId: this.item.id });
         const response = await apiClient.post(
           '/api/user/process-credit-purchase',
-          {
-            userId: this.user.id,
-            itemId: this.item.id,
-          },
-          {
-            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-          }
+          { userId: this.user.id, itemId: this.item.id },
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
         if (response.data.error) {
           throw new Error(response.data.error);
         }
 
-        // Only deduct credits and proceed if the backend confirms the purchase
-        this.userCredits -= this.item.amount;
-        await this.saveToInventory();
-        await this.updateUserCredits();
-        this.$emit('credits-updated', this.userCredits); // Emit event
+        this.userCredits = response.data.credits;
+        this.$emit('credits-updated', this.userCredits);
         console.log('Purchase successful with credits');
       } catch (error) {
-        console.error('Purchase failed:', error.message);
+        console.error('Raw error:', error);
+        console.error('Response data:', error.response?.data);
+        if (error.response && error.response.data && error.response.data.error) {
+          this.errorTitle = error.response.data.error === 'You already own this item' ? 'Item Already Owned!' : 'Purchase Failed!';
+          throw new Error(error.response.data.error);
+        }
+        this.errorTitle = 'Purchase Failed!';
         throw new Error(error.message || 'Failed to process credit purchase');
       }
     },
-    async updateUserCredits() {
+    async handlePurchase() {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) throw new Error('No access token found. Please log in.');
-
-        await apiClient.post(
-          '/api/user/update-credits',
-          {
-            userId: this.user.id,
-            credits: this.userCredits,
-          },
-          {
-            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        if (this.selectedPaymentMethod === 'credits') {
+          if (this.userCredits < this.item.amount) {
+            this.errorTitle = 'Not Enough Credits!';
+            throw new Error('Insufficient credits to complete this purchase.');
           }
-        );
-        console.log('User credits updated');
+          await this.processCreditPurchase();
+        } else {
+          const itemPrice = parseFloat(this.item.price);
+          if (!isNaN(itemPrice) && itemPrice > 0) {
+            console.log(`Processing ${this.selectedPaymentMethod} payment - not implemented yet`);
+            throw new Error('Non-credit payment methods are not yet implemented.');
+          } else {
+            throw new Error('Invalid item price');
+          }
+        }
+        this.showSuccessDialog = true;
       } catch (error) {
-        console.error('Failed to update user credits:', error);
-        this.errorMessage = `Failed to update user credits: ${error.message}`;
+        console.error('Purchase failed:', error);
+        this.errorMessage = error.message;
         this.showErrorDialog = true;
       }
     },
@@ -450,6 +412,8 @@ export default {
   },
 };
 </script>
+
+<!-- Styles remain unchanged -->
 <style scoped>
 .purchase-container {
   min-height: 100vh;
