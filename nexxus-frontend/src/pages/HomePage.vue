@@ -10,13 +10,13 @@
         <img :src="getProfilePhotoById(currentUser.id)" class="profile-pic" alt="Profile" />
         <div class="post-input-wrapper">
           <textarea v-model="newPostContent" placeholder="What's happening?" class="post-input" rows="2"
-            @input="adjustTextareaHeight"></textarea>
+                    @input="adjustTextareaHeight"></textarea>
 
           <!-- Preview for uploaded file -->
           <div v-if="newPostFile" class="file-preview">
             <div class="preview-container">
               <img v-if="!newPostFile.type.includes('video')" :src="previewUrl" alt="Image Preview"
-                class="preview-media" />
+                   class="preview-media" />
               <video v-else :src="previewUrl" controls class="preview-media"></video>
               <button class="remove-file-btn" @click="removeFile">X</button>
             </div>
@@ -26,7 +26,7 @@
           <div v-if="selectedLocation" class="location-preview">
             <i class="mdi mdi-map-marker"></i>
             <a :href="`https://www.google.com/maps?q=${selectedLocation.lat},${selectedLocation.lon}`" target="_blank"
-              class="location-btn">
+               class="location-btn">
               {{ selectedLocation.name }}
             </a>
             <button class="remove-btn" @click="removeLocation">Remove</button>
@@ -38,7 +38,7 @@
                 <i class="mdi mdi-image"></i>
               </label>
               <input id="media-upload" type="file" accept=".png, .jpg, .jpeg, .mp4" @change="handleNewPostFileUpload"
-                style="display: none" />
+                     style="display: none" />
               <button class="action-btn" @click="toggleEmojiPicker" title="Add Emoji">
                 <i class="mdi mdi-emoticon-outline"></i>
               </button>
@@ -47,16 +47,13 @@
               </button>
             </div>
             <button class="post-btn" :disabled="!newPostContent && !newPostFile && !selectedLocation"
-              @click="submitPost">
+                    @click="submitPost">
               Post
             </button>
           </div>
 
-          <!-- Emoji Picker -->
-          <div v-if="showEmojiPicker" class="emoji-picker" ref="emojiPicker">
-            <span v-for="emoji in emojis" :key="emoji" class="emoji-item" @click="addEmoji(emoji)"
-              v-html="emoji"></span>
-          </div>
+          <!-- New Emoji Picker -->
+          <VEmojiPicker v-if="showEmojiPicker" class="emoji-picker" @select="addEmoji" />
         </div>
       </div>
     </div>
@@ -78,7 +75,7 @@
               <div v-if="post.location" class="post-location">
                 <i class="mdi mdi-earth location-icon"></i>
                 <a :href="`https://www.google.com/maps?q=${encodeURIComponent(post.location)}`" target="_blank"
-                  class="location-link">
+                   class="location-link">
                   {{ simplifyLocation(post.location) }}
                 </a>
               </div>
@@ -105,64 +102,17 @@
         </div>
       </div>
 
-      <!-- <v-dialog v-model="editPostPopup" max-width="500">
-        <v-card>
-          <v-card-title>Edit Post</v-card-title>
-          <v-card-text>
-            <div v-if="selectedPost && selectedPost.file_path" class="current-image">
-              <p>Current File:</p>
-              <img
-                v-if="!selectedPost.file_path.includes('.mp4')"
-                :src="getImageUrl(selectedPost.file_path)"
-                alt="Current post image"
-                style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"
-              />
-              <video
-                v-else
-                :src="getImageUrl(selectedPost.file_path)"
-                controls
-                style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"
-              ></video>
-            </div>
-            <v-file-input label="Replace Image/Video (.png, .jpg, .jpeg, .mp4)" accept=".png, .jpg, .jpeg, .mp4"
-                          @update:modelValue="handleEditFileUpload" outlined></v-file-input>
-            <v-text-field v-model="editPostDescription" label="Description" outlined></v-text-field>
-            <div v-if="editPostLocation" class="location-preview">
-              <i class="mdi mdi-map-marker"></i>
-              <a
-                :href="`https://www.google.com/maps?q=${editPostLocation.lat},${editPostLocation.lon}`"
-                target="_blank"
-                class="location-btn"
-              >
-                {{ editPostLocation.name }}
-              </a>
-              <button class="remove-btn" @click="removeEditLocation">Remove</button>
-            </div>
-            <button v-else class="action-btn" @click="getEditLocation" title="Add Location">
-              <i class="mdi mdi-map-marker-outline"></i> Add Location
-            </button>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn text @click="cancelEditPost">Cancel</v-btn>
-            <v-btn color="primary" @click="saveEditPost">Update Post</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog> -->
-
       <div v-if="editPostPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        @click="cancelEditPost">
+           @click="cancelEditPost">
         <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md" @click.stop>
           <h3 class="text-lg font-bold mb-4">Edit Post</h3>
-          <!-- Current image (only if it exists) -->
           <div v-if="selectedPost && selectedPost.file_path" class="mb-4">
             <p class="text-sm text-gray-600 dark:text-gray-300">Current File:</p>
             <img v-if="!selectedPost.file_path.includes('.mp4')" :src="getImageUrl(selectedPost.file_path)"
-              alt="Current post image" class="max-w-full h-auto max-h-48 mb-2" />
+                 alt="Current post image" class="max-w-full h-auto max-h-48 mb-2" />
             <video v-else :src="getImageUrl(selectedPost.file_path)" controls
-              class="max-w-full h-auto max-h-48 mb-2"></video>
+                   class="max-w-full h-auto max-h-48 mb-2"></video>
           </div>
-          <!-- Input to replace file - Added @click.stop to prevent closing -->
           <label class="block mb-4">
             <span class="sr-only">Choose file</span>
             <input type="file" accept=".png, .jpg, .jpeg, .mp4" @change="handleEditFileUpload" @click.stop class="block w-full text-sm text-gray-500
@@ -172,13 +122,11 @@
           file:bg-blue-500 file:text-white
           hover:file:bg-blue-600" />
           </label>
-          <!-- Description field -->
           <input v-model="editPostDescription" type="text" placeholder="Description"
-            class="w-full p-2 border rounded mb-4 dark:bg-gray-700 dark:text-white" />
-          <!-- Action buttons -->
+                 class="w-full p-2 border rounded mb-4 dark:bg-gray-700 dark:text-white" />
           <div class="flex justify-end gap-2">
             <button @click="cancelEditPost"
-              class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white">
+                    class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white">
               Cancel
             </button>
             <button @click="saveEditPost" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
@@ -227,6 +175,8 @@ import Footer from '@/components/AppFooter.vue';
 import StoriesBar from '@/components/StoriesBar.vue';
 import axios from 'axios';
 import { generateAvatar } from '@/utils/avatar';
+import VEmojiPicker from 'vue3-emoji-picker';
+import 'vue3-emoji-picker/css';
 
 const loadTwemoji = () => {
   const script = document.createElement('script');
@@ -235,17 +185,16 @@ const loadTwemoji = () => {
   document.head.appendChild(script);
 };
 
-// Inicialización
 onMounted(() => {
   loadTwemoji();
   fetchPosts(1, true);
-  window.addEventListener('scroll', handleScroll, 'click', handleClickOutside);
+  window.addEventListener('scroll', handleScroll);
   window.addEventListener('click', handleClickOutside);
 });
 
-// Limpieza
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
+  window.removeEventListener('click', handleClickOutside);
   if (scrollDebounce.value) {
     clearTimeout(scrollDebounce.value);
   }
@@ -265,7 +214,7 @@ const isDeleting = ref(false);
 const postMenuVisible = ref(null);
 const editPostPopup = ref(false);
 const editPostDescription = ref('');
-const editPostLocation = ref(null); // For editing location
+const editPostLocation = ref(null);
 const editPostFile = ref(null);
 const stories = ref({ data: [] });
 const shares = ref(0);
@@ -274,28 +223,6 @@ const newPostFile = ref(null);
 const previewUrl = ref(null);
 const showEmojiPicker = ref(false);
 const selectedLocation = ref(null);
-const emojiPicker = ref(null);
-
-const emojis = ref([
-  '😀', '😂', '😍', '😢', '😡', '👍', '👎', '❤️', '🔥', '🎉',
-  '🤓', '😎', '🤗', '🙌', '💡', '🌟', '🍕', '🍔', '🍎', '🏈',
-  '⚽', '🎸', '🎨', '🏆', '🚀', '💯', '🔞', '🆒', '🆕', '🆙',
-  '🆓', '🆖', '🅿️', '🅰️', '🅱️', '🅾️', '🎵', '🎶', '🎼', '🎤',
-  '🎧', '🎦', '🎥', '🎬', '📺', '📻', '🎮', '🎲', '🃏', '🎯',
-  '🏹', '🎳', '🎰', '🚗', '🚕', '🚙', '🚌', '🚎', '🏎', '🚓',
-  '🚒', '🚑', '🚚', '🚛', '🚜', '🏍', '🚲', '🛴', '🚏', '🛵',
-  '🚀', '🚁', '🛩', '✈️', '🛫', '🛬', '🚦', '🚧', '⚓', '⛽',
-  '🚢', '🚤', '🛳', '⛵', '🚡', '🚠', '🚟', '🚝', '🚄', '🚅',
-  '🚈', '🚞', '🚋', '🚆', '🚇', '🚊', '🚉', '🚁', '🚂', '🚃',
-  '🚄', '🚅', '🚆', '🚇', '🚈', '🚉', '🚊', '🚋', '🚌', '🚍',
-  '🚎', '🚏', '🚐', '🚑', '🚒', '🚓', '🚔', '🚕', '🚖', '🚗',
-  '🚘', '🚙', '🚚', '🚛', '🚜', '🚝', '🚞', '🚟', '🚠', '🚡',
-  '🚢', '🚣', '🚤', '🚥', '🚦', '🚧', '🚨', '🚩', '🚪', '🚫',
-  '🚬', '🚭', '🚮', '🚯', '🚰', '🚱', '🚲', '🚳', '🚴', '🚵',
-  '🚶', '🚷', '🚸', '🚹', '🚺', '🚻', '🚼', '🚽', '🚾', '🚿',
-  '🛀', '🛁', '🛂', '🛃', '🛄', '🛅', '🛋', '🛌', '🛍', '🛎',
-  '🛏', '🛐', '🛑', '🛒', '🛓', '🛔', '🛕', '🛖', '🛗', '🛘',
-]);
 
 const currentUser = ref({
   id: null,
@@ -325,8 +252,6 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
       posts.value = [...posts.value, ...result.data.data];
     }
 
-    console.log("post",posts.value);
-
     currentPage.value = result.data.current_page;
     lastPage.value = result.data.last_page;
 
@@ -355,10 +280,8 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
 
     const storiesResult = await axios.get('http://localhost:8000/api/stories', {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-
     });
     stories.value = storiesResult.data;
-
   } catch (error) {
     console.error('Error al obtener datos', error.response?.data || error.message);
   } finally {
@@ -407,19 +330,27 @@ const toggleEmojiPicker = (event) => {
 };
 
 const handleClickOutside = (event) => {
-  // Close emoji picker if clicked outside
-  if (showEmojiPicker.value && emojiPicker.value && !emojiPicker.value.contains(event.target)) {
+  if (showEmojiPicker.value && !event.target.closest('.emoji-picker') && !event.target.closest('.action-btn')) {
     showEmojiPicker.value = false;
   }
-
-  // Close post menu if clicked outside
   if (postMenuVisible.value && !event.target.closest('.post-menu')) {
     postMenuVisible.value = null;
   }
 };
 
 const addEmoji = (emoji) => {
-  newPostContent.value += emoji;
+  console.log('Selected emoji data:', emoji); // Debug the emitted data
+  if (typeof emoji === 'string') {
+    newPostContent.value += emoji; // Direct string
+  } else if (emoji && emoji.i) {
+    newPostContent.value += emoji.i; // Likely property from vue3-emoji-picker
+  } else if (emoji && emoji.emoji) {
+    newPostContent.value += emoji.emoji; // Alternative property
+  } else if (emoji && emoji.code) {
+    newPostContent.value += emoji.code; // Another possible property
+  } else {
+    newPostContent.value += '❓'; // Fallback
+  }
   showEmojiPicker.value = false;
 };
 
@@ -434,14 +365,14 @@ const getLocation = () => {
           selectedLocation.value = {
             name: data.display_name || `Lat: ${latitude}, Lon: ${longitude}`,
             lat: latitude,
-            lon: longitude
+            lon: longitude,
           };
         } catch (error) {
           console.error('Error fetching location name:', error);
           selectedLocation.value = {
             name: `Lat: ${latitude}, Lon: ${longitude}`,
             lat: latitude,
-            lon: longitude
+            lon: longitude,
           };
         }
       },
@@ -470,14 +401,14 @@ const getEditLocation = () => {
           editPostLocation.value = {
             name: data.display_name || `Lat: ${latitude}, Lon: ${longitude}`,
             lat: latitude,
-            lon: longitude
+            lon: longitude,
           };
         } catch (error) {
           console.error('Error fetching location name:', error);
           editPostLocation.value = {
             name: `Lat: ${latitude}, Lon: ${longitude}`,
             lat: latitude,
-            lon: longitude
+            lon: longitude,
           };
         }
       },
@@ -504,7 +435,6 @@ const submitPost = async () => {
     const formData = new FormData();
     formData.append('description', newPostContent.value);
     formData.append('publish_date', publishDate);
-    console.log("current user",currentUser.value);
     formData.append('id_user', currentUser.value.id);
     if (newPostFile.value) formData.append('file', newPostFile.value);
     if (selectedLocation.value) formData.append('location', selectedLocation.value.name);
@@ -515,7 +445,7 @@ const submitPost = async () => {
       { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
     );
 
-    await fetchPosts(1,true);
+    await fetchPosts(1, true);
     newPostContent.value = '';
     newPostFile.value = null;
     previewUrl.value = null;
@@ -529,7 +459,6 @@ const submitPost = async () => {
 
 const renderPostDescription = (description) => {
   if (!description) return '';
-
   let html = description;
   html = html.replace(/\n/g, '<br>');
   return html;
@@ -548,23 +477,21 @@ const simplifyLocation = (location) => {
 
 const getImageUrl = (path) => {
   if (!path) return generateAvatar('User');
-  // Si ya es una URL completa, devolverla tal cual
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  // Si es una ruta local, añadir el prefijo de storage
   return `http://localhost:8000/storage/${path}`;
 };
+
 const getProfilePhotoById = (id) => {
   const user = users.value[id];
   if (user?.profile_photo_path) {
-    // Si es una URL completa, devolverla sin cambios
     if (user.profile_photo_path.startsWith('http://') || user.profile_photo_path.startsWith('https://')) {
       return user.profile_photo_path;
     }
-    // Si es una ruta local, añadir el prefijo
     return `http://localhost:8000/storage/${user.profile_photo_path}`;
   }
   return generateAvatar(user?.name || 'User');
 };
+
 const getUserNameById = (id) => users.value[id]?.name || 'Usuario desconocido';
 const getUsernameById = (id) => users.value[id]?.username || null;
 
@@ -575,11 +502,7 @@ const goToUserProfile = (userId) => {
 };
 
 const navigateToPost = (post, event) => {
-  // Don't navigate if clicking on menu or edit-related elements
-  if (event.target.closest('.post-menu, .dropdown-menu, [data-edit]')) {
-    return;
-  }
-
+  if (event.target.closest('.post-menu, .dropdown-menu, [data-edit]')) return;
   const username = getUsernameById(post.id_user);
   if (!username) {
     console.warn('No username found for userId:', post.id_user);
@@ -609,7 +532,7 @@ const togglePostMenu = (postId) => {
 };
 
 const editPost = (post) => {
-  postMenuVisible.value = null; // Close the menu when opening edit
+  postMenuVisible.value = null;
   selectedPost.value = post;
   editPostDescription.value = post.description || '';
   editPostLocation.value = post.location ? { name: post.location, lat: null, lon: null } : null;
@@ -651,15 +574,14 @@ const saveEditPost = async () => {
       }
     );
 
-    // Update the post in the posts array directly
     const updatedPost = response.data.post;
-    const postIndex = posts.value.data.findIndex(p => p.id === selectedPost.value.id);
+    const postIndex = posts.value.findIndex(p => p.id === selectedPost.value.id);
     if (postIndex !== -1) {
-      posts.value.data[postIndex] = {
-        ...posts.value.data[postIndex],
+      posts.value[postIndex] = {
+        ...posts.value[postIndex],
         description: updatedPost.description,
-        file_path: updatedPost.file_path || posts.value.data[postIndex].file_path,
-        updated_at: updatedPost.updated_at
+        file_path: updatedPost.file_path || posts.value[postIndex].file_path,
+        updated_at: updatedPost.updated_at,
       };
     }
 
@@ -676,9 +598,9 @@ const deletePost = async (postId) => {
   isDeleting.value = true;
   try {
     await axios.delete(`http://localhost:8000/api/posts/${postId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
-    posts.value.data = posts.value.data.filter(post => post.id !== postId);
+    posts.value = posts.value.filter(post => post.id !== postId);
   } catch (error) {
     console.error('Error deleting post:', error.response?.data || error.message);
     alert('Failed to delete post: ' + (error.response?.data?.message || error.message));
@@ -688,7 +610,7 @@ const deletePost = async (postId) => {
 };
 
 const reportPost = (post) => alert(`Reported post with ID: ${post.id}`);
-const sharePost = (post) => { };
+const sharePost = (post) => {};
 
 const formatDate = (dateString) => {
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -878,27 +800,8 @@ h1 {
   position: absolute;
   top: 100%;
   left: 0;
-  background: white;
-  border: 1px solid #d3d3d3;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   z-index: 1000;
-  padding: 10px;
-  max-height: 200px;
-  overflow-y: auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.emoji-item {
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.emoji-item:hover {
-  background: #f0f0f0;
-  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .post-description {
