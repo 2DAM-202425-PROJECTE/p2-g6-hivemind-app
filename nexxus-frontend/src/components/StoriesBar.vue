@@ -1,7 +1,7 @@
 <template>
   <div class="stories-bar">
     <!-- Botó per afegir històries -->
-    <div class="story-item add-story" @click="openCreateStoryModal">
+    <div class="story-item add-story" @click="showCreateStoryModal = true">
       <div class="add-story-icon">+</div>
       <p>Add Story</p>
     </div>
@@ -11,6 +11,8 @@
       <img :src="getProfilePhotoById(story.id_user)" alt="Story" class="story-image" />
       <p>{{ getUserNameById(story.id_user) }}</p>
     </div>
+
+    <CreateStoryImage v-model="showCreateStoryModal" @storyCreated="fetchStories" />
 
     <!-- Modal para mostrar la historia -->
     <v-dialog v-model="showStoryModal" max-width="500">
@@ -33,6 +35,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import axios from 'axios';
+import CreateStoryImage from './CreateStoryImage.vue';
 
 const users = ref([]);
 const showCreateStoryModal = ref(false);
@@ -129,6 +132,7 @@ const deleteStory = async (id) => {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
+    this.userId = response.data.id;
     showStoryModal.value = false;
     showSuccessPopup.value = true;
     await fetchStories();

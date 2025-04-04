@@ -449,9 +449,10 @@ const submitPost = async () => {
       return;
     }
 
-    if (!currentUser.value.id) {
-      console.error('Current user ID is not available');
-      alert('Error: User ID not found. Please log in again.');
+    // Check if currentUser is defined
+    if (!currentUser.value || !currentUser.value.id) {
+      console.error('Current user is not defined');
+      alert('Error: User not found. Please log in again.');
       return;
     }
 
