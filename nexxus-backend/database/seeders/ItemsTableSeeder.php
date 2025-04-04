@@ -17,17 +17,17 @@ class ItemsTableSeeder extends Seeder
             ['id' => 2, 'name' => 'Premium', 'price' => 9.99, 'iconUrl' => 'https://api.iconify.design/lucide/shield-check.svg', 'type' => 'subscription'],
             ['id' => 3, 'name' => 'Elite', 'price' => 19.99, 'iconUrl' => 'https://api.iconify.design/lucide/crown.svg', 'type' => 'subscription'],
 
-            // Credit Packs (8 items, unchanged)
+            // Credit Packs (8 items, organized by credit amount)
             ['id' => 4, 'name' => '100 Credits', 'price' => 1.99, 'iconUrl' => 'https://api.iconify.design/lucide/coins.svg', 'type' => 'credit_pack'],
+            ['id' => 9, 'name' => '200 Credits', 'price' => 3.99, 'iconUrl' => 'https://api.iconify.design/lucide/coins.svg', 'type' => 'credit_pack'],
             ['id' => 5, 'name' => '500 Credits', 'price' => 7.99, 'iconUrl' => 'https://api.iconify.design/lucide/coins.svg', 'type' => 'credit_pack'],
+            ['id' => 10, 'name' => '750 Credits', 'price' => 11.99, 'iconUrl' => 'https://api.iconify.design/lucide/coins.svg', 'type' => 'credit_pack'],
             ['id' => 6, 'name' => '1000 Credits', 'price' => 14.99, 'iconUrl' => 'https://api.iconify.design/lucide/coins.svg', 'type' => 'credit_pack'],
+            ['id' => 11, 'name' => '1500 Credits', 'price' => 24.99, 'iconUrl' => 'https://api.iconify.design/lucide/coins.svg', 'type' => 'credit_pack'],
             ['id' => 7, 'name' => '2500 Credits', 'price' => 34.99, 'iconUrl' => 'https://api.iconify.design/lucide/coins.svg', 'type' => 'credit_pack'],
             ['id' => 8, 'name' => '5000 Credits', 'price' => 59.99, 'iconUrl' => 'https://api.iconify.design/lucide/coins.svg', 'type' => 'credit_pack'],
-            ['id' => 9, 'name' => '200 Credits', 'price' => 3.99, 'iconUrl' => 'https://api.iconify.design/lucide/coins.svg', 'type' => 'credit_pack'],
-            ['id' => 10, 'name' => '750 Credits', 'price' => 11.99, 'iconUrl' => 'https://api.iconify.design/lucide/coins.svg', 'type' => 'credit_pack'],
-            ['id' => 11, 'name' => '1500 Credits', 'price' => 24.99, 'iconUrl' => 'https://api.iconify.design/lucide/coins.svg', 'type' => 'credit_pack'],
 
-            // Profile Icons (16 items: 8 original + 8 new)
+            // Profile Icons (16 items)
             ['id' => 12, 'name' => 'Mini Crown', 'price' => 150, 'iconUrl' => 'https://api.iconify.design/lucide/crown.svg', 'type' => 'profile_icon'],
             ['id' => 13, 'name' => 'Shining Star', 'price' => 100, 'iconUrl' => 'https://api.iconify.design/lucide/star.svg', 'type' => 'profile_icon'],
             ['id' => 14, 'name' => 'Glowing Heart', 'price' => 100, 'iconUrl' => 'https://api.iconify.design/lucide/heart.svg', 'type' => 'profile_icon'],
@@ -45,7 +45,7 @@ class ItemsTableSeeder extends Seeder
             ['id' => 66, 'name' => 'Anchor Drop', 'price' => 140, 'iconUrl' => 'https://api.iconify.design/lucide/anchor.svg', 'type' => 'profile_icon'],
             ['id' => 67, 'name' => 'Feather Light', 'price' => 110, 'iconUrl' => 'https://api.iconify.design/lucide/feather.svg', 'type' => 'profile_icon'],
 
-            // Backgrounds (16 items: 8 original + 8 new, all 4K from Unsplash)
+            // Backgrounds (16 items, replaced problematic ones)
             ['id' => 20, 'name' => 'Soft Gradient', 'price' => 300, 'iconUrl' => 'https://images.unsplash.com/photo-1557683316-973673baf926?w=3840&h=2160&fit=crop', 'type' => 'background'],
             ['id' => 21, 'name' => 'Starry Night', 'price' => 400, 'iconUrl' => 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=3840&h=2160&fit=crop', 'type' => 'background'],
             ['id' => 22, 'name' => 'Minimal Waves', 'price' => 350, 'iconUrl' => 'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=3840&h=2160&fit=crop', 'type' => 'background'],
@@ -55,15 +55,15 @@ class ItemsTableSeeder extends Seeder
             ['id' => 26, 'name' => 'Ocean Depth', 'price' => 350, 'iconUrl' => 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=3840&h=2160&fit=crop', 'type' => 'background'],
             ['id' => 27, 'name' => 'Desert Dunes', 'price' => 320, 'iconUrl' => 'https://images.unsplash.com/photo-1503435980610-a51f3ddfee50?w=3840&h=2160&fit=crop', 'type' => 'background'],
             ['id' => 68, 'name' => 'Mountain Peak', 'price' => 380, 'iconUrl' => 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=3840&h=2160&fit=crop', 'type' => 'background'],
-            ['id' => 69, 'name' => 'Aurora Veil', 'price' => 450, 'iconUrl' => 'https://images.unsplash.com/photo-1572017194838-5a665e45e2ff?w=3840&h=2160&fit=crop', 'type' => 'background'],
+            ['id' => 69, 'name' => 'Northern Lights', 'price' => 450, 'iconUrl' => 'https://images.unsplash.com/photo-1517436079540-236e6b308f9d?w=3840&h=2160&fit=crop', 'type' => 'background'], // Replaced Aurora Veil
             ['id' => 70, 'name' => 'Lush Valley', 'price' => 340, 'iconUrl' => 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=3840&h=2160&fit=crop', 'type' => 'background'],
-            ['id' => 71, 'name' => 'Twilight City', 'price' => 410, 'iconUrl' => 'https://images.unsplash.com/photo-1503428593587-593da4f8e398?w=3840&h=2160&fit=crop', 'type' => 'background'],
+            ['id' => 71, 'name' => 'Dusk Metropolis', 'price' => 410, 'iconUrl' => 'https://images.unsplash.com/photo-1536697246787-1f7ae568d89a?w=3840&h=2160&fit=crop', 'type' => 'background'], // Replaced Twilight City
             ['id' => 72, 'name' => 'Golden Fields', 'price' => 330, 'iconUrl' => 'https://images.unsplash.com/photo-1501696461415-6bd6660c6742?w=3840&h=2160&fit=crop', 'type' => 'background'],
-            ['id' => 73, 'name' => 'Icy Plains', 'price' => 360, 'iconUrl' => 'https://images.unsplash.com/photo-1485286166769-36b57196888f?w=3840&h=2160&fit=crop', 'type' => 'background'],
+            ['id' => 73, 'name' => 'Frosty Tundra', 'price' => 360, 'iconUrl' => 'https://images.unsplash.com/photo-1543773495-1f939b1c31b0?w=3840&h=2160&fit=crop', 'type' => 'background'], // Replaced Icy Plains
             ['id' => 74, 'name' => 'Volcanic Ash', 'price' => 390, 'iconUrl' => 'https://images.unsplash.com/photo-1528164344705-47542687000d?w=3840&h=2160&fit=crop', 'type' => 'background'],
-            ['id' => 75, 'name' => 'Cosmic Dust', 'price' => 420, 'iconUrl' => 'https://images.unsplash.com/photo-1447433693259-c8549e352d2d?w=3840&h=2160&fit=crop', 'type' => 'background'],
+            ['id' => 75, 'name' => 'Nebula Cloud', 'price' => 420, 'iconUrl' => 'https://images.unsplash.com/photo-1538370965046-79c0d6907d47?w=3840&h=2160&fit=crop', 'type' => 'background'], // Replaced Cosmic Dust
 
-            // Animations (16 items: 8 original + 8 new)
+            // Animations (16 items, replaced problematic ones)
             ['id' => 28, 'name' => 'Gentle Sparkle', 'price' => 500, 'iconUrl' => 'https://api.iconify.design/lucide/sparkles.svg', 'type' => 'animation'],
             ['id' => 29, 'name' => 'Fading Pulse', 'price' => 550, 'iconUrl' => 'https://api.iconify.design/lucide/activity.svg', 'type' => 'animation'],
             ['id' => 30, 'name' => 'Soft Ripple', 'price' => 500, 'iconUrl' => 'https://api.iconify.design/lucide/waves.svg', 'type' => 'animation'],
@@ -72,16 +72,16 @@ class ItemsTableSeeder extends Seeder
             ['id' => 33, 'name' => 'Twirl Flash', 'price' => 520, 'iconUrl' => 'https://api.iconify.design/lucide/refresh-cw.svg', 'type' => 'animation'],
             ['id' => 34, 'name' => 'Pulse Wave', 'price' => 530, 'iconUrl' => 'https://api.iconify.design/lucide/radio.svg', 'type' => 'animation'],
             ['id' => 35, 'name' => 'Star Burst', 'price' => 580, 'iconUrl' => 'https://api.iconify.design/lucide/sparkle.svg', 'type' => 'animation'],
-            ['id' => 76, 'name' => 'Meteor Shower', 'price' => 590, 'iconUrl' => 'https://api.iconify.design/lucide/shooting-star.svg', 'type' => 'animation'],
+            ['id' => 76, 'name' => 'Stellar Rain', 'price' => 590, 'iconUrl' => 'https://api.iconify.design/lucide/shooting-star.svg', 'type' => 'animation'], // Replaced Meteor Shower
             ['id' => 77, 'name' => 'Vortex Spin', 'price' => 560, 'iconUrl' => 'https://api.iconify.design/lucide/wind.svg', 'type' => 'animation'],
             ['id' => 78, 'name' => 'Flame Dance', 'price' => 540, 'iconUrl' => 'https://api.iconify.design/lucide/flame.svg', 'type' => 'animation'],
             ['id' => 79, 'name' => 'Frost Swirl', 'price' => 510, 'iconUrl' => 'https://api.iconify.design/lucide/snowflake.svg', 'type' => 'animation'],
             ['id' => 80, 'name' => 'Electric Surge', 'price' => 570, 'iconUrl' => 'https://api.iconify.design/lucide/zap.svg', 'type' => 'animation'],
-            ['id' => 81, 'name' => 'Shadow Fade', 'price' => 520, 'iconUrl' => 'https://api.iconify.design/lucide/shadow.svg', 'type' => 'animation'],
+            ['id' => 81, 'name' => 'Dusk Transition', 'price' => 520, 'iconUrl' => 'https://api.iconify.design/lucide/shadow.svg', 'type' => 'animation'], // Replaced Shadow Fade
             ['id' => 82, 'name' => 'Rainbow Pulse', 'price' => 600, 'iconUrl' => 'https://api.iconify.design/lucide/rainbow.svg', 'type' => 'animation'],
             ['id' => 83, 'name' => 'Bubble Pop', 'price' => 530, 'iconUrl' => 'https://api.iconify.design/lucide/droplets.svg', 'type' => 'animation'],
 
-            // Name Effects (16 items: 8 original + 8 new)
+            // Name Effects (16 items)
             ['id' => 36, 'name' => 'Soft Glow', 'price' => 300, 'iconUrl' => 'https://api.iconify.design/lucide/lamp.svg', 'type' => 'name_effect'],
             ['id' => 37, 'name' => 'Gradient Fade', 'price' => 350, 'iconUrl' => 'https://api.iconify.design/lucide/blend.svg', 'type' => 'name_effect'],
             ['id' => 38, 'name' => 'Golden Outline', 'price' => 400, 'iconUrl' => 'https://api.iconify.design/lucide/badge.svg', 'type' => 'name_effect'],
@@ -99,7 +99,7 @@ class ItemsTableSeeder extends Seeder
             ['id' => 90, 'name' => 'Crystal Pulse', 'price' => 400, 'iconUrl' => 'https://api.iconify.design/lucide/diamond.svg', 'type' => 'name_effect'],
             ['id' => 91, 'name' => 'Rainbow Gleam', 'price' => 420, 'iconUrl' => 'https://api.iconify.design/lucide/rainbow.svg', 'type' => 'name_effect'],
 
-            // Profile Frames (16 items: 8 original + 8 new)
+            // Profile Frames (16 items, replaced Vine Wrap)
             ['id' => 44, 'name' => 'Golden Ring', 'price' => 300, 'iconUrl' => 'https://api.iconify.design/lucide/circle.svg', 'type' => 'profile_frame'],
             ['id' => 45, 'name' => 'Crystal Edge', 'price' => 350, 'iconUrl' => 'https://api.iconify.design/lucide/diamond.svg', 'type' => 'profile_frame'],
             ['id' => 46, 'name' => 'Star Border', 'price' => 350, 'iconUrl' => 'https://api.iconify.design/lucide/star.svg', 'type' => 'profile_frame'],
@@ -113,11 +113,11 @@ class ItemsTableSeeder extends Seeder
             ['id' => 94, 'name' => 'Gear Frame', 'price' => 380, 'iconUrl' => 'https://api.iconify.design/lucide/cog.svg', 'type' => 'profile_frame'],
             ['id' => 95, 'name' => 'Moon Orbit', 'price' => 340, 'iconUrl' => 'https://api.iconify.design/lucide/moon.svg', 'type' => 'profile_frame'],
             ['id' => 96, 'name' => 'Sun Burst', 'price' => 390, 'iconUrl' => 'https://api.iconify.design/lucide/sun.svg', 'type' => 'profile_frame'],
-            ['id' => 97, 'name' => 'Vine Wrap', 'price' => 320, 'iconUrl' => 'https://api.iconify.design/lucide/vine.svg', 'type' => 'profile_frame'],
+            ['id' => 97, 'name' => 'Ivy Crown', 'price' => 320, 'iconUrl' => 'https://api.iconify.design/lucide/leafy-green.svg', 'type' => 'profile_frame'], // Replaced Vine Wrap
             ['id' => 98, 'name' => 'Neon Circuit', 'price' => 400, 'iconUrl' => 'https://api.iconify.design/lucide/circuit-board.svg', 'type' => 'profile_frame'],
             ['id' => 99, 'name' => 'Starfield Edge', 'price' => 410, 'iconUrl' => 'https://api.iconify.design/lucide/stars.svg', 'type' => 'profile_frame'],
 
-            // Profile Badges (16 items: 8 original + 8 new)
+            // Profile Badges (16 items)
             ['id' => 52, 'name' => 'Verified Badge', 'price' => 200, 'iconUrl' => 'https://api.iconify.design/lucide/check-circle.svg', 'type' => 'badge'],
             ['id' => 53, 'name' => 'Founder Badge', 'price' => 300, 'iconUrl' => 'https://api.iconify.design/lucide/award.svg', 'type' => 'badge'],
             ['id' => 54, 'name' => 'VIP Badge', 'price' => 250, 'iconUrl' => 'https://api.iconify.design/lucide/crown.svg', 'type' => 'badge'],

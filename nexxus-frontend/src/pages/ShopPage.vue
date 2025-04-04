@@ -168,10 +168,12 @@ export default {
           ...tier,
           price: tier.price === 0 ? 'Free' : `${tier.price}€/month`
         }));
-        this.creditPacks = response.data.creditPacks.map(pack => ({
-          ...pack,
-          price: `${pack.price}€`
-        }));
+        this.creditPacks = response.data.creditPacks
+          .sort((a, b) => parseInt(a.name) - parseInt(b.name)) // Sort by credit amount
+          .map(pack => ({
+            ...pack,
+            price: `${pack.price}€`
+          }));
         this.cosmeticCategories = this.categorizeCosmetics(response.data.cosmetics);
       } catch (error) {
         console.error('Failed to fetch categorized items:', error);
@@ -192,7 +194,7 @@ export default {
           description: 'Transform your profile with stunning background themes',
           items: cosmetics.filter(item =>
             ['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes',
-              'Mountain Peak', 'Aurora Veil', 'Lush Valley', 'Twilight City', 'Golden Fields', 'Icy Plains', 'Volcanic Ash', 'Cosmic Dust'].includes(item.name)
+              'Mountain Peak', 'Northern Lights', 'Lush Valley', 'Dusk Metropolis', 'Golden Fields', 'Frosty Tundra', 'Volcanic Ash', 'Nebula Cloud'].includes(item.name)
           ),
         },
         {
@@ -200,7 +202,7 @@ export default {
           description: 'Add dynamic effects to make your profile come alive',
           items: cosmetics.filter(item =>
             ['Gentle Sparkle', 'Fading Pulse', 'Soft Ripple', 'Orbit Glow', 'Subtle Glitch', 'Twirl Flash', 'Pulse Wave', 'Star Burst',
-              'Meteor Shower', 'Vortex Spin', 'Flame Dance', 'Frost Swirl', 'Electric Surge', 'Shadow Fade', 'Rainbow Pulse', 'Bubble Pop'].includes(item.name)
+              'Stellar Rain', 'Vortex Spin', 'Flame Dance', 'Frost Swirl', 'Electric Surge', 'Dusk Transition', 'Rainbow Pulse', 'Bubble Pop'].includes(item.name)
           ),
         },
         {
@@ -216,7 +218,7 @@ export default {
           description: 'Frame your profile picture with stunning borders',
           items: cosmetics.filter(item =>
             ['Golden Ring', 'Crystal Edge', 'Star Border', 'Cloud Frame', 'Tech Circuit', 'Leaf Wreath', 'Wave Crest', 'Pixel Grid',
-              'Flame Halo', 'Frost Ring', 'Gear Frame', 'Moon Orbit', 'Sun Burst', 'Vine Wrap', 'Neon Circuit', 'Starfield Edge'].includes(item.name)
+              'Flame Halo', 'Frost Ring', 'Gear Frame', 'Moon Orbit', 'Sun Burst', 'Ivy Crown', 'Neon Circuit', 'Starfield Edge'].includes(item.name)
           ),
         },
         {

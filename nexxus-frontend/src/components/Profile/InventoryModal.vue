@@ -226,13 +226,13 @@ const determineItemType = (itemName) => {
   if (['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem', 'Thunder Bolt', 'Moon Glow', 'Sun Flare',
     'Flame Crest', 'Snowflake Spark', 'Leaf Whisper', 'Wave Ripple', 'Cloud Drift', 'Gear Spin', 'Anchor Drop', 'Feather Light'].includes(itemName)) return 'profile_icon';
   if (['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes',
-    'Mountain Peak', 'Aurora Veil', 'Lush Valley', 'Twilight City', 'Golden Fields', 'Icy Plains', 'Volcanic Ash', 'Cosmic Dust'].includes(itemName)) return 'background';
+    'Mountain Peak', 'Northern Lights', 'Lush Valley', 'Dusk Metropolis', 'Golden Fields', 'Frosty Tundra', 'Volcanic Ash', 'Nebula Cloud'].includes(itemName)) return 'background';
   if (['Gentle Sparkle', 'Fading Pulse', 'Soft Ripple', 'Orbit Glow', 'Subtle Glitch', 'Twirl Flash', 'Pulse Wave', 'Star Burst',
-    'Meteor Shower', 'Vortex Spin', 'Flame Dance', 'Frost Swirl', 'Electric Surge', 'Shadow Fade', 'Rainbow Pulse', 'Bubble Pop'].includes(itemName)) return 'animation';
+    'Stellar Rain', 'Vortex Spin', 'Flame Dance', 'Frost Swirl', 'Electric Surge', 'Dusk Transition', 'Rainbow Pulse', 'Bubble Pop'].includes(itemName)) return 'animation';
   if (['Soft Glow', 'Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker',
     'Emerald Sheen', 'Shadow Drift', 'Electric Glow', 'Lunar Haze', 'Solar Flare', 'Wave Shimmer', 'Crystal Pulse', 'Rainbow Gleam'].includes(itemName)) return 'name_effect';
   if (['Golden Ring', 'Crystal Edge', 'Star Border', 'Cloud Frame', 'Tech Circuit', 'Leaf Wreath', 'Wave Crest', 'Pixel Grid',
-    'Flame Halo', 'Frost Ring', 'Gear Frame', 'Moon Orbit', 'Sun Burst', 'Vine Wrap', 'Neon Circuit', 'Starfield Edge'].includes(itemName)) return 'profile_frame';
+    'Flame Halo', 'Frost Ring', 'Gear Frame', 'Moon Orbit', 'Sun Burst', 'Ivy Crown', 'Neon Circuit', 'Starfield Edge'].includes(itemName)) return 'profile_frame';
   if (['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge', 'Legend Badge', 'Pioneer Badge', 'Guardian Badge',
     'Warrior Badge', 'Sage Badge', 'Star Gazer Badge', 'Trailblazer Badge', 'Elementalist Badge', 'Innovator Badge', 'Nomad Badge', 'Champion Badge'].includes(itemName)) return 'badge';
   return 'other';
