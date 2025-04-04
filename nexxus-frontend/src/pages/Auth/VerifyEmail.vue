@@ -180,13 +180,6 @@ export default {
   100% { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes bee {
-  0% { opacity: 0; transform: translateX(var(--start)) translateY(0); }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateX(110%) translateY(-20px); opacity: 0; }
-}
-
 .animate-bounce-in {
   animation: bounce-in 1s ease-out;
 }
@@ -213,18 +206,5 @@ export default {
   opacity: 0;
   animation: fade-in 1s ease-out forwards;
   animation-delay: 0.8s;
-}
-
-.bee {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  opacity: 0;
-}
-
-.animate-bee {
-  animation: bee linear forwards;
-  animation-duration: var(--duration);
-  animation-delay: var(--delay);
 }
 </style>
