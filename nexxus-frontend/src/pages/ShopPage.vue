@@ -120,7 +120,7 @@ export default {
       cosmeticCategories: [],
       userInventory: [],
       userId: null,
-      fallbackImage: 'https://api.iconify.design/lucide/image-off.svg', // Fallback image for errors
+      fallbackImage: 'https://api.iconify.design/lucide/image-off.svg',
     };
   },
   computed: {
@@ -183,42 +183,48 @@ export default {
           title: 'Profile Icons',
           description: 'Stand out with unique profile icons that showcase your personality',
           items: cosmetics.filter(item =>
-            ['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem', 'Thunder Bolt', 'Moon Glow', 'Sun Flare'].includes(item.name)
+            ['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem', 'Thunder Bolt', 'Moon Glow', 'Sun Flare',
+              'Flame Crest', 'Snowflake Spark', 'Leaf Whisper', 'Wave Ripple', 'Cloud Drift', 'Gear Spin', 'Anchor Drop', 'Feather Light'].includes(item.name)
           ),
         },
         {
           title: 'Backgrounds',
           description: 'Transform your profile with stunning background themes',
           items: cosmetics.filter(item =>
-            ['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes'].includes(item.name)
+            ['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes',
+              'Mountain Peak', 'Aurora Veil', 'Lush Valley', 'Twilight City', 'Golden Fields', 'Icy Plains', 'Volcanic Ash', 'Cosmic Dust'].includes(item.name)
           ),
         },
         {
           title: 'Animations',
           description: 'Add dynamic effects to make your profile come alive',
           items: cosmetics.filter(item =>
-            ['Gentle Sparkle', 'Fading Pulse', 'Soft Ripple', 'Orbit Glow', 'Subtle Glitch', 'Twirl Flash', 'Pulse Wave', 'Star Burst'].includes(item.name)
+            ['Gentle Sparkle', 'Fading Pulse', 'Soft Ripple', 'Orbit Glow', 'Subtle Glitch', 'Twirl Flash', 'Pulse Wave', 'Star Burst',
+              'Meteor Shower', 'Vortex Spin', 'Flame Dance', 'Frost Swirl', 'Electric Surge', 'Shadow Fade', 'Rainbow Pulse', 'Bubble Pop'].includes(item.name)
           ),
         },
         {
           title: 'Name Effects',
           description: 'Make your username stand out with eye-catching effects',
           items: cosmetics.filter(item =>
-            ['Soft Glow', 'Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker'].includes(item.name)
+            ['Soft Glow', 'Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker',
+              'Emerald Sheen', 'Shadow Drift', 'Electric Glow', 'Lunar Haze', 'Solar Flare', 'Wave Shimmer', 'Crystal Pulse', 'Rainbow Gleam'].includes(item.name)
           ),
         },
         {
           title: 'Profile Frames',
           description: 'Frame your profile picture with stunning borders',
           items: cosmetics.filter(item =>
-            ['Golden Ring', 'Crystal Edge', 'Star Border', 'Cloud Frame', 'Tech Circuit', 'Leaf Wreath', 'Wave Crest', 'Pixel Grid'].includes(item.name)
+            ['Golden Ring', 'Crystal Edge', 'Star Border', 'Cloud Frame', 'Tech Circuit', 'Leaf Wreath', 'Wave Crest', 'Pixel Grid',
+              'Flame Halo', 'Frost Ring', 'Gear Frame', 'Moon Orbit', 'Sun Burst', 'Vine Wrap', 'Neon Circuit', 'Starfield Edge'].includes(item.name)
           ),
         },
         {
           title: 'Profile Badges',
           description: 'Show off your status with exclusive profile badges',
           items: cosmetics.filter(item =>
-            ['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge', 'Legend Badge', 'Pioneer Badge', 'Guardian Badge'].includes(item.name)
+            ['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge', 'Legend Badge', 'Pioneer Badge', 'Guardian Badge',
+              'Warrior Badge', 'Sage Badge', 'Star Gazer Badge', 'Trailblazer Badge', 'Elementalist Badge', 'Innovator Badge', 'Nomad Badge', 'Champion Badge'].includes(item.name)
           ),
         },
       ].filter(category => category.items.length > 0);
@@ -244,7 +250,7 @@ export default {
     },
     handleImageError(item) {
       console.warn(`Image failed to load for ${item.name}: ${item.iconUrl}`);
-      item.iconUrl = this.fallbackImage; // Replace with fallback image
+      item.iconUrl = this.fallbackImage;
     },
   },
 };

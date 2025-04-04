@@ -1,3 +1,4 @@
+<!-- Profile.vue -->
 <template>
   <div
     class="min-h-screen bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white p-5 pb-24"
@@ -7,17 +8,22 @@
     <h1 class="text-2xl mb-5">Profile</h1>
 
     <div class="dark:bg-gray-700 rounded-lg p-5 max-w-5xl mx-auto">
-      <ProfileHeader :user="user" :is-current-user="isCurrentUser" :edit-profile="editProfile" :share-profile="shareProfile" :open-inventory="openInventory" />
+      <ProfileHeader
+        :user="user"
+        :is-current-user="isCurrentUser"
+        :edit-profile="editProfile"
+        :share-profile="shareProfile"
+        :open-inventory="openInventory"
+      />
       <ProfileStories :visible-stories="visibleStories" :prev-story="prevStory" :next-story="nextStory" />
       <ProfilePosts :user-posts="userPosts" :is-current-user="isCurrentUser" />
     </div>
 
     <ProfileEditModal :is-open="isEditModalVisible" :user="user" @close="isEditModalVisible = false" @save="updateUserProfile" />
-    <ShareModal v-if="isModalVisible" :share-url="shareUrl" @close="isModalVisible = false"/>
+    <ShareModal v-if="isModalVisible" :share-url="shareUrl" @close="isModalVisible = false" />
     <InventoryModal v-if="isInventoryModalVisible" :user="user" @close="isInventoryModalVisible = false" @update-user="updateUserProfile" />
-    <Footer/>
+    <Footer />
 
-    <!-- Snackbar para el mensaje de copia -->
     <v-snackbar
       v-model="snackbar"
       :timeout="2000"
@@ -52,7 +58,6 @@ const isInventoryModalVisible = ref(false);
 const shareUrl = ref('');
 const snackbar = ref(false);
 
-// Computed property to dynamically set the background style
 const backgroundStyle = computed(() => {
   return user.value?.equipped_background_path
     ? {

@@ -183,15 +183,15 @@ class UserController extends Controller
     public function updateEquippedNameEffect(Request $request)
     {
         $request->validate([
-            'userId' => 'required|integer|exists:users,id',
-            'equippedNameEffectPath' => 'nullable|string',
+            'userId' => 'required|exists:users,id',
+            'equipped_name_effect_path' => 'nullable|string',
         ]);
 
-        $user = User::find($request->input('userId'));
-        $user->equipped_name_effect_path = $request->input('equippedNameEffectPath');
+        $user = User::findOrFail($request->userId);
+        $user->equipped_name_effect_path = $request->equipped_name_effect_path;
         $user->save();
 
-        return response()->json(['message' => 'Equipped name effect updated successfully'], 200);
+        return response()->json(['message' => 'Name effect updated successfully', 'user' => $user]);
     }
 
     public function updateEquippedBadge(Request $request)

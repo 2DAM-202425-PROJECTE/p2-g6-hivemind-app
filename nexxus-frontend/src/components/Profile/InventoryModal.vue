@@ -45,7 +45,6 @@
       </div>
     </div>
 
-    <!-- Equip Confirmation Popup -->
     <div
       v-if="showEquipPopup"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
@@ -69,10 +68,7 @@ import { ref, onMounted } from 'vue';
 import apiClient from '@/axios.js';
 
 const props = defineProps({
-  user: {
-    type: Object,
-    required: true,
-  },
+  user: { type: Object, required: true },
 });
 
 const emit = defineEmits(['close', 'update-user']);
@@ -82,18 +78,12 @@ const equippedItemName = ref('');
 const inventory = ref([]);
 const inventoryCategories = ref([]);
 
-// Close inventory modal when clicking on the backdrop
 const closeInventoryOnBackdrop = (event) => {
-  if (event.target === event.currentTarget) {
-    emit('close');
-  }
+  if (event.target === event.currentTarget) emit('close');
 };
 
-// Close equip confirmation popup when clicking on the backdrop
 const closeEquipPopupOnBackdrop = (event) => {
-  if (event.target === event.currentTarget) {
-    showEquipPopup.value = false;
-  }
+  if (event.target === event.currentTarget) showEquipPopup.value = false;
 };
 
 const equipItem = async (item) => {
@@ -111,10 +101,10 @@ const equipItem = async (item) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const updatedFields = { [field]: path };
-      emit('update-user', updatedFields); // Emit to update profile page
+      emit('update-user', updatedFields);
       item.isEquipped = true;
       inventory.value.forEach(i => {
-        if (i.type === item.type && i.id !== item.id) i.isEquipped = false; // Unequip others of same type
+        if (i.type === item.type && i.id !== item.id) i.isEquipped = false;
       });
       inventoryCategories.value = categorizeInventory(inventory.value);
     } catch (error) {
@@ -144,7 +134,6 @@ const equipItem = async (item) => {
   }
 };
 
-// Unequip item function
 const unequipItem = async (item) => {
   const updateUnequipped = async (endpoint, field) => {
     try {
@@ -157,7 +146,7 @@ const unequipItem = async (item) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const updatedFields = { [field]: null };
-      emit('update-user', updatedFields); // Emit to update profile page
+      emit('update-user', updatedFields);
       item.isEquipped = false;
       equippedItemName.value = `${item.name} has been unequipped`;
       showEquipPopup.value = true;
@@ -189,80 +178,43 @@ const unequipItem = async (item) => {
   }
 };
 
-// Format price
 const formatPrice = (price) => {
   if (typeof price === 'string') return price;
   return price === 0 ? 'Free' : `${price} Credits`;
 };
 
-// Categorize inventory items based on type
 const categorizeInventory = (items) => {
   const categorized = [
-    {
-      title: 'Profile Icons',
-      description: 'Stand out with unique profile icons that showcase your personality',
-      items: items.filter(item => item.type === 'profile_icon'),
-    },
-    {
-      title: 'Backgrounds',
-      description: 'Transform your profile with stunning background themes',
-      items: items.filter(item => {
-        if (item.type === 'background') item.isBackground = true; // Add flag for styling
-        return item.type === 'background';
-      }),
-    },
-    {
-      title: 'Animations',
-      description: 'Add dynamic effects to make your profile come alive',
-      items: items.filter(item => item.type === 'animation'),
-    },
-    {
-      title: 'Name Effects',
-      description: 'Make your username stand out with eye-catching effects',
-      items: items.filter(item => item.type === 'name_effect'),
-    },
-    {
-      title: 'Profile Frames',
-      description: 'Frame your profile picture with stunning borders',
-      items: items.filter(item => item.type === 'profile_frame'),
-    },
-    {
-      title: 'Profile Badges',
-      description: 'Show off your status with exclusive profile badges',
-      items: items.filter(item => item.type === 'badge'),
-    },
-    {
-      title: 'Other Items',
-      description: 'Miscellaneous items in your inventory',
-      items: items.filter(item => !['profile_icon', 'background', 'animation', 'name_effect', 'profile_frame', 'badge'].includes(item.type)),
-    },
+    { title: 'Profile Icons', description: 'Stand out with unique profile icons', items: items.filter(item => item.type === 'profile_icon') },
+    { title: 'Backgrounds', description: 'Transform your profile with stunning themes', items: items.filter(item => { if (item.type === 'background') item.isBackground = true; return item.type === 'background'; }) },
+    { title: 'Animations', description: 'Add dynamic effects', items: items.filter(item => item.type === 'animation') },
+    { title: 'Name Effects', description: 'Make your username pop', items: items.filter(item => item.type === 'name_effect') },
+    { title: 'Profile Frames', description: 'Frame your profile picture', items: items.filter(item => item.type === 'profile_frame') },
+    { title: 'Profile Badges', description: 'Show off your status', items: items.filter(item => item.type === 'badge') },
+    { title: 'Other Items', description: 'Miscellaneous items', items: items.filter(item => !['profile_icon', 'background', 'animation', 'name_effect', 'profile_frame', 'badge'].includes(item.type)) },
   ].filter(category => category.items.length > 0);
-
   return categorized;
 };
 
-// Load inventory from API
 const loadInventory = async () => {
   if (!props.user?.id) return;
   try {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token found.');
-    const response = await apiClient.get(`/api/user/${props.user.id}/inventory`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    console.log('Raw API response:', response.data); // Log raw data for debugging
+    const response = await apiClient.get(`/api/user/${props.user.id}/inventory`, { headers: { Authorization: `Bearer ${token}` } });
+    console.log('Raw API response:', response.data);
     const mappedInventory = response.data.map(item => {
-      const itemData = item.item || item; // Handle nested or flat structure
+      const itemData = item.item || item;
       return {
         id: item.id,
         name: itemData.name,
         price: itemData.price || 0,
         icon_url: itemData.iconUrl || itemData.icon_url,
-        type: itemData.type || determineItemType(itemData.name), // Use API type if available, fallback to name-based
+        type: itemData.type || determineItemType(itemData.name),
         isEquipped: checkIfEquipped(itemData),
       };
     });
-    console.log('Mapped inventory:', mappedInventory); // Log mapped data for debugging
+    console.log('Mapped inventory:', mappedInventory);
     inventory.value = mappedInventory;
     inventoryCategories.value = categorizeInventory(mappedInventory);
   } catch (error) {
@@ -270,42 +222,31 @@ const loadInventory = async () => {
   }
 };
 
-// Helper functions
 const determineItemType = (itemName) => {
-  // Fallback logic if API doesn't provide type
-  if (['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem', 'Thunder Bolt', 'Moon Glow', 'Sun Flare'].includes(itemName)) {
-    return 'profile_icon';
-  } else if (['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes'].includes(itemName)) {
-    return 'background'; // Updated to include all 8 backgrounds
-  } else if (['Gentle Sparkle', 'Fading Pulse', 'Soft Ripple', 'Orbit Glow', 'Subtle Glitch', 'Twirl Flash', 'Pulse Wave', 'Star Burst'].includes(itemName)) {
-    return 'animation';
-  } else if (['Soft Glow', 'Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker'].includes(itemName)) {
-    return 'name_effect';
-  } else if (['Golden Ring', 'Crystal Edge', 'Star Border', 'Cloud Frame', 'Tech Circuit', 'Leaf Wreath', 'Wave Crest', 'Pixel Grid'].includes(itemName)) {
-    return 'profile_frame';
-  } else if (['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge', 'Legend Badge', 'Pioneer Badge', 'Guardian Badge'].includes(itemName)) {
-    return 'badge';
-  }
-  return 'other'; // Default for uncategorized items
+  if (['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem', 'Thunder Bolt', 'Moon Glow', 'Sun Flare',
+    'Flame Crest', 'Snowflake Spark', 'Leaf Whisper', 'Wave Ripple', 'Cloud Drift', 'Gear Spin', 'Anchor Drop', 'Feather Light'].includes(itemName)) return 'profile_icon';
+  if (['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes',
+    'Mountain Peak', 'Aurora Veil', 'Lush Valley', 'Twilight City', 'Golden Fields', 'Icy Plains', 'Volcanic Ash', 'Cosmic Dust'].includes(itemName)) return 'background';
+  if (['Gentle Sparkle', 'Fading Pulse', 'Soft Ripple', 'Orbit Glow', 'Subtle Glitch', 'Twirl Flash', 'Pulse Wave', 'Star Burst',
+    'Meteor Shower', 'Vortex Spin', 'Flame Dance', 'Frost Swirl', 'Electric Surge', 'Shadow Fade', 'Rainbow Pulse', 'Bubble Pop'].includes(itemName)) return 'animation';
+  if (['Soft Glow', 'Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker',
+    'Emerald Sheen', 'Shadow Drift', 'Electric Glow', 'Lunar Haze', 'Solar Flare', 'Wave Shimmer', 'Crystal Pulse', 'Rainbow Gleam'].includes(itemName)) return 'name_effect';
+  if (['Golden Ring', 'Crystal Edge', 'Star Border', 'Cloud Frame', 'Tech Circuit', 'Leaf Wreath', 'Wave Crest', 'Pixel Grid',
+    'Flame Halo', 'Frost Ring', 'Gear Frame', 'Moon Orbit', 'Sun Burst', 'Vine Wrap', 'Neon Circuit', 'Starfield Edge'].includes(itemName)) return 'profile_frame';
+  if (['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge', 'Legend Badge', 'Pioneer Badge', 'Guardian Badge',
+    'Warrior Badge', 'Sage Badge', 'Star Gazer Badge', 'Trailblazer Badge', 'Elementalist Badge', 'Innovator Badge', 'Nomad Badge', 'Champion Badge'].includes(itemName)) return 'badge';
+  return 'other';
 };
 
 const checkIfEquipped = (item) => {
-  const name = item.name;
   const iconUrl = item.iconUrl || item.icon_url;
-  if (['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem', 'Thunder Bolt', 'Moon Glow', 'Sun Flare'].includes(name)) {
-    return iconUrl === props.user.equipped_profile_icon_path;
-  } else if (['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes'].includes(name)) {
-    return iconUrl === props.user.equipped_background_path;
-  } else if (['Gentle Sparkle', 'Fading Pulse', 'Soft Ripple', 'Orbit Glow', 'Subtle Glitch', 'Twirl Flash', 'Pulse Wave', 'Star Burst'].includes(name)) {
-    return iconUrl === props.user.equipped_animation_path;
-  } else if (['Soft Glow', 'Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker'].includes(name)) {
-    return iconUrl === props.user.equipped_name_effect_path;
-  } else if (['Golden Ring', 'Crystal Edge', 'Star Border', 'Cloud Frame', 'Tech Circuit', 'Leaf Wreath', 'Wave Crest', 'Pixel Grid'].includes(name)) {
-    return iconUrl === props.user.equipped_profile_frame_path;
-  } else if (['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge', 'Legend Badge', 'Pioneer Badge', 'Guardian Badge'].includes(name)) {
-    return iconUrl === props.user.equipped_badge_path;
-  }
-  return false; // Default to false for uncategorized items
+  if (item.type === 'profile_icon') return iconUrl === props.user.equipped_profile_icon_path;
+  if (item.type === 'background') return iconUrl === props.user.equipped_background_path;
+  if (item.type === 'animation') return iconUrl === props.user.equipped_animation_path;
+  if (item.type === 'name_effect') return iconUrl === props.user.equipped_name_effect_path;
+  if (item.type === 'profile_frame') return iconUrl === props.user.equipped_profile_frame_path;
+  if (item.type === 'badge') return iconUrl === props.user.equipped_badge_path;
+  return false;
 };
 
 onMounted(() => {
@@ -411,7 +352,6 @@ onMounted(() => {
   background-color: #c82333;
 }
 
-/* Ensure the modal fits within the viewport */
 .fixed.inset-0 {
   display: flex;
   align-items: center;
