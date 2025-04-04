@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Log;
 
 final class AuthController extends Controller
 {
@@ -65,17 +66,17 @@ final class AuthController extends Controller
 
         // If the user does not exist or the password is incorrect, increment the attempts counter
         if (!$user || !Auth::attempt(['email' => $validated['email'], 'password' => $validated['password']])) {
-            RateLimiter::hit($attemptsKey, 1 * 60); // Increment attempts for 15 minutes
+            RateLimiter::hit($attemptsKey, 15); // Increment attempts for 15 minutes
             $attempts = RateLimiter::attempts($attemptsKey);
 
             // If the user has exceeded the maximum number of attempts, send an email notification and block the account for 15 minutes
             if ($attempts >= 5 && $user) {
                 $ipAddress = request()->ip();
-                Mail::to($validated['email'])->send(new \App\Mail\LoginAttemptsExceeded($user, $ipAddress));
+                Mail::to($validated['email'])->send(new LoginAttemptsExceeded($user, $ipAddress));
 
                 $seconds = RateLimiter::availableIn($attemptsKey);
                 return response()->json([
-                    'message' => "Too many login attempts. Please try again in $seconds seconds."
+                    'message' => "Too m any login attempts. Please try again in $seconds seconds."
                 ], 429);
             }
 

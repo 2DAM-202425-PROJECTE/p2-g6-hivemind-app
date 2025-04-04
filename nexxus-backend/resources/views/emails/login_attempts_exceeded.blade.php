@@ -17,7 +17,7 @@
 
 <p>If this wasn’t you buzzing around, here’s how to keep your hive safe:</p>
 <ul>
-    <li>Change your password right away by clicking <a href="{{ url('/password/reset') }}" style="color: #1a73e8;">here</a>.</li>
+    <li>Change your password right away by clicking <a href="{{ $frontendUrl }}/password/reset" style="color: #1a73e8;">here</a>.</li>
     <li>Check your recent activity for anything odd.</li>
     <li>Need help? Sting us a message at support.</li>
 </ul>
@@ -26,8 +26,8 @@
 
 <p>We take your security seriously, and we’re here to help you keep your hive buzzing safely.</p>
 <p>Thanks for being part of our hive!</p>
-<p>For more tips on keeping your account secure, check out our <a href="{{ url('/security-tips') }}" style="color: #1a73e8;">security tips</a>.</p>
-<p>And remember, if you ever feel like your account is in danger, you can always <a href="{{ url('/contact') }}" style="color: #1a73e8;">contact us</a>.</p>
+<p>For more tips on keeping your account secure, check out our <a href="{{ $frontendUrl }}/security-tips" style="color: #1a73e8;">security tips</a>.</p>
+<p>And remember, if you ever feel like your account is in danger, you can always <a href="{{ $frontendUrl }}/contact" style="color: #1a73e8;">contact us</a>.</p>
 
 <p>Stay safe and keep buzzing!</p>
 <p><strong>The HiveMind Crew</strong></p>

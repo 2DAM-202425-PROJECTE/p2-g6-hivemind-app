@@ -7,6 +7,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Monolog\Logger;
 
 class LoginAttemptsExceeded extends Mailable
 {
@@ -23,12 +24,13 @@ class LoginAttemptsExceeded extends Mailable
 
     public function build()
     {
-        Log::info('Building email with user', ['user' => $this->user->toArray()]);
-        return $this->subject('Suspicious Activity in Your Hive')
+        return $this->from(config('mail.noreply.address'), config('mail.noreply.name'))
+            ->subject('Suspicious Activity in Your Hive')
             ->view('emails.login_attempts_exceeded')
             ->with([
-                'user', $this->user,
-                'ipAddress', $this->ipAddress
+                'user' => $this->user,
+                'ipAddress' => $this->ipAddress,
+                'frontendUrl' => env('FRONTEND_URL'),
             ]);
     }
 }

@@ -21,7 +21,8 @@ class ContactConfirmation extends Mailable
 
     public function build()
     {
-        return $this->view('emails.contact_confirmation')
+        return $this->from(config('mail.contact.address'), config('mail.contact.name'))
+            ->view('emails.contact_confirmation')
             ->with('data', $this->data);
     }
 }

@@ -113,4 +113,15 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    // Custom from addresses for different purposes
+    'noreply' => [
+        'address' => env('MAIL_FROM_ADDRESS_NOREPLY', 'hivemindnexxus.noreply@gmail.com'),
+        'name' => env('MAIL_FROM_NAME_NOREPLY', 'No Reply'),
+    ],
+
+    'contact' => [
+        'address' => env('MAIL_FROM_ADDRESS_CONTACT', 'hivemindnexxuscontact@gmail.com'),
+        'name' => env('MAIL_FROM_NAME_CONTACT', 'Support Team'),
+    ],
+
 ];

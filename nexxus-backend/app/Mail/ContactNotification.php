@@ -19,7 +19,8 @@ class ContactNotification extends Mailable
 
     public function build()
     {
-        return $this->view('emails.contact_notification')
+        return $this->from(config('mail.contact.address'), config('mail.contact.name'))
+            ->view('emails.contact_notification')
             ->with('data', $this->data);
     }
 }
