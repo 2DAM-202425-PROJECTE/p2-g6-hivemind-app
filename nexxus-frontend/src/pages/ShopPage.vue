@@ -23,7 +23,7 @@
         <div class="trending-grid">
           <div v-for="item in trendingItems" :key="item.id" class="trending-item" :class="{ 'purchased': isPurchased(item.id) }">
             <div class="item-icon" :class="{ 'background-preview': item.type === 'background' }">
-              <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" />
+              <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" @error="handleImageError(item)" />
             </div>
             <h3 class="item-name">{{ item.name }}</h3>
             <p class="item-price">{{ formatPrice(item.price) }}</p>
@@ -43,7 +43,7 @@
         <h2 class="section-title">Subscriptions</h2>
         <div class="subscription-grid">
           <div v-for="tier in subscriptionTiers" :key="tier.id" class="subscription-card" :class="{ 'purchased': isPurchased(tier.id) }">
-            <img :src="tier.iconUrl" :alt="tier.name" class="cosmetic-icon" />
+            <img :src="tier.iconUrl" :alt="tier.name" class="cosmetic-icon" @error="handleImageError(tier)" />
             <h3 class="tier-title">{{ tier.name }}</h3>
             <p class="tier-price">{{ formatPrice(tier.price) }}</p>
             <button
@@ -62,7 +62,7 @@
         <h2 class="section-title">Buy Credits</h2>
         <div class="credits-grid">
           <div v-for="credit in creditPacks" :key="credit.id" class="credit-card">
-            <img :src="credit.iconUrl" :alt="credit.name" class="credit-icon" />
+            <img :src="credit.iconUrl" :alt="credit.name" class="credit-icon" @error="handleImageError(credit)" />
             <h3 class="credit-amount">{{ credit.name }}</h3>
             <p class="credit-price">{{ formatPrice(credit.price) }}</p>
             <button @click="goToPurchase(credit.id)" class="buy-button">Purchase</button>
@@ -80,7 +80,7 @@
             <div class="items-grid">
               <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'purchased': isPurchased(item.id), 'background-item': item.type === 'background' }">
                 <div class="item-preview" :class="{ 'background-preview': item.type === 'background' }">
-                  <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" />
+                  <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" @error="handleImageError(item)" />
                 </div>
                 <h4 class="item-name">{{ item.name }}</h4>
                 <p class="item-price">{{ formatPrice(item.price) }}</p>
@@ -120,6 +120,7 @@ export default {
       cosmeticCategories: [],
       userInventory: [],
       userId: null,
+      fallbackImage: 'https://api.iconify.design/lucide/image-off.svg', // Fallback image for errors
     };
   },
   computed: {
@@ -182,42 +183,42 @@ export default {
           title: 'Profile Icons',
           description: 'Stand out with unique profile icons that showcase your personality',
           items: cosmetics.filter(item =>
-            ['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem'].includes(item.name)
+            ['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem', 'Thunder Bolt', 'Moon Glow', 'Sun Flare'].includes(item.name)
           ),
         },
         {
           title: 'Backgrounds',
           description: 'Transform your profile with stunning background themes',
           items: cosmetics.filter(item =>
-            ['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow'].includes(item.name)
+            ['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes'].includes(item.name)
           ),
         },
         {
           title: 'Animations',
           description: 'Add dynamic effects to make your profile come alive',
           items: cosmetics.filter(item =>
-            ['Gentle Sparkle', 'Fading Pulse', 'Soft Ripple', 'Orbit Glow', 'Subtle Glitch'].includes(item.name)
+            ['Gentle Sparkle', 'Fading Pulse', 'Soft Ripple', 'Orbit Glow', 'Subtle Glitch', 'Twirl Flash', 'Pulse Wave', 'Star Burst'].includes(item.name)
           ),
         },
         {
           title: 'Name Effects',
           description: 'Make your username stand out with eye-catching effects',
           items: cosmetics.filter(item =>
-            ['Soft Glow', 'Gradient Fade', 'Golden Outline', 'Deep Shadow', 'Cosmic Shine'].includes(item.name)
+            ['Soft Glow', 'Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker'].includes(item.name)
           ),
         },
         {
           title: 'Profile Frames',
           description: 'Frame your profile picture with stunning borders',
           items: cosmetics.filter(item =>
-            ['Golden Ring', 'Crystal Edge', 'Star Border', 'Cloud Frame', 'Tech Circuit'].includes(item.name)
+            ['Golden Ring', 'Crystal Edge', 'Star Border', 'Cloud Frame', 'Tech Circuit', 'Leaf Wreath', 'Wave Crest', 'Pixel Grid'].includes(item.name)
           ),
         },
         {
           title: 'Profile Badges',
           description: 'Show off your status with exclusive profile badges',
           items: cosmetics.filter(item =>
-            ['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge'].includes(item.name)
+            ['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge', 'Legend Badge', 'Pioneer Badge', 'Guardian Badge'].includes(item.name)
           ),
         },
       ].filter(category => category.items.length > 0);
@@ -240,6 +241,10 @@ export default {
     },
     isPurchased(itemId) {
       return this.userInventory.includes(itemId);
+    },
+    handleImageError(item) {
+      console.warn(`Image failed to load for ${item.name}: ${item.iconUrl}`);
+      item.iconUrl = this.fallbackImage; // Replace with fallback image
     },
   },
 };
@@ -379,7 +384,7 @@ section {
 /* Credits Section */
 .credits-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
 }
 
@@ -475,7 +480,6 @@ section {
   }
 
   .subscription-grid,
-  .credits-grid,
   .cosmetics-grid {
     grid-template-columns: 1fr;
   }
