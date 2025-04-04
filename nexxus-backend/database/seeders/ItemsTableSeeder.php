@@ -37,15 +37,15 @@ class ItemsTableSeeder extends Seeder
             ['id' => 18, 'name' => 'Moon Glow', 'price' => 120, 'iconUrl' => 'https://api.iconify.design/lucide/moon.svg', 'type' => 'profile_icon'],
             ['id' => 19, 'name' => 'Sun Flare', 'price' => 130, 'iconUrl' => 'https://api.iconify.design/lucide/sun.svg', 'type' => 'profile_icon'],
 
-            // Backgrounds (8 items)
-            ['id' => 20, 'name' => 'Soft Gradient', 'price' => 300, 'iconUrl' => 'https://images.unsplash.com/photo-1557683316-973673baf926?w=200&h=200&fit=crop', 'type' => 'background'],
-            ['id' => 21, 'name' => 'Starry Night', 'price' => 400, 'iconUrl' => 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=200&h=200&fit=crop', 'type' => 'background'],
-            ['id' => 22, 'name' => 'Minimal Waves', 'price' => 350, 'iconUrl' => 'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=200&h=200&fit=crop', 'type' => 'background'],
-            ['id' => 23, 'name' => 'Pastel Sky', 'price' => 350, 'iconUrl' => 'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?w=200&h=200&fit=crop', 'type' => 'background'],
-            ['id' => 24, 'name' => 'Urban Glow', 'price' => 400, 'iconUrl' => 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=200&h=200&fit=crop', 'type' => 'background'],
-            ['id' => 25, 'name' => 'Forest Mist', 'price' => 300, 'iconUrl' => 'https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=200&h=200&fit=crop', 'type' => 'background'],
-            ['id' => 26, 'name' => 'Ocean Depth', 'price' => 350, 'iconUrl' => 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200&h=200&fit=crop', 'type' => 'background'],
-            ['id' => 27, 'name' => 'Desert Dunes', 'price' => 320, 'iconUrl' => 'https://images.unsplash.com/photo-1503435980610-a51f3ddfee50?w=200&h=200&fit=crop', 'type' => 'background'],
+            // Backgrounds (8 items) - Updated to high-resolution URLs
+            ['id' => 20, 'name' => 'Soft Gradient', 'price' => 300, 'iconUrl' => 'https://images.unsplash.com/photo-1557683316-973673baf926?w=1920&h=1080&fit=crop', 'type' => 'background'],
+            ['id' => 21, 'name' => 'Starry Night', 'price' => 400, 'iconUrl' => 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1920&h=1080&fit=crop', 'type' => 'background'],
+            ['id' => 22, 'name' => 'Minimal Waves', 'price' => 350, 'iconUrl' => 'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=1920&h=1080&fit=crop', 'type' => 'background'],
+            ['id' => 23, 'name' => 'Pastel Sky', 'price' => 350, 'iconUrl' => 'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?w=1920&h=1080&fit=crop', 'type' => 'background'],
+            ['id' => 24, 'name' => 'Urban Glow', 'price' => 400, 'iconUrl' => 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&h=1080&fit=crop', 'type' => 'background'],
+            ['id' => 25, 'name' => 'Forest Mist', 'price' => 300, 'iconUrl' => 'https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=1920&h=1080&fit=crop', 'type' => 'background'],
+            ['id' => 26, 'name' => 'Ocean Depth', 'price' => 350, 'iconUrl' => 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&h=1080&fit=crop', 'type' => 'background'],
+            ['id' => 27, 'name' => 'Desert Dunes', 'price' => 320, 'iconUrl' => 'https://images.unsplash.com/photo-1503435980610-a51f3ddfee50?w=1920&h=1080&fit=crop', 'type' => 'background'],
 
             // Animations (8 items)
             ['id' => 28, 'name' => 'Gentle Sparkle', 'price' => 500, 'iconUrl' => 'https://api.iconify.design/lucide/sparkles.svg', 'type' => 'animation'],
