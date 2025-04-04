@@ -21,13 +21,19 @@
       <section class="trending-section">
         <h2 class="section-title">Trending Items</h2>
         <div class="trending-grid">
-          <div v-for="(item, index) in trendingItems" :key="index" class="trending-item">
-            <div class="item-icon">
-              <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" />
+          <div v-for="item in trendingItems" :key="item.id" class="trending-item" :class="{ 'purchased': isPurchased(item.id) }">
+            <div class="item-icon" :class="{ 'background-preview': item.type === 'background' }">
+              <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" @error="handleImageError(item)" />
             </div>
             <h3 class="item-name">{{ item.name }}</h3>
-            <p class="item-price">{{ item.price }}</p>
-            <button @click="goToPurchase(item.id)" class="buy-button">Purchase</button>
+            <p class="item-price">{{ formatPrice(item.price) }}</p>
+            <button
+              @click="goToPurchase(item.id)"
+              class="buy-button"
+              :disabled="isPurchased(item.id)"
+            >
+              {{ isPurchased(item.id) ? 'Owned' : 'Purchase' }}
+            </button>
           </div>
         </div>
       </section>
@@ -36,14 +42,17 @@
       <section class="subscriptions-section">
         <h2 class="section-title">Subscriptions</h2>
         <div class="subscription-grid">
-          <div v-for="tier in subscriptionTiers" :key="tier.id" class="subscription-card">
-            <img :src="tier.iconUrl" :alt="tier.title" class="cosmetic-icon" />
-            <h3 class="tier-title">{{ tier.title }}</h3>
-            <p class="tier-price">{{ tier.price }}</p>
-            <ul class="tier-features">
-              <li v-for="(feature, index) in tier.features" :key="index">{{ feature }}</li>
-            </ul>
-            <button @click="goToPurchase(tier.id)" class="buy-button">Purchase</button>
+          <div v-for="tier in subscriptionTiers" :key="tier.id" class="subscription-card" :class="{ 'purchased': isPurchased(tier.id) }">
+            <img :src="tier.iconUrl" :alt="tier.name" class="cosmetic-icon" @error="handleImageError(tier)" />
+            <h3 class="tier-title">{{ tier.name }}</h3>
+            <p class="tier-price">{{ formatPrice(tier.price) }}</p>
+            <button
+              @click="goToPurchase(tier.id)"
+              class="buy-button"
+              :disabled="isPurchased(tier.id)"
+            >
+              {{ isPurchased(tier.id) ? 'Owned' : 'Purchase' }}
+            </button>
           </div>
         </div>
       </section>
@@ -52,10 +61,10 @@
       <section id="buy-credits" class="credits-section">
         <h2 class="section-title">Buy Credits</h2>
         <div class="credits-grid">
-          <div v-for="(credit, index) in creditPacks" :key="index" class="credit-card">
-            <img :src="credit.iconUrl" :alt="credit.amount" class="credit-icon" />
-            <h3 class="credit-amount">{{ credit.amount }} Credits</h3>
-            <p class="credit-price">{{ credit.price }}</p>
+          <div v-for="credit in creditPacks" :key="credit.id" class="credit-card">
+            <img :src="credit.iconUrl" :alt="credit.name" class="credit-icon" @error="handleImageError(credit)" />
+            <h3 class="credit-amount">{{ credit.name }}</h3>
+            <p class="credit-price">{{ formatPrice(credit.price) }}</p>
             <button @click="goToPurchase(credit.id)" class="buy-button">Purchase</button>
           </div>
         </div>
@@ -69,11 +78,19 @@
             <h3 class="category-title">{{ category.title }}</h3>
             <p class="category-description">{{ category.description }}</p>
             <div class="items-grid">
-              <div v-for="item in category.items" :key="item.id" class="cosmetic-item">
-                <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" />
+              <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'purchased': isPurchased(item.id), 'background-item': item.type === 'background' }">
+                <div class="item-preview" :class="{ 'background-preview': item.type === 'background' }">
+                  <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" @error="handleImageError(item)" />
+                </div>
                 <h4 class="item-name">{{ item.name }}</h4>
-                <p class="item-price">{{ item.price }}</p>
-                <button @click="goToPurchase(item.id)" class="buy-button">Purchase</button>
+                <p class="item-price">{{ formatPrice(item.price) }}</p>
+                <button
+                  @click="goToPurchase(item.id)"
+                  class="buy-button"
+                  :disabled="isPurchased(item.id)"
+                >
+                  {{ isPurchased(item.id) ? 'Owned' : 'Purchase' }}
+                </button>
               </div>
             </div>
           </div>
@@ -88,6 +105,7 @@
 <script>
 import NavBar from '../components/NavBar.vue';
 import AppFooter from '../components/AppFooter.vue';
+import apiClient from '@/axios.js';
 
 export default {
   name: 'ShopPage',
@@ -97,131 +115,118 @@ export default {
   },
   data() {
     return {
-      subscriptionTiers: [
-        {
-
-          id: 1,
-          title: 'Basic',
-          price: 'Free',
-          features: ['Access to basic features', '1 exclusive profile icon', '100 monthly credits'],
-          iconUrl: 'https://api.iconify.design/lucide/sprout.svg' // Simple, fresh start
-        },
-        {
-          id: 2,
-          title: 'Standard Premium',
-          price: '10€/month',
-          features: ['Advanced features', '3 exclusive icons', '500 monthly credits'],
-          iconUrl: 'https://api.iconify.design/lucide/shield.svg' // Protection, solid mid-tier
-        },
-        {
-          id: 3,
-          title: 'Ultimate Premium',
-          price: '20€/month',
-          features: ['Full access to all features', '10 exclusive icons', '1000 monthly credits + bonuses'],
-          iconUrl: 'https://api.iconify.design/lucide/trophy.svg' // Victory, top-tier achievement
-        },
-      ],
-      creditPacks: [
-        { id: 4, amount: '100', price: '2€', iconUrl: 'https://api.iconify.design/lucide/coins.svg' },
-        { id: 5, amount: '500', price: '8€', iconUrl: 'https://api.iconify.design/lucide/coins.svg' },
-        { id: 6, amount: '1000', price: '15€', iconUrl: 'https://api.iconify.design/lucide/coins.svg' },
-        { id: 7, amount: '5000', price: '60€', iconUrl: 'https://api.iconify.design/lucide/coins.svg' },
-      ],
-      cosmeticCategories: [
-        {
-          title: 'Profile Icons',
-          description: 'Stand out with unique profile icons that showcase your personality',
-          items: [
-            { id: 8, name: 'Crown Icon', price: '250 Credits', iconUrl: 'https://api.iconify.design/lucide/crown.svg' },
-            { id: 9, name: 'Star Icon', price: '150 Credits', iconUrl: 'https://api.iconify.design/lucide/star.svg' },
-            { id: 10, name: 'Heart Icon', price: '100 Credits', iconUrl: 'https://api.iconify.design/lucide/heart.svg' },
-            { id: 11, name: 'Ghost Icon', price: '200 Credits', iconUrl: 'https://api.iconify.design/lucide/ghost.svg' },
-            { id: 12, name: 'Diamond Icon', price: '300 Credits', iconUrl: 'https://api.iconify.design/lucide/diamond.svg' },
-            { id: 13, name: 'Lightning Icon', price: '200 Credits', iconUrl: 'https://api.iconify.design/lucide/zap.svg' },
-            { id: 14, name: 'Fire Icon', price: '200 Credits', iconUrl: 'https://api.iconify.design/lucide/flame.svg' },
-            { id: 15, name: 'Music Icon', price: '150 Credits', iconUrl: 'https://api.iconify.design/lucide/music.svg' },
-          ],
-        },
-        {
-          title: 'Backgrounds',
-          description: 'Transform your profile with stunning background themes',
-          items: [
-            { id: 16, name: 'Galaxy', price: '500 Credits', iconUrl: 'https://api.iconify.design/lucide/sparkles.svg' },
-            { id: 17, name: 'Night City', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/building-2.svg' },
-            { id: 18, name: 'Mountain', price: '300 Credits', iconUrl: 'https://api.iconify.design/lucide/mountain.svg' },
-            { id: 19, name: 'Blossom', price: '350 Credits', iconUrl: 'https://api.iconify.design/lucide/flower-2.svg' },
-            { id: 20, name: 'Ocean', price: '450 Credits', iconUrl: 'https://api.iconify.design/lucide/waves.svg' },
-            { id: 21, name: 'Forest', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/trees.svg' },
-            { id: 22, name: 'Desert', price: '350 Credits', iconUrl: 'https://api.iconify.design/lucide/sun.svg' },
-            { id: 23, name: 'Space', price: '550 Credits', iconUrl: 'https://api.iconify.design/lucide/moon.svg' },
-          ],
-        },
-        {
-          title: 'Animations',
-          description: 'Add dynamic effects to make your profile come alive',
-          items: [
-            { id: 24, name: 'Sparkle', price: '600 Credits', iconUrl: 'https://api.iconify.design/lucide/sparkles.svg' },
-            { id: 25, name: 'Wind', price: '700 Credits', iconUrl: 'https://api.iconify.design/lucide/wind.svg' },
-            { id: 26, name: 'Fire', price: '800 Credits', iconUrl: 'https://api.iconify.design/lucide/flame.svg' },
-            { id: 27, name: 'Wave', price: '750 Credits', iconUrl: 'https://api.iconify.design/lucide/waves.svg' },
-            { id: 28, name: 'Rainbow', price: '900 Credits', iconUrl: 'https://api.iconify.design/lucide/palette.svg' },
-            { id: 29, name: 'Glitch', price: '850 Credits', iconUrl: 'https://api.iconify.design/lucide/scan-line.svg' },
-            { id: 30, name: 'Pulse', price: '700 Credits', iconUrl: 'https://api.iconify.design/lucide/activity.svg' },
-            { id: 31, name: 'Orbit', price: '800 Credits', iconUrl: 'https://api.iconify.design/lucide/orbit.svg' },
-          ],
-        },
-        {
-          title: 'Emojis',
-          description: 'Express yourself with premium animated emojis',
-          items: [
-            { id: 32, name: 'Smile Emoji', price: '50 Credits', iconUrl: 'https://api.iconify.design/lucide/smile.svg' },
-            { id: 33, name: 'Laugh Emoji', price: '50 Credits', iconUrl: 'https://api.iconify.design/lucide/laugh.svg' },
-            { id: 34, name: 'Wink Emoji', price: '50 Credits', iconUrl: 'https://api.iconify.design/lucide/smile-plus.svg' },
-            { id: 35, name: 'Cool Emoji', price: '50 Credits', iconUrl: 'https://api.iconify.design/lucide/sun.svg' },
-            { id: 36, name: 'Party Emoji', price: '75 Credits', iconUrl: 'https://api.iconify.design/lucide/party-popper.svg' },
-            { id: 37, name: 'Love Emoji', price: '75 Credits', iconUrl: 'https://api.iconify.design/lucide/heart-handshake.svg' },
-            { id: 38, name: 'Surprised Emoji', price: '50 Credits', iconUrl: 'https://api.iconify.design/lucide/circle-dot.svg' },
-            { id: 39, name: 'Star Eyes Emoji', price: '75 Credits', iconUrl: 'https://api.iconify.design/lucide/star.svg' },
-          ],
-        },
-        {
-          title: 'Name Effects',
-          description: 'Make your username stand out with eye-catching effects',
-          items: [
-            { id: 40, name: 'Gradient', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/blend.svg' },
-            { id: 41, name: 'Neon', price: '450 Credits', iconUrl: 'https://api.iconify.design/lucide/lamp.svg' },
-            { id: 42, name: 'Gold', price: '500 Credits', iconUrl: 'https://api.iconify.design/lucide/badge.svg' },
-            { id: 43, name: 'Rainbow', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/palette.svg' },
-            { id: 44, name: 'Glitter', price: '450 Credits', iconUrl: 'https://api.iconify.design/lucide/sparkles.svg' },
-            { id: 45, name: 'Shadow', price: '350 Credits', iconUrl: 'https://api.iconify.design/lucide/box.svg' },
-            { id: 46, name: 'Pixel', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/square.svg' },
-            { id: 47, name: 'Cosmic', price: '500 Credits', iconUrl: 'https://api.iconify.design/lucide/stars.svg' },
-          ],
-        },
-        {
-          title: 'Profile Frames',
-          description: 'Frame your profile picture with stunning borders',
-          items: [
-            { id: 48, name: 'Golden Frame', price: '300 Credits', iconUrl: 'https://api.iconify.design/lucide/square.svg' },
-            { id: 49, name: 'Crystal Frame', price: '350 Credits', iconUrl: 'https://api.iconify.design/lucide/pentagon.svg' },
-            { id: 50, name: 'Flame Frame', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/flame.svg' },
-            { id: 51, name: 'Nature Frame', price: '300 Credits', iconUrl: 'https://api.iconify.design/lucide/flower.svg' },
-            { id: 52, name: 'Tech Frame', price: '350 Credits', iconUrl: 'https://api.iconify.design/lucide/cpu.svg' },
-            { id: 53, name: 'Star Frame', price: '400 Credits', iconUrl: 'https://api.iconify.design/lucide/star.svg' },
-            { id: 54, name: 'Cloud Frame', price: '300 Credits', iconUrl: 'https://api.iconify.design/lucide/cloud.svg' },
-            { id: 55, name: 'Royal Frame', price: '450 Credits', iconUrl: 'https://api.iconify.design/lucide/crown.svg' },
-          ],
-        },
-      ],
+      subscriptionTiers: [],
+      creditPacks: [],
+      cosmeticCategories: [],
+      userInventory: [],
+      userId: null,
+      fallbackImage: 'https://api.iconify.design/lucide/image-off.svg', // Fallback image for errors
     };
   },
   computed: {
     trendingItems() {
       const allItems = this.cosmeticCategories.flatMap(category => category.items);
-      return this.shuffleArray([...allItems]).slice(0, 5); // Use spread to avoid mutating original array
+      return this.shuffleArray([...allItems]).slice(0, 5);
     },
   },
+  created() {
+    this.fetchCurrentUser();
+    this.fetchCategorizedItems();
+  },
   methods: {
+    async fetchCurrentUser() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+
+        const response = await apiClient.get('/api/user', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        this.userId = response.data.id;
+        await this.fetchUserInventory();
+      } catch (error) {
+        console.error('Failed to fetch current user:', error);
+      }
+    },
+    async fetchUserInventory() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await apiClient.get(`/api/user/${this.userId}/inventory`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        this.userInventory = response.data.map(item => item.item_id);
+      } catch (error) {
+        console.error('Failed to fetch user inventory:', error);
+      }
+    },
+    async fetchCategorizedItems() {
+      try {
+        const response = await apiClient.get('/api/shop/categorized-items', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        this.subscriptionTiers = response.data.subscriptions.map(tier => ({
+          ...tier,
+          price: tier.price === 0 ? 'Free' : `${tier.price}€/month`
+        }));
+        this.creditPacks = response.data.creditPacks.map(pack => ({
+          ...pack,
+          price: `${pack.price}€`
+        }));
+        this.cosmeticCategories = this.categorizeCosmetics(response.data.cosmetics);
+      } catch (error) {
+        console.error('Failed to fetch categorized items:', error);
+      }
+    },
+    categorizeCosmetics(cosmetics) {
+      return [
+        {
+          title: 'Profile Icons',
+          description: 'Stand out with unique profile icons that showcase your personality',
+          items: cosmetics.filter(item =>
+            ['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem', 'Thunder Bolt', 'Moon Glow', 'Sun Flare'].includes(item.name)
+          ),
+        },
+        {
+          title: 'Backgrounds',
+          description: 'Transform your profile with stunning background themes',
+          items: cosmetics.filter(item =>
+            ['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes'].includes(item.name)
+          ),
+        },
+        {
+          title: 'Animations',
+          description: 'Add dynamic effects to make your profile come alive',
+          items: cosmetics.filter(item =>
+            ['Gentle Sparkle', 'Fading Pulse', 'Soft Ripple', 'Orbit Glow', 'Subtle Glitch', 'Twirl Flash', 'Pulse Wave', 'Star Burst'].includes(item.name)
+          ),
+        },
+        {
+          title: 'Name Effects',
+          description: 'Make your username stand out with eye-catching effects',
+          items: cosmetics.filter(item =>
+            ['Soft Glow', 'Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker'].includes(item.name)
+          ),
+        },
+        {
+          title: 'Profile Frames',
+          description: 'Frame your profile picture with stunning borders',
+          items: cosmetics.filter(item =>
+            ['Golden Ring', 'Crystal Edge', 'Star Border', 'Cloud Frame', 'Tech Circuit', 'Leaf Wreath', 'Wave Crest', 'Pixel Grid'].includes(item.name)
+          ),
+        },
+        {
+          title: 'Profile Badges',
+          description: 'Show off your status with exclusive profile badges',
+          items: cosmetics.filter(item =>
+            ['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge', 'Legend Badge', 'Pioneer Badge', 'Guardian Badge'].includes(item.name)
+          ),
+        },
+      ].filter(category => category.items.length > 0);
+    },
+    formatPrice(price) {
+      if (typeof price === 'string') return price;
+      return price === 0 ? 'Free' : `${price} Credits`;
+    },
     shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -230,13 +235,16 @@ export default {
       return array;
     },
     goToPurchase(itemId) {
-      const shopData = {
-        subscriptionTiers: this.subscriptionTiers,
-        creditPacks: this.creditPacks,
-        cosmeticCategories: this.cosmeticCategories,
-      };
-      localStorage.setItem('shopData', JSON.stringify(shopData));
-      this.$router.push({ path: `/purchase/${itemId}` });
+      if (!this.isPurchased(itemId)) {
+        this.$router.push({ path: `/purchase/${itemId}` });
+      }
+    },
+    isPurchased(itemId) {
+      return this.userInventory.includes(itemId);
+    },
+    handleImageError(item) {
+      console.warn(`Image failed to load for ${item.name}: ${item.iconUrl}`);
+      item.iconUrl = this.fallbackImage; // Replace with fallback image
     },
   },
 };
@@ -373,21 +381,10 @@ section {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.tier-features {
-  list-style: none;
-  padding: 0;
-  margin-bottom: 1.5rem;
-}
-
-.tier-features li {
-  margin-bottom: 0.5rem;
-  color: #666;
-}
-
 /* Credits Section */
 .credits-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
 }
 
@@ -425,6 +422,19 @@ section {
   text-align: center;
 }
 
+.background-item .item-preview {
+  height: 100px;
+  overflow: hidden;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.background-preview .cosmetic-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .cosmetic-icon {
   width: 2rem;
   height: 2rem;
@@ -438,6 +448,21 @@ section {
 .cosmetic-item h4,
 .cosmetic-item p {
   color: #000;
+}
+
+/* Purchased Item Styling */
+.purchased {
+  background: #e0e0e0;
+  opacity: 0.7;
+}
+
+.purchased .buy-button {
+  background-color: #a0a0a0;
+  cursor: not-allowed;
+}
+
+.purchased .buy-button:hover {
+  background-color: #a0a0a0;
 }
 
 /* Responsive Design */
@@ -455,7 +480,6 @@ section {
   }
 
   .subscription-grid,
-  .credits-grid,
   .cosmetics-grid {
     grid-template-columns: 1fr;
   }
@@ -477,7 +501,7 @@ section {
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   cursor: pointer;
-  margin-top: 0.5rem; /* Adjusted margin for better spacing */
+  margin-top: 0.5rem;
   transition: background-color 0.3s;
 }
 

@@ -72,6 +72,14 @@
                 >
                   Google Pay
                 </v-btn>
+                <v-btn
+                  @click="selectPaymentMethod('credits')"
+                  :class="{ active: selectedPaymentMethod === 'credits' }"
+                  class="payment-btn"
+                  outlined
+                >
+                  Pay with Credits
+                </v-btn>
               </div>
 
               <!-- Payment Forms (Collapsible) -->
@@ -151,6 +159,19 @@
                       <v-btn type="submit" color="primary" block>Pay with Google Pay</v-btn>
                     </form>
                   </div>
+
+                  <div v-if="selectedPaymentMethod === 'credits'" class="payment-method">
+                    <h4>Pay with Credits</h4>
+                    <div class="credits-info">
+                      <p>Current Credits: <strong>{{ userCredits }}</strong></p>
+                      <p>Cost: <strong>{{ item.amount }} Credits</strong></p>
+                    </div>
+                    <form @submit.prevent="handlePurchase" class="payment-form">
+                      <v-btn type="submit" color="primary" block :disabled="userCredits < item.amount">
+                        Pay with Credits
+                      </v-btn>
+                    </form>
+                  </div>
                 </div>
               </transition>
             </div>
@@ -172,7 +193,7 @@
           <p v-if="item && item.amount">
             You've successfully added <strong>{{ item.amount }} credits</strong> to your account using <strong>{{ selectedPaymentMethod }}</strong>.
           </p>
-          <p v-else-if="item && item.price.includes('Credits')">
+          <p v-else-if="item && String(item.price).includes('Credits')">
             You've successfully purchased <strong>{{ item.name || item.title }}</strong> using <strong>{{ selectedPaymentMethod }}</strong>.
           </p>
           <p>Your current credit balance is: <strong>{{ userCredits }} credits</strong>.</p>
@@ -183,18 +204,47 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Error Dialog -->
+    <v-dialog v-model="showErrorDialog" max-width="500px">
+      <v-card class="error-dialog">
+        <v-card-title class="headline">
+          <v-icon color="red" large left>mdi-alert-circle</v-icon>
+          {{ errorTitle }}
+        </v-card-title>
+        <v-card-text class="dialog-text">
+          <p>{{ errorMessage }}</p>
+          <p v-if="errorMessage === 'Insufficient credits to complete this purchase.'">
+            Please buy more credits in the shop to complete your purchase.
+          </p>
+          <p v-else-if="errorMessage === 'You already own this item'">
+            This item is already in your inventory. No need to purchase it again!
+          </p>
+          <p v-else>
+            Please try again or contact support at <a href="mailto:hivemindnexxuscontact@gmail.com">hivemindnexxuscontact@gmail.com</a>.
+          </p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="closeErrorDialog">
+            {{ errorMessage === 'Insufficient credits to complete this purchase.' ? 'Go to Shop' : 'OK' }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script>
 import NavBar from '../components/NavBar.vue';
 import AppFooter from '../components/AppFooter.vue';
+import apiClient from '@/axios.js';
 
 export default {
   name: 'PurchasePage',
   components: {
     NavBar,
-    AppFooter
+    AppFooter,
   },
   data() {
     return {
@@ -213,6 +263,9 @@ export default {
       selectedPaymentMethod: null,
       userCredits: 1000,
       showSuccessDialog: false,
+      showErrorDialog: false,
+      errorMessage: '',
+      errorTitle: 'Purchase Failed!', // Default title
       countryCodes: [
         { name: 'Spain', code: '+34', digits: 9, displayText: 'Spain (+34)' },
         { name: 'United States', code: '+1', digits: 10, displayText: 'United States (+1)' },
@@ -227,6 +280,7 @@ export default {
         { name: 'Japan', code: '+81', digits: 10, displayText: 'Japan (+81)' },
         { name: 'Mexico', code: '+52', digits: 10, displayText: 'Mexico (+52)' },
       ],
+      user: { id: null },
     };
   },
   computed: {
@@ -243,141 +297,123 @@ export default {
         v => !!v || 'Phone number is required',
         v => /^\d+$/.test(v) || 'Phone number must contain only digits',
         v => {
-          const digits = this.selectedPaymentMethod === 'bizum' ?
-            this.bizumDigitLength : this.googlePayDigitLength;
+          const digits = this.selectedPaymentMethod === 'bizum'
+            ? this.bizumDigitLength
+            : this.googlePayDigitLength;
           return v.length === digits || `Phone number must be ${digits} digits`;
-        }
+        },
       ];
-    }
+    },
   },
   created() {
     const itemId = parseInt(this.$route.params.id, 10);
     if (itemId) {
-      this.item = this.getItemById(itemId);
-      console.log('Fetched item:', this.item);
+      this.fetchItemById(itemId);
     }
+    this.fetchCurrentUser();
   },
   methods: {
-    getItemById(id) {
-      const shopData = JSON.parse(localStorage.getItem('shopData') || '{}');
-      const allItems = [
-        ...(shopData.subscriptionTiers || []),
-        ...(shopData.creditPacks || []),
-        ...(shopData.cosmeticCategories ? shopData.cosmeticCategories.flatMap(category => category.items) : []),
-      ];
-      const item = allItems.find(item => item.id === id);
-      if (!item) {
-        console.error(`Item with ID ${id} not found`);
+    async fetchItemById(id) {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+
+        const response = await apiClient.get(`/api/shop/items/${id}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        this.item = response.data;
+      } catch (error) {
+        console.error(`Failed to fetch item with ID ${id}:`, error);
+        this.errorMessage = `Failed to fetch item: ${error.message}`;
+        this.showErrorDialog = true;
       }
-      return item;
+    },
+    async fetchCurrentUser() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+
+        const response = await apiClient.get('/api/user', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        this.user = response.data;
+        this.userCredits = response.data.credits || 1000;
+      } catch (error) {
+        console.error('Failed to fetch current user:', error);
+        this.errorMessage = `Failed to fetch user data: ${error.message}`;
+        this.showErrorDialog = true;
+      }
     },
     selectPaymentMethod(method) {
       this.selectedPaymentMethod = this.selectedPaymentMethod === method ? null : method;
     },
-    handlePurchase(method) {
-      console.log(`${method} payment button clicked`);
-      console.log('Item:', this.item);
+    async processCreditPurchase() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
 
-      const isCreditPack = this.item && this.item.amount && this.item.price.includes('€');
-      const itemPrice = this.item.price.includes('Credits') ? parseInt(this.item.price) : null;
+        console.log('Sending payload:', { userId: this.user.id, itemId: this.item.id });
+        const response = await apiClient.post(
+          '/api/user/process-credit-purchase',
+          { userId: this.user.id, itemId: this.item.id },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
-      if (isCreditPack) {
-        switch (method) {
-          case 'card':
-            if (/^\d{16}$/.test(this.cardNumber) && /^\d{2}\/\d{2}$/.test(this.expiryDate) && /^\d{3}$/.test(this.cvv)) {
-              console.log('Card Number:', this.cardNumber);
-              console.log('Expiry Date:', this.expiryDate);
-              console.log('CVV:', this.cvv);
-              this.userCredits += parseInt(this.item.amount);
-              this.showSuccessDialog = true;
-            } else {
-              alert('Invalid card details. Please check: 16-digit card number, MM/YY expiry, 3-digit CVV.');
-            }
-            break;
-          case 'paypal':
-            if (/.+@.+\..+/.test(this.paypalEmail) && this.paypalPassword) {
-              console.log('PayPal Email:', this.paypalEmail);
-              console.log('PayPal Password:', this.paypalPassword);
-              this.userCredits += parseInt(this.item.amount);
-              this.showSuccessDialog = true;
-            } else {
-              alert('Invalid PayPal details. Email must contain @ and password is required.');
-            }
-            break;
-          case 'bizum':
-            if (this.phoneRules.every(rule => rule(this.bizumPhone) === true) && this.bizumPin) {
-              console.log('Bizum Phone:', `${this.bizumCountryCode}${this.bizumPhone}`);
-              console.log('Bizum PIN:', this.bizumPin);
-              this.userCredits += parseInt(this.item.amount);
-              this.showSuccessDialog = true;
-            } else {
-              alert(`Invalid Bizum details. Phone must be ${this.bizumDigitLength} digits and PIN is required.`);
-            }
-            break;
-          case 'googlepay':
-            if (/.+@.+\..+/.test(this.googlePayEmail) &&
-              this.phoneRules.every(rule => rule(this.googlePayPhone) === true)) {
-              console.log('Google Pay Email:', this.googlePayEmail);
-              console.log('Google Pay Phone:', `${this.googlePayCountryCode}${this.googlePayPhone}`);
-              this.userCredits += parseInt(this.item.amount);
-              this.showSuccessDialog = true;
-            } else {
-              alert(`Invalid Google Pay details. Email must contain @ and phone must be ${this.googlePayDigitLength} digits.`);
-            }
-            break;
+        if (response.data.error) {
+          throw new Error(response.data.error);
         }
-      } else if (itemPrice) {
-        switch (method) {
-          case 'card':
-            if (/^\d{16}$/.test(this.cardNumber) && /^\d{2}\/\d{2}$/.test(this.expiryDate) && /^\d{3}$/.test(this.cvv)) {
-              this.processCreditPurchase(itemPrice);
-            } else {
-              alert('Invalid card details. Please check: 16-digit card number, MM/YY expiry, 3-digit CVV.');
-            }
-            break;
-          case 'paypal':
-            if (/.+@.+\..+/.test(this.paypalEmail) && this.paypalPassword) {
-              this.processCreditPurchase(itemPrice);
-            } else {
-              alert('Invalid PayPal details. Email must contain @ and password is required.');
-            }
-            break;
-          case 'bizum':
-            if (this.phoneRules.every(rule => rule(this.bizumPhone) === true) && this.bizumPin) {
-              this.processCreditPurchase(itemPrice);
-            } else {
-              alert(`Invalid Bizum details. Phone must be ${this.bizumDigitLength} digits and PIN is required.`);
-            }
-            break;
-          case 'googlepay':
-            if (/.+@.+\..+/.test(this.googlePayEmail) &&
-              this.phoneRules.every(rule => rule(this.googlePayPhone) === true)) {
-              this.processCreditPurchase(itemPrice);
-            } else {
-              alert(`Invalid Google Pay details. Email must contain @ and phone must be ${this.googlePayDigitLength} digits.`);
-            }
-            break;
+
+        this.userCredits = response.data.credits;
+        this.$emit('credits-updated', this.userCredits);
+        console.log('Purchase successful with credits');
+      } catch (error) {
+        console.error('Raw error:', error);
+        console.error('Response data:', error.response?.data);
+        if (error.response && error.response.data && error.response.data.error) {
+          this.errorTitle = error.response.data.error === 'You already own this item' ? 'Item Already Owned!' : 'Purchase Failed!';
+          throw new Error(error.response.data.error);
         }
-      } else {
-        alert('Invalid item type.');
+        this.errorTitle = 'Purchase Failed!';
+        throw new Error(error.message || 'Failed to process credit purchase');
       }
     },
-    processCreditPurchase(itemPrice) {
-      if (this.userCredits >= itemPrice) {
-        this.userCredits -= itemPrice;
+    async handlePurchase() {
+      try {
+        if (this.selectedPaymentMethod === 'credits') {
+          if (this.userCredits < this.item.amount) {
+            this.errorTitle = 'Not Enough Credits!';
+            throw new Error('Insufficient credits to complete this purchase.');
+          }
+          await this.processCreditPurchase();
+        } else {
+          const itemPrice = parseFloat(this.item.price);
+          if (!isNaN(itemPrice) && itemPrice > 0) {
+            console.log(`Processing ${this.selectedPaymentMethod} payment - not implemented yet`);
+            throw new Error('Non-credit payment methods are not yet implemented.');
+          } else {
+            throw new Error('Invalid item price');
+          }
+        }
         this.showSuccessDialog = true;
-      } else {
-        alert('Purchase Failed! Insufficient credits.');
+      } catch (error) {
+        console.error('Purchase failed:', error);
+        this.errorMessage = error.message;
+        this.showErrorDialog = true;
       }
     },
     closeSuccessDialog() {
       this.showSuccessDialog = false;
       this.$router.push('/shop');
-    }
+    },
+    closeErrorDialog() {
+      this.showErrorDialog = false;
+      this.$router.push('/shop');
+    },
   },
 };
 </script>
 
+<!-- Styles remain unchanged -->
 <style scoped>
 .purchase-container {
   min-height: 100vh;
@@ -603,6 +639,21 @@ export default {
   width: 100%;
 }
 
+.credits-info {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.credits-info p {
+  font-size: 1rem;
+  color: #475569;
+  margin-bottom: 0.5rem;
+}
+
+.credits-info strong {
+  color: #2563eb;
+}
+
 .phone-input {
   display: flex;
   gap: 1rem;
@@ -672,8 +723,24 @@ export default {
   color: #0000ff;
 }
 
+.dialog-text a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.dialog-text a:hover {
+  color: #1d4ed8;
+}
+
 .v-card-actions {
   padding-top: 1rem;
+}
+
+/* Error Dialog Styles */
+.error-dialog {
+  background: #000000;
+  padding: 1.5rem;
+  border-radius: 12px;
 }
 
 @media (max-width: 768px) {

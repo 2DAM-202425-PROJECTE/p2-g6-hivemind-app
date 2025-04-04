@@ -54,7 +54,7 @@
           <input
             v-model="user.name"
             type="text"
-            class="mt-2 w-full p-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+            class="mt-2 w-full p-3 bg-[#f0f2f5] text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition duration-200"
             placeholder="Enter your name"
           />
         </div>
@@ -62,24 +62,70 @@
           <label class="block text-sm font-semibold text-gray-800">Description</label>
           <textarea
             v-model="user.description"
-            class="mt-2 w-full p-3 bg-white text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+            class="mt-2 w-full p-3 bg-[#f0f2f5] text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition duration-200"
             rows="4"
             placeholder="Tell us about yourself"
           ></textarea>
+        </div>
+
+        <!-- Terms and Privacy Checkboxes -->
+        <div class="space-y-4">
+          <div class="flex items-center">
+            <input
+              :checked="acceptedTerms"
+              type="checkbox"
+              id="terms-checkbox"
+              class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-not-allowed"
+              disabled
+            />
+            <label for="terms-checkbox" class="ml-2 text-sm text-gray-800">
+              I agree to the
+              <router-link
+                to="/terms-of-service"
+                @click.prevent="acceptTerms"
+                class="text-blue-600 hover:underline font-semibold"
+                target="_blank"
+              >
+                Terms of Service
+              </router-link>
+            </label>
+          </div>
+          <div class="flex items-center">
+            <input
+              :checked="acceptedPrivacy"
+              type="checkbox"
+              id="policy-checkbox"
+              class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-not-allowed"
+              disabled
+            />
+            <label for="policy-checkbox" class="ml-2 text-sm text-gray-800">
+              I agree to the
+              <router-link
+                to="/privacy-policy"
+                @click.prevent="acceptPrivacy"
+                class="text-blue-600 hover:underline font-semibold"
+                target="_blank"
+              >
+                Privacy Policy
+              </router-link>
+            </label>
+          </div>
         </div>
 
         <!-- Buttons -->
         <div class="flex justify-end gap-4 mt-8">
           <button
             type="button"
-            @click="$router.push('/home')"
-            class="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-100 transition duration-200"
+            @click="handleSkip"
+            :disabled="!acceptedTerms || !acceptedPrivacy"
+            class="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-100 transition duration-200 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
           >
             Skip
           </button>
           <button
             type="submit"
-            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200"
+            :disabled="!acceptedTerms || !acceptedPrivacy"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             Save
           </button>
@@ -131,6 +177,8 @@ const bannerPreview = ref(null);
 const errorMessage = ref('');
 const showErrorSnackbar = ref(false);
 const showSuccessSnackbar = ref(false);
+const acceptedTerms = ref(false);
+const acceptedPrivacy = ref(false);
 
 const getImageUrl = (filePath) => {
   const baseUrl = 'http://localhost:8000'; // Adjust based on your server
@@ -170,7 +218,38 @@ const fetchUser = async () => {
   }
 };
 
+const acceptTerms = () => {
+  acceptedTerms.value = true;
+  window.open('/terms-of-service', '_blank'); // Opens the link in a new tab
+};
+
+const acceptPrivacy = () => {
+  acceptedPrivacy.value = true;
+  window.open('/privacy-policy', '_blank'); // Opens the link in a new tab
+};
+
+const handleSkip = () => {
+  if (!acceptedTerms.value || !acceptedPrivacy.value) {
+    errorMessage.value = 'Please review and accept the Terms of Service and Privacy Policy to proceed.';
+    showErrorSnackbar.value = true;
+    setTimeout(() => {
+      showErrorSnackbar.value = false;
+    }, 3000);
+    return;
+  }
+  router.push('/home');
+};
+
 const saveProfile = async () => {
+  if (!acceptedTerms.value || !acceptedPrivacy.value) {
+    errorMessage.value = 'Please review and accept the Terms of Service and Privacy Policy to proceed.';
+    showErrorSnackbar.value = true;
+    setTimeout(() => {
+      showErrorSnackbar.value = false;
+    }, 3000);
+    return;
+  }
+
   const formData = new FormData();
   formData.append('name', user.value.name || '');
   formData.append('description', user.value.description || '');
@@ -215,18 +294,18 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background-color: #f0f2f5; /* Softer background color */
+  background-color: #f0f2f5;
   padding: 2rem;
 }
 
 .profile-box {
   text-align: center;
-  background: #ffffff; /* Clean white container */
+  background: #ffffff;
   padding: 3rem;
-  border-radius: 24px; /* Softer, larger border radius */
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); /* Softer shadow */
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   width: 100%;
-  max-width: 800px; /* Larger max-width for better layout */
+  max-width: 800px;
 }
 
 .logo {
@@ -242,28 +321,29 @@ h1 {
   font-size: 2rem;
   font-weight: bold;
   margin-bottom: 2rem;
-  color: #1a1a1a; /* Darker text for contrast */
+  color: #1a1a1a;
 }
 
 input,
 textarea {
   padding: 0.75rem;
-  border: 1px solid #d1d5db; /* Lighter gray border */
-  border-radius: 8px; /* Softer corners */
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
   font-size: 1rem;
-  color: #1a1a1a; /* Dark text */
+  color: #1a1a1a;
+  background-color: #f0f2f5;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #6b7280; /* Subtle gray placeholder */
+  color: #6b7280;
 }
 
 button {
   padding: 0.9rem 1.5rem;
-  border-radius: 8px; /* Softer button corners */
+  border-radius: 8px;
   font-size: 1rem;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .custom-snackbar {

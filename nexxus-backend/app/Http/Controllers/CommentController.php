@@ -13,19 +13,26 @@ class CommentController extends Controller
     {
         $request->validate([
             'content' => 'required|string|max:255',
+            'parent_id' => 'nullable|exists:comments,id', // Ensure parent_id is validated
         ]);
     
         $comment = $post->comments()->create([
             'content' => $request->content,
-            'user_id' => auth()->id()
+            'user_id' => auth()->id(),
+            'parent_id' => $request->parent_id, // Save parent_id if provided
         ]);
     
-        return response()->json($comment->load('user'), 201);
+        return response()->json($comment->load('user', 'replies.user'), 201); // Load replies for nested structure
     }
 
     public function index(Post $post)
     {
-        return response()->json($post->comments()->with('user')->get());
+        $comments = $post->comments()
+            ->whereNull('parent_id')
+            ->with(['user', 'replies.user'])
+            ->get();
+
+        return response()->json($comments);
     }
 
     public function destroy($id)
