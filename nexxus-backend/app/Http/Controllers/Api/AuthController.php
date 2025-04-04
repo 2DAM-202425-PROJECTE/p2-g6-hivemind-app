@@ -24,10 +24,10 @@ final class AuthController extends Controller
                 'required',
                 'string',
                 'min:8',
-                'regex:/[a-z]/',      // al menos una letra minúscula
-                'regex:/[A-Z]/',      // al menos una letra mayúscula
-                'regex:/[0-9]/',      // al menos un número
-                'regex:/[@$!%*#?&]/', // al menos un carácter especial
+                'regex:/[a-z]/',      // at least one letter lowercase
+                'regex:/[A-Z]/',      // at least one letter uppercase
+                'regex:/[0-9]/',      // at least one digit
+                'regex:/[@$!%*#?&]/', // at least one special character
             ],
         ]);
 
@@ -49,7 +49,8 @@ final class AuthController extends Controller
         $validated = request()->validate([
             'email' => 'required|email',
             'password' => 'required',
-            'device_name' => 'required'
+            'device_name' => 'required',
+            'remember_me' => 'boolean',
         ]);
 
         // Check if the user is trying to log in too many times
@@ -85,17 +86,27 @@ final class AuthController extends Controller
 
         // Successful login, clear the attempts counter and generate a token
         RateLimiter::clear($attemptsKey);
-        $token = $user->createToken($validated['device_name'])->plainTextToken; // Generate a token for the user with the device name
 
-        return response()->json(['token' => $token]);
+        // If remember_me is true, set the expiration to 30 days, otherwise 1 hour
+        $expiration = $validated['remember_me'] ? now()->addMonth() : now()->addHour();
+        $token = $user->createToken($validated['device_name'], ['*'], $expiration)->plainTextToken;
+        return response()->json(['token' => $token])->cookie(
+            'auth_token',
+            $token,
+            $validated['remember_me'] ? 43200 : 60, // Expiration (30 days or 1 hour)
+            '/',                    // Path (root for all subdomains)
+            null,                   // Domain (null for current domain)
+            false,                   // Secure (true for HTTPS)
+            true                    // HttpOnly (XSS protection)
+        );
     }
 
     final public function logout(): JsonResponse
     {
-        \Illuminate\Support\Facades\Auth::user()->tokens()->delete();
+        Auth::user()->tokens()->delete();
 
         return response()->json([
             'message' => 'Logged out'
-        ]);
+        ])->withCookie(cookie()->forget('auth_token'));
     }
 }

@@ -205,6 +205,8 @@ export default {
           password: this.password,
           device_name: this.deviceName,
           remember_me: this.rememberMe
+        }, {
+          withCredentials: true
         });
 
         localStorage.setItem('token', response.data.token);
