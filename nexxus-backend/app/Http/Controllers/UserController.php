@@ -112,9 +112,6 @@ class UserController extends Controller
         }
     }
 
-    // Removed saveToInventory since it’s redundant with processCreditPurchase
-    // If you need it for another purpose, rename and re-route it
-
     public function searchUsers(Request $request)
     {
         $validatedData = $request->validate([
@@ -144,6 +141,89 @@ class UserController extends Controller
         $user->save();
 
         return response()->json(['message' => 'Equipped profile icon updated successfully'], 200);
+    }
+
+    public function updateEquippedProfileFrame(Request $request)
+    {
+        $request->validate([
+            'userId' => 'required|integer|exists:users,id',
+            'equippedProfileFramePath' => 'nullable|string',
+        ]);
+
+        $user = User::find($request->input('userId'));
+        $user->equipped_profile_frame_path = $request->input('equippedProfileFramePath');
+        $user->save();
+
+        return response()->json(['message' => 'Equipped profile frame updated successfully'], 200);
+    }
+
+    public function updateEquippedBackground(Request $request)
+    {
+        $request->validate([
+            'userId' => 'required|integer|exists:users,id',
+            'equippedBackgroundPath' => 'nullable|string',
+        ]);
+
+        $user = User::find($request->input('userId'));
+        $user->equipped_background_path = $request->input('equippedBackgroundPath');
+        $user->save();
+
+        return response()->json(['message' => 'Equipped background updated successfully'], 200);
+    }
+
+    public function updateEquippedAnimation(Request $request)
+    {
+        $request->validate([
+            'userId' => 'required|integer|exists:users,id',
+            'equippedAnimationPath' => 'nullable|string',
+        ]);
+
+        $user = User::find($request->input('userId'));
+        $user->equipped_animation_path = $request->input('equippedAnimationPath');
+        $user->save();
+
+        return response()->json(['message' => 'Equipped animation updated successfully'], 200);
+    }
+
+    public function updateEquippedNameEffect(Request $request)
+    {
+        $request->validate([
+            'userId' => 'required|integer|exists:users,id',
+            'equippedNameEffectPath' => 'nullable|string',
+        ]);
+
+        $user = User::find($request->input('userId'));
+        $user->equipped_name_effect_path = $request->input('equippedNameEffectPath');
+        $user->save();
+
+        return response()->json(['message' => 'Equipped name effect updated successfully'], 200);
+    }
+
+    public function updateEquippedBadge(Request $request)
+    {
+        $request->validate([
+            'userId' => 'required|integer|exists:users,id',
+            'equippedBadgePath' => 'nullable|string',
+        ]);
+
+        $user = User::find($request->input('userId'));
+        $user->equipped_badge_path = $request->input('equippedBadgePath');
+        $user->save();
+
+        return response()->json(['message' => 'Equipped badge updated successfully'], 200);
+    }
+
+    public function getEquippedItems($id)
+    {
+        $user = User::findOrFail($id);
+        return response()->json([
+            'equipped_profile_icon_path' => $user->equipped_profile_icon_path,
+            'equipped_profile_frame_path' => $user->equipped_profile_frame_path,
+            'equipped_background_path' => $user->equipped_background_path,
+            'equipped_animation_path' => $user->equipped_animation_path,
+            'equipped_name_effect_path' => $user->equipped_name_effect_path,
+            'equipped_badge_path' => $user->equipped_badge_path,
+        ], 200);
     }
 
     public function updateProfile(Request $request)

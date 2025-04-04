@@ -180,38 +180,44 @@ export default {
         {
           title: 'Profile Icons',
           description: 'Stand out with unique profile icons that showcase your personality',
-          items: cosmetics.filter(item => item.name.includes('Icon')),
+          items: cosmetics.filter(item =>
+            ['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem'].includes(item.name)
+          ),
         },
         {
           title: 'Backgrounds',
           description: 'Transform your profile with stunning background themes',
           items: cosmetics.filter(item =>
-            ['Galaxy', 'Night City', 'Mountain', 'Blossom', 'Ocean', 'Forest', 'Desert', 'Space'].includes(item.name)
+            ['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow'].includes(item.name)
           ),
         },
         {
           title: 'Animations',
           description: 'Add dynamic effects to make your profile come alive',
           items: cosmetics.filter(item =>
-            ['Sparkle', 'Wind', 'Fire', 'Wave', 'Rainbow', 'Glitch', 'Pulse', 'Orbit'].includes(item.name)
+            ['Gentle Sparkle', 'Fading Pulse', 'Soft Ripple', 'Orbit Glow', 'Subtle Glitch'].includes(item.name)
           ),
-        },
-        {
-          title: 'Emojis',
-          description: 'Express yourself with premium animated emojis',
-          items: cosmetics.filter(item => item.name.includes('Emoji')),
         },
         {
           title: 'Name Effects',
           description: 'Make your username stand out with eye-catching effects',
           items: cosmetics.filter(item =>
-            ['Gradient', 'Neon', 'Gold', 'Rainbow', 'Glitter', 'Shadow', 'Pixel', 'Cosmic'].includes(item.name)
+            ['Soft Glow', 'Gradient Fade', 'Golden Outline', 'Deep Shadow', 'Cosmic Shine'].includes(item.name)
           ),
         },
         {
           title: 'Profile Frames',
           description: 'Frame your profile picture with stunning borders',
-          items: cosmetics.filter(item => item.name.includes('Frame')),
+          items: cosmetics.filter(item =>
+            ['Golden Ring', 'Crystal Edge', 'Star Border', 'Cloud Frame', 'Tech Circuit'].includes(item.name)
+          ),
+        },
+        {
+          title: 'Profile Badges',
+          description: 'Show off your status with exclusive profile badges',
+          items: cosmetics.filter(item =>
+            ['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge'].includes(item.name)
+          ),
         },
       ].filter(category => category.items.length > 0); // Only include categories with items
     },

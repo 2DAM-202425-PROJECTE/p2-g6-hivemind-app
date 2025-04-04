@@ -13,5 +13,6 @@ class Item extends Model
         'name',
         'price',
         'iconUrl',
+        'type', // Added to support profile_icon, profile_frame, etc.
     ];
 }

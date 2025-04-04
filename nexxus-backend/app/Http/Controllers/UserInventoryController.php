@@ -17,7 +17,19 @@ class UserInventoryController extends Controller
         }
 
         $inventory = UserInventory::where('user_id', $id)->with('item')->get();
-        return response()->json($inventory);
+        $formattedInventory = $inventory->map(function ($inventoryItem) {
+            return [
+                'id' => $inventoryItem->id,
+                'item' => [
+                    'name' => $inventoryItem->item->name,
+                    'price' => $inventoryItem->item->price,
+                    'iconUrl' => $inventoryItem->item->iconUrl,
+                    'type' => $inventoryItem->item->type ?? (str_contains($inventoryItem->item->name, 'Icon') ? 'profile_icon' : (str_contains($inventoryItem->item->name, 'Frame') ? 'profile_frame' : 'other')),
+                ],
+            ];
+        });
+
+        return response()->json($formattedInventory, 200);
     }
 
     public function store(Request $request)
