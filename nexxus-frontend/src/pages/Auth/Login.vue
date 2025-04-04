@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 p-4">
-    <div class="w-full max-w-2xl bg-white rounded-xl shadow-lg overflow-hidden">
+    <div class="w-full max-w-2xl bg-white rounded-xl shadow-lg overflow-hidden animate-[fadeInUp_0.5s_ease-out]">
       <!-- Logo y título -->
       <div class="p-8 text-center">
         <img class="w-16 h-16 mx-auto mb-4" src="/logo.png" alt="Hivemind Logo" />
@@ -19,7 +19,7 @@
             placeholder="your@example.com"
             required
             autocomplete="email"
-            class="w-full p-3 bg-gray-100 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+            class="w-full p-3 bg-gray-100 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 hover:bg-gray-50 hover:shadow-sm"
           />
         </div>
 
@@ -39,7 +39,7 @@
               minlength="8"
               placeholder="Enter 8 characters or more"
               required
-              class="w-full p-3 pr-12 bg-gray-100 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              class="w-full p-3 bg-gray-100 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 hover:bg-gray-50 hover:shadow-sm"
               @keydown="checkCapsLock"
               @keyup="checkCapsLock"
               @blur="capsLockOn = false"
@@ -114,7 +114,7 @@
 
         <!-- Social login buttons -->
         <div class="flex justify-center mb-4">
-          <button class="gsi-material-button">
+          <button class="gsi-material-button" disabled>
             <div class="gsi-material-button-state"></div>
             <div class="gsi-material-button-content-wrapper">
               <div class="gsi-material-button-icon">
@@ -216,7 +216,7 @@ export default {
       try {
 
         await apiClient.get('/sanctum/csrf-cookie', { withCredentials: true });
-        
+
         const response = await apiClient.post('/api/login', {
           email: this.email,
           password: this.password,

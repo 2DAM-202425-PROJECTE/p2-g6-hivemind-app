@@ -4,13 +4,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Mail\LoginAttemptsExceeded;
 use App\Models\User;
-use http\Env\Request;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Log;
 
 final class AuthController extends Controller
 {
@@ -101,12 +101,22 @@ final class AuthController extends Controller
         );
     }
 
-    final public function logout(): JsonResponse
+    final public function logout(Request $request): JsonResponse
     {
-        Auth::user()->tokens()->delete();
+        $request -> user()->tokens()->delete();
 
-        return response()->json([
-            'message' => 'Logged out'
-        ])->withCookie(cookie()->forget('auth_token'));
+        $response = response()->json(['message' => 'Logged out']);
+
+        // Eliminar auth_token
+        $response->withCookie(Cookie::forget('auth_token'));
+
+        // Eliminar XSRF-TOKEN
+        $response->withCookie(Cookie::forget('XSRF-TOKEN'));
+
+        // Eliminar laravel_session (si existe)
+        $response->withCookie(Cookie::forget('laravel_session'));
+
+        return $response;
+
     }
 }
