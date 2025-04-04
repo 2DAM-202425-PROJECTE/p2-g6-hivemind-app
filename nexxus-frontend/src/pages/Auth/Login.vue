@@ -167,7 +167,7 @@
 
 <script>
 import apiClient from '../../axios.js';
-import { EyeIcon, EyeSlashIcon, LockClosedIcon } from '@heroicons/vue/24/outline';
+import {EyeIcon, EyeSlashIcon, LockClosedIcon} from '@heroicons/vue/24/outline';
 
 export default {
   components: {
@@ -190,14 +190,28 @@ export default {
       isLoading: false
     };
   },
+  mounted() {
+    this.checkRememberMe();
+  },
   methods: {
     checkCapsLock(event) {
       this.capsLockOn = event.getModifierState && event.getModifierState('CapsLock');
     },
 
+    // Save remember me state
+    checkRememberMe() {
+      this.rememberMe = localStorage.getItem('remember_me') === 'true';
+    },
+
+    saveRememberMe() {
+      localStorage.setItem('remember_me', this.rememberMe);
+    },
+
     async login() {
       this.isLoading = true;
       this.error = null;
+
+      this.saveRememberMe();
 
       try {
         const response = await apiClient.post('/api/login', {
@@ -208,7 +222,6 @@ export default {
         }, {
           withCredentials: true
         });
-
         localStorage.setItem('token', response.data.token);
         this.showSuccessSnackbar = true;
 

@@ -67,7 +67,7 @@ final class AuthController extends Controller
 
         // If the user does not exist or the password is incorrect, increment the attempts counter
         if (!$user || !Auth::attempt(['email' => $validated['email'], 'password' => $validated['password']])) {
-            RateLimiter::hit($attemptsKey, 15); // Increment attempts for 15 minutes
+            RateLimiter::hit($attemptsKey, 30*60); // 30 minutes lockout
             $attempts = RateLimiter::attempts($attemptsKey);
 
             // If the user has exceeded the maximum number of attempts, send an email notification and block the account for 15 minutes
@@ -96,7 +96,7 @@ final class AuthController extends Controller
             $validated['remember_me'] ? 43200 : 60, // Expiration (30 days or 1 hour)
             '/',                    // Path (root for all subdomains)
             null,                   // Domain (null for current domain)
-            false,                   // Secure (true for HTTPS)
+            true,                   // Secure (true for HTTPS)
             true                    // HttpOnly (XSS protection)
         );
     }
