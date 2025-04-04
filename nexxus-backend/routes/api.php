@@ -80,7 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/{id}/equipped-items', [UserController::class, 'getEquippedItems']);
     Route::post('/user/update-equipped-profile-frame', [UserController::class, 'updateEquippedProfileFrame']);
     Route::post('/user/update-equipped-profile-icon', [UserController::class, 'updateEquippedProfileIcon']);
-    Route::post('/user/update-equipped-background', [UserController::class, 'updateEquippedBackground']); // Added
+    Route::post('/user/update-equipped-background', [UserController::class, 'updateEquippedBackground']);
     Route::post('/user/update-equipped-animation', [UserController::class, 'updateEquippedAnimation']); // Added
     Route::post('/user/update-equipped-name-effect', [UserController::class, 'updateEquippedNameEffect']); // Added
     Route::post('/user/update-equipped-badge', [UserController::class, 'updateEquippedBadge']); // Added

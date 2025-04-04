@@ -18,7 +18,7 @@
           <h3 class="category-title">{{ category.title }}</h3>
           <p class="category-description">{{ category.description }}</p>
           <div class="items-grid">
-            <div v-for="item in category.items" :key="item.id" class="cosmetic-item">
+            <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'background-item': item.isBackground }">
               <img :src="item.icon_url" :alt="item.name" class="cosmetic-icon" />
               <h4 class="item-name">{{ item.name }}</h4>
               <p class="item-price">{{ formatPrice(item.price) }}</p>
@@ -96,7 +96,6 @@ const closeEquipPopupOnBackdrop = (event) => {
   }
 };
 
-// Equip item function
 const equipItem = async (item) => {
   equippedItemName.value = `${item.name} has been equipped`;
   showEquipPopup.value = true;
@@ -112,10 +111,10 @@ const equipItem = async (item) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const updatedFields = { [field]: path };
-      emit('update-user', updatedFields);
+      emit('update-user', updatedFields); // Emit to update profile page
       item.isEquipped = true;
       inventory.value.forEach(i => {
-        if (i.type === item.type && i.id !== item.id) i.isEquipped = false;
+        if (i.type === item.type && i.id !== item.id) i.isEquipped = false; // Unequip others of same type
       });
       inventoryCategories.value = categorizeInventory(inventory.value);
     } catch (error) {
@@ -158,7 +157,7 @@ const unequipItem = async (item) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const updatedFields = { [field]: null };
-      emit('update-user', updatedFields);
+      emit('update-user', updatedFields); // Emit to update profile page
       item.isEquipped = false;
       equippedItemName.value = `${item.name} has been unequipped`;
       showEquipPopup.value = true;
@@ -209,9 +208,11 @@ const categorizeInventory = (items) => {
     {
       title: 'Backgrounds',
       description: 'Transform your profile with stunning background themes',
-      items: items.filter(item =>
-        ['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow'].includes(item.name)
-      ),
+      items: items.filter(item => {
+        const isBackground = ['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow'].includes(item.name);
+        if (isBackground) item.isBackground = true; // Add flag for styling
+        return isBackground;
+      }),
     },
     {
       title: 'Animations',
@@ -371,7 +372,15 @@ onMounted(() => {
   background: #e9ecef;
 }
 
-.cosmetic-icon {
+.cosmetic-item.background-item .cosmetic-icon {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.cosmetic-item:not(.background-item) .cosmetic-icon {
   width: 2rem;
   height: 2rem;
   margin-bottom: 0.5rem;

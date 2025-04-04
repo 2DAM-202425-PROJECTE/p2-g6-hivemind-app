@@ -22,7 +22,7 @@
         <h2 class="section-title">Trending Items</h2>
         <div class="trending-grid">
           <div v-for="item in trendingItems" :key="item.id" class="trending-item" :class="{ 'purchased': isPurchased(item.id) }">
-            <div class="item-icon">
+            <div class="item-icon" :class="{ 'background-preview': item.type === 'background' }">
               <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" />
             </div>
             <h3 class="item-name">{{ item.name }}</h3>
@@ -78,8 +78,10 @@
             <h3 class="category-title">{{ category.title }}</h3>
             <p class="category-description">{{ category.description }}</p>
             <div class="items-grid">
-              <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'purchased': isPurchased(item.id) }">
-                <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" />
+              <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'purchased': isPurchased(item.id), 'background-item': item.type === 'background' }">
+                <div class="item-preview" :class="{ 'background-preview': item.type === 'background' }">
+                  <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" />
+                </div>
                 <h4 class="item-name">{{ item.name }}</h4>
                 <p class="item-price">{{ formatPrice(item.price) }}</p>
                 <button
@@ -116,18 +118,18 @@ export default {
       subscriptionTiers: [],
       creditPacks: [],
       cosmeticCategories: [],
-      userInventory: [], // Store the user's purchased item IDs
-      userId: null, // Store the current user's ID
+      userInventory: [],
+      userId: null,
     };
   },
   computed: {
     trendingItems() {
       const allItems = this.cosmeticCategories.flatMap(category => category.items);
-      return this.shuffleArray([...allItems]).slice(0, 5); // Randomly select 5 items
+      return this.shuffleArray([...allItems]).slice(0, 5);
     },
   },
   created() {
-    this.fetchCurrentUser(); // Fetch user ID and inventory first
+    this.fetchCurrentUser();
     this.fetchCategorizedItems();
   },
   methods: {
@@ -140,7 +142,7 @@ export default {
           headers: { Authorization: `Bearer ${token}` },
         });
         this.userId = response.data.id;
-        await this.fetchUserInventory(); // Fetch inventory after getting user ID
+        await this.fetchUserInventory();
       } catch (error) {
         console.error('Failed to fetch current user:', error);
       }
@@ -151,7 +153,6 @@ export default {
         const response = await apiClient.get(`/api/user/${this.userId}/inventory`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        // Extract item_ids from the response (array of objects with item relationship)
         this.userInventory = response.data.map(item => item.item_id);
       } catch (error) {
         console.error('Failed to fetch user inventory:', error);
@@ -219,10 +220,10 @@ export default {
             ['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge'].includes(item.name)
           ),
         },
-      ].filter(category => category.items.length > 0); // Only include categories with items
+      ].filter(category => category.items.length > 0);
     },
     formatPrice(price) {
-      if (typeof price === 'string') return price; // Already formatted
+      if (typeof price === 'string') return price;
       return price === 0 ? 'Free' : `${price} Credits`;
     },
     shuffleArray(array) {
@@ -416,6 +417,19 @@ section {
   text-align: center;
 }
 
+.background-item .item-preview {
+  height: 100px;
+  overflow: hidden;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.background-preview .cosmetic-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .cosmetic-icon {
   width: 2rem;
   height: 2rem;
@@ -433,17 +447,17 @@ section {
 
 /* Purchased Item Styling */
 .purchased {
-  background: #e0e0e0; /* Greyed out background */
-  opacity: 0.7; /* Slightly faded */
+  background: #e0e0e0;
+  opacity: 0.7;
 }
 
 .purchased .buy-button {
-  background-color: #a0a0a0; /* Darker grey for button */
-  cursor: not-allowed; /* Disable cursor */
+  background-color: #a0a0a0;
+  cursor: not-allowed;
 }
 
 .purchased .buy-button:hover {
-  background-color: #a0a0a0; /* No hover effect */
+  background-color: #a0a0a0;
 }
 
 /* Responsive Design */

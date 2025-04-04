@@ -126,21 +126,16 @@ class UserController extends Controller
     {
         $user = User::where('username', $username)->firstOrFail();
         $posts = $user->posts;
-        return response()->json(['user' => $user, 'posts' => $posts], 200);
+        return response()->json(['user' => $this->appendEquippedItems($user), 'posts' => $posts], 200);
     }
 
     public function updateEquippedProfileIcon(Request $request)
     {
-        $request->validate([
-            'userId' => 'required|integer|exists:users,id',
-            'equippedProfileIconPath' => 'nullable|string',
-        ]);
-
-        $user = User::find($request->input('userId'));
-        $user->equipped_profile_icon_path = $request->input('equippedProfileIconPath');
+        $user = User::find($request->userId);
+        $user->equipped_profile_icon_path = $request->equipped_profile_icon_path;
         $user->save();
 
-        return response()->json(['message' => 'Equipped profile icon updated successfully'], 200);
+        return response()->json(['message' => 'Profile icon updated successfully']);
     }
 
     public function updateEquippedProfileFrame(Request $request)
@@ -160,15 +155,15 @@ class UserController extends Controller
     public function updateEquippedBackground(Request $request)
     {
         $request->validate([
-            'userId' => 'required|integer|exists:users,id',
-            'equippedBackgroundPath' => 'nullable|string',
+            'userId' => 'required|exists:users,id',
+            'equipped_background_path' => 'nullable|string',
         ]);
 
-        $user = User::find($request->input('userId'));
-        $user->equipped_background_path = $request->input('equippedBackgroundPath');
+        $user = User::find($request->userId);
+        $user->equipped_background_path = $request->equipped_background_path;
         $user->save();
 
-        return response()->json(['message' => 'Equipped background updated successfully'], 200);
+        return response()->json(['message' => 'Background updated successfully']);
     }
 
     public function updateEquippedAnimation(Request $request)
@@ -216,14 +211,7 @@ class UserController extends Controller
     public function getEquippedItems($id)
     {
         $user = User::findOrFail($id);
-        return response()->json([
-            'equipped_profile_icon_path' => $user->equipped_profile_icon_path,
-            'equipped_profile_frame_path' => $user->equipped_profile_frame_path,
-            'equipped_background_path' => $user->equipped_background_path,
-            'equipped_animation_path' => $user->equipped_animation_path,
-            'equipped_name_effect_path' => $user->equipped_name_effect_path,
-            'equipped_badge_path' => $user->equipped_badge_path,
-        ], 200);
+        return response()->json($this->appendEquippedItems($user), 200);
     }
 
     public function updateProfile(Request $request)
@@ -267,6 +255,18 @@ class UserController extends Controller
         $user->description = $validatedData['description'] ?? null;
         $user->save();
 
-        return response()->json(['message' => 'Profile updated successfully', 'user' => $user], 200);
+        return response()->json(['message' => 'Profile updated successfully', 'user' => $this->appendEquippedItems($user)], 200);
+    }
+
+    private function appendEquippedItems($user)
+    {
+        $user->equipped_profile_icon_path = $user->equipped_profile_icon_path;
+        $user->equipped_profile_frame_path = $user->equipped_profile_frame_path;
+        $user->equipped_background_path = $user->equipped_background_path;
+        $user->equipped_animation_path = $user->equipped_animation_path;
+        $user->equipped_name_effect_path = $user->equipped_name_effect_path;
+        $user->equipped_badge_path = $user->equipped_badge_path;
+
+        return $user;
     }
 }

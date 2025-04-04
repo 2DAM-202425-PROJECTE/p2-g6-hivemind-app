@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden max-w-5xl mx-auto mb-5">
+  <div :class="['bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden max-w-5xl mx-auto mb-5', equippedBackgroundClass]">
     <!-- Banner -->
     <div class="relative w-full h-48 bg-gray-200 dark:bg-gray-700">
       <img
@@ -102,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import apiClient from '@/axios.js';
 import InventoryModal from './InventoryModal.vue';
 
@@ -131,6 +131,10 @@ const props = defineProps({
 
 const showInventory = ref(false);
 
+const equippedBackgroundClass = computed(() => {
+  return props.user.equipped_background_path ? `bg-[url(${props.user.equipped_background_path})]` : '';
+});
+
 // Load equipped state
 const loadEquippedState = async () => {
   if (!props.user?.id) return;
@@ -141,6 +145,7 @@ const loadEquippedState = async () => {
       headers: { Authorization: `Bearer ${token}` },
     });
     props.user.equipped_profile_icon_path = response.data.equipped_profile_icon_path;
+    props.user.equipped_background_path = response.data.equipped_background_path;
   } catch (error) {
     console.error('Failed to load equipped state:', error.response?.data || error.message);
   }
