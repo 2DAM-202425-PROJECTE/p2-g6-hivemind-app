@@ -15,7 +15,8 @@ class Comment extends Model
     protected $fillable = [
         'post_id', 
         'user_id', 
-        'content'
+        'content', 
+        'parent_id' // Allow parent_id to be mass assigned
     ];
 
     public function post()
@@ -36,5 +37,15 @@ class Comment extends Model
     public function getCreatedAtAttribute($value)
     {
         return \Carbon\Carbon::parse($value)->format('d-m-Y');
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Comment::class, 'parent_id');
+    }
+
+    public function replies()
+    {
+        return $this->hasMany(Comment::class, 'parent_id');
     }
 }

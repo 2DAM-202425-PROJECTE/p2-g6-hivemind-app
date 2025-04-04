@@ -43,7 +43,8 @@
             <div v-else class="post-description" v-html="renderPostDescription(selectedMedia.description)"></div>
             <div v-if="selectedMedia.location" class="post-location">
               <i class="mdi mdi-earth location-icon"></i>
-              <a :href="`https://www.google.com/maps?q=${encodeURIComponent(selectedMedia.location)}`" target="_blank" class="location-link">
+              <a :href="`https://www.google.com/maps?q=${encodeURIComponent(selectedMedia.location)}`" target="_blank"
+                class="location-link">
                 {{ simplifyLocation(selectedMedia.location) }}
               </a>
             </div>
@@ -91,9 +92,23 @@
                     {{ comment.user?.name || 'Unknown User' }}
                   </strong>
                   <p>{{ comment.content }}</p>
-                  <button v-if="isMediaFromUser(selectedMedia)" @click="openDeleteCommentDialog(comment.id)" class="delete-comment-btn">
-                    <i class="mdi mdi-delete"></i>
-                  </button>
+                  <div class="comment-actions">
+                    <button @click="toggleReplyInput(comment.id)" class="reply-btn">Reply</button>
+                    <button v-if="comment.replies?.length" @click="toggleRepliesVisibility(comment.id)" class="view-replies-btn">
+                      {{ areRepliesVisible(comment.id) ? 'Hide' : `View ${comment.replies.length} ${comment.replies.length === 1 ? 'Reply' : 'Replies'}` }}
+                    </button>
+                  </div>
+                  <div v-if="replyInputVisible === comment.id" class="reply-input">
+                    <input v-model="replies[comment.id]" placeholder="Write a reply..." @keyup.enter="addReply(comment.id)" />
+                    <button @click="addReply(comment.id)">Post Reply</button>
+                  </div>
+                  <!-- Display Replies -->
+                  <div v-if="areRepliesVisible(comment.id)" class="replies-list">
+                    <div v-for="reply in comment.replies" :key="reply.id" class="reply">
+                      <strong>{{ reply.user?.name || 'Unknown User' }}</strong>
+                      <p>{{ reply.content }}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -109,33 +124,19 @@
         <v-card-text>
           <div v-if="selectedMedia && selectedMedia.file_path" class="current-media">
             <p>Current {{ isVideo ? 'Video' : 'Image' }}:</p>
-            <img
-              v-if="!isVideo"
-              :src="getImageUrl(selectedMedia.file_path)"
-              alt="Current media image"
-              style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"
-            />
-            <video
-              v-else
-              :src="getImageUrl(selectedMedia.file_path)"
-              controls
-              style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"
-            ></video>
+            <img v-if="!isVideo" :src="getImageUrl(selectedMedia.file_path)" alt="Current media image"
+              style="max-width: 100%; max-height: 200px; margin-bottom: 10px;" />
+            <video v-else :src="getImageUrl(selectedMedia.file_path)" controls
+              style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
           </div>
-          <v-file-input
-            :label="`Replace ${isVideo ? 'Video (.mp4, .mov)' : 'Image/Video (.png, .jpg, .jpeg, .mp4)'}`"
-            :accept="isVideo ? '.mp4, .mov' : '.png, .jpg, .jpeg, .mp4'"
-            @update:modelValue="handleEditFileUpload"
-            outlined
-          ></v-file-input>
+          <v-file-input :label="`Replace ${isVideo ? 'Video (.mp4, .mov)' : 'Image/Video (.png, .jpg, .jpeg, .mp4)'}`"
+            :accept="isVideo ? '.mp4, .mov' : '.png, .jpg, .jpeg, .mp4'" @update:modelValue="handleEditFileUpload"
+            outlined></v-file-input>
           <v-text-field v-model="editMediaDescription" label="Description" outlined></v-text-field>
           <div v-if="editMediaLocation" class="location-preview">
             <i class="mdi mdi-map-marker"></i>
-            <a
-              :href="`https://www.google.com/maps?q=${editMediaLocation.lat},${editMediaLocation.lon}`"
-              target="_blank"
-              class="location-btn"
-            >
+            <a :href="`https://www.google.com/maps?q=${editMediaLocation.lat},${editMediaLocation.lon}`" target="_blank"
+              class="location-btn">
               {{ editMediaLocation.name }}
             </a>
             <button class="remove-btn" @click="removeEditLocation">Remove</button>
@@ -157,12 +158,36 @@
       <v-card>
         <v-card-title class="headline">Confirm Deletion</v-card-title>
         <v-card-text>
-          Are you sure you want to delete this {{ deleteType === 'media' ? (isVideo ? 'video' : 'post') : 'comment' }}? This action cannot be undone.
+          Are you sure you want to delete this {{ deleteType === 'media' ? (isVideo ? 'video' : 'post') : 'comment' }}?
+          This
+          action cannot be undone.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn text @click="cancelDelete">Cancel</v-btn>
           <v-btn color="error" @click="confirmDelete">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Replies Popup -->
+    <v-dialog v-model="repliesPopupVisible" max-width="500">
+      <v-card>
+        <v-card-title>Replies</v-card-title>
+        <v-card-text>
+          <div v-if="selectedCommentReplies.length === 0" class="no-replies">
+            <p>No replies yet</p>
+          </div>
+          <div v-else class="replies-list">
+            <div v-for="reply in selectedCommentReplies" :key="reply.id" class="reply">
+              <strong>{{ reply.user?.name || 'Unknown User' }}</strong>
+              <p>{{ reply.content }}</p>
+            </div>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="closeRepliesPopup">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -186,6 +211,10 @@ const user = ref({});
 const selectedMedia = ref(null);
 const comments = ref([]);
 const newComment = ref('');
+const replyInputVisible = ref(null);
+const replies = ref({});
+const repliesPopupVisible = ref(false);
+const selectedCommentReplies = ref([]);
 const isDeleting = ref(false);
 const mediaMenuVisible = ref(null);
 const editMediaPopup = ref(false);
@@ -199,6 +228,7 @@ const deleteDialog = ref(false);
 const deleteType = ref('');
 const itemToDelete = ref(null);
 const previousRoute = ref('');
+const visibleReplies = ref({});
 
 const API_BASE_URL = 'http://localhost:8000';
 const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
@@ -206,6 +236,53 @@ const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
 const isVideo = computed(() => {
   return selectedMedia.value?.file_path && VIDEO_EXTENSIONS.some(ext => selectedMedia.value.file_path.toLowerCase().endsWith(ext));
 });
+
+const toggleReplyInput = (commentId) => {
+  replyInputVisible.value = replyInputVisible.value === commentId ? null : commentId;
+};
+
+const addReply = async (parentId) => {
+  if (!replies.value[parentId]?.trim()) return;
+
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.post(`${API_BASE_URL}/api/posts/${selectedMedia.value.id}/comments`, {
+      content: replies.value[parentId],
+      parent_id: parentId, // Include parent_id in the request
+    }, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const parentComment = comments.value.find(comment => comment.id === parentId);
+    if (parentComment) {
+      parentComment.replies = parentComment.replies || [];
+      parentComment.replies.push(response.data); // Add the reply to the parent comment
+    }
+
+    replies.value[parentId] = ''; // Clear the reply input
+    replyInputVisible.value = null; // Hide the reply input
+  } catch (error) {
+    console.error('Error adding reply:', error.response?.data || error.message);
+  }
+};
+
+const toggleRepliesVisibility = (commentId) => {
+  visibleReplies.value[commentId] = !visibleReplies.value[commentId];
+};
+
+const areRepliesVisible = (commentId) => {
+  return visibleReplies.value[commentId] || false;
+};
+
+const openRepliesPopup = (comment) => {
+  selectedCommentReplies.value = comment.replies || [];
+  repliesPopupVisible.value = true;
+};
+
+const closeRepliesPopup = () => {
+  repliesPopupVisible.value = false;
+  selectedCommentReplies.value = [];
+};
 
 onMounted(async () => {
   try {
@@ -223,6 +300,11 @@ onMounted(async () => {
     const usersResult = await axios.get(`${API_BASE_URL}/api/users`, {
       headers: { Authorization: `Bearer ${token}` }
     });
+
+    // Assign the nested comments structure
+    // comments.value = commentsResult.data || [];
+    // console.log('Fetched comments:', comments.value); // Verify nested structure
+
     users.value = usersResult.data.data.reduce((acc, user) => {
       acc[user.id] = { name: user.name, username: user.username, profile_photo_path: user.profile_photo_path };
       return acc;
@@ -876,6 +958,81 @@ h1 {
 
 .comment-input button:hover {
   background: #0056b3;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.reply-btn,
+.view-replies-btn {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.reply-btn:hover,
+.view-replies-btn:hover {
+  text-decoration: underline;
+}
+
+.replies-list {
+  margin-top: 10px;
+  padding-left: 20px;
+  border-left: 2px solid #ddd;
+}
+
+.reply {
+  margin-top: 10px;
+}
+
+.reply-input {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.reply-input input {
+  flex: 1;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.reply-input button {
+  padding: 5px 10px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.reply-input button:hover {
+  background: #0056b3;
+}
+
+.view-replies-btn {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.view-replies-btn:hover {
+  text-decoration: underline;
+}
+
+.no-replies {
+  text-align: center;
+  color: #666;
+  padding: 10px 0;
 }
 
 .no-media {
