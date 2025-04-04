@@ -3,45 +3,138 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Mail\LoginAttemptsExceeded;
+use App\Mail\VerifyEmail;
+use App\Models\PendingUser;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 final class AuthController extends Controller
 {
-    final public function register(): JsonResponse
+    public function registerPending(): JsonResponse
     {
-        \Illuminate\Support\Facades\Request::validate([
+        $validated = request()->validate([
             'name' => 'required|string|max:255',
-            'username' => 'required|string|max:15|unique:users',
+            'username' => 'required|string|max:15|regex:/^[a-zA-Z0-9_]+$/|unique:users',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => [
                 'required',
                 'string',
                 'min:8',
-                'regex:/[a-z]/',      // at least one letter lowercase
-                'regex:/[A-Z]/',      // at least one letter uppercase
-                'regex:/[0-9]/',      // at least one digit
-                'regex:/[@$!%*#?&]/', // at least one special character
+                'regex:/[a-z]/',
+                'regex:/[A-Z]/',
+                'regex:/[0-9]/',
+                'regex:/[@$!%*#?&]/',
             ],
         ]);
 
-        $user = User::create([
-            'name' => request()->name,
-            'username' => request()->username,
-            'email' => request()->email,
-            'password' => Hash::make(request()->password),
+        $pendingUser = PendingUser::where('email', $validated['email'])->first();
+
+        if ($pendingUser) {
+            Mail::to($validated['email'])->send(new VerifyEmail($pendingUser->verification_token));
+            return response()->json([
+                'message' => 'This email is already registered but not verified. We’ve resent the verification email.',
+                'token' => $pendingUser->verification_token, // Debug
+            ], 202);
+        }
+
+        $token = Str::random(60);
+        $pendingUser = PendingUser::create([
+            'name' => $validated['name'],
+            'username' => $validated['username'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'verification_token' => $token,
         ]);
 
+        Mail::to($validated['email'])->send(new VerifyEmail($token));
+
         return response()->json([
-            'message' => 'User registered successfully',
-            'user' => $user,
-        ], 201);
+            'message' => 'Please verify your email to complete registration',
+            'email' => $validated['email'], // Send email for frontend
+        ], 202);
+    }
+
+    public function verifyEmail(string $token): JsonResponse
+    {
+        $pendingUser = PendingUser::where('verification_token', $token)->first();
+
+        if (!$pendingUser) {
+            return response()->json(['message' => 'Token inválido o expirado'], 404);
+        }
+
+        $user = DB::transaction(function () use ($pendingUser) {
+            $user = User::create([
+                'name' => $pendingUser->name,
+                'username' => $pendingUser->username,
+                'email' => $pendingUser->email,
+                'password' => $pendingUser->password,
+                'email_verified_at' => now(),
+            ]);
+
+            $pendingUser->delete();
+
+            return $user;
+        });
+
+        $token = $user->createToken(('web'), ['*'])->plainTextToken;
+
+        return response()->json(['token' => $token])
+            ->cookie(
+                'auth_token',
+                $token,
+                60,                   // Expiration (1 hour)
+                '/',                    // Path (root for all subdomains)
+                null,                 // Domain (null for current domain)
+                true,                // Secure (true for HTTPS)
+                true                 // HttpOnly (XSS protection));
+            );
+    }
+
+    public function checkVerification(Request $request): JsonResponse
+    {
+        $email = $request->query('email');
+        $user = User::where('email', $email)->first();
+
+        if ($user && !is_null($user->email_verified_at)) {
+            $token = $user->createToken(('web'), ['*'])->plainTextToken;
+            return response()->json(['token' => $token, 'verified' => true])
+                ->cookie(
+                    'auth_token',
+                    $token,
+                    60,                   // Expiration (1 hour)
+                    '/',                    // Path (root for all subdomains)
+                    null,                 // Domain (null for current domain)
+                    true,                // Secure (true for HTTPS)
+                    true                 // HttpOnly (XSS protection));
+                );
+        }
+
+        return response()->json(['verified' => false]);
+    }
+
+    public function resendVerification(Request $request): JsonResponse
+    {
+        $request->validate(['email' => 'required|email']);
+        $pendingUser = PendingUser::where('email', $request->email)->first();
+
+        if (!$pendingUser) {
+            return response()->json(['message' => 'No pending registration found'], 404);
+        }
+
+        $token = $pendingUser->verification_token;
+        Mail::to($pendingUser->email)->send(new \App\Mail\VerifyEmail($token));
+
+        return response()->json(['message' => 'Verification email resent']);
     }
 
     final public function login(): JsonResponse

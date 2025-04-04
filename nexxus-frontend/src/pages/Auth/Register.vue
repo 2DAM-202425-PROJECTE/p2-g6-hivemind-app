@@ -21,6 +21,7 @@
             required
             class="w-full p-3 bg-gray-100 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
           />
+          <p v-if="errors.name" class="text-xs text-red-500 mt-1">{{ errors.name }}</p>
         </div>
 
         <!-- Username -->
@@ -35,6 +36,7 @@
             required
             class="w-full p-3 bg-gray-100 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
           />
+          <p v-if="errors.username" class="text-xs text-red-500 mt-1">{{ errors.username }}</p>
         </div>
 
         <!-- Email -->
@@ -49,6 +51,7 @@
             required
             class="w-full p-3 bg-gray-100 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
           />
+          <p v-if="errors.email" class="text-xs text-red-500 mt-1">{{ errors.email }}</p>
         </div>
 
         <!-- Password -->
@@ -73,13 +76,14 @@
               <LockClosedIcon
                 v-if="capsLockOn"
                 class="h-6 w-6 text-amber-600"
-                title="Caps Lock is on"
+                aria-label="Caps Lock is on"
               />
               <!-- Show/Hide Password Icon -->
               <button
                 type="button"
                 @click="showPassword = !showPassword"
                 class="text-gray-600 hover:text-amber-600 focus:outline-none transition-colors duration-200"
+                :aria-label="showPassword ? 'Hide password' : 'Show password'"
               >
                 <EyeIcon
                   v-if="showPassword"
@@ -138,13 +142,17 @@
         <!-- Register button -->
         <button
           type="submit"
-          :disabled="!isPasswordValid"
+          :disabled="!isPasswordValid || isLoading"
           class="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <svg v-if="isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
           </svg>
-          Create Account
+          {{ isLoading ? 'Registering...' : 'Create Account' }}
         </button>
 
         <!-- Divider -->
@@ -159,7 +167,7 @@
 
         <!-- Social login buttons -->
         <div class="flex justify-center mb-4">
-          <button class="gsi-material-button">
+          <button class="gsi-material-button" disabled>
             <div class="gsi-material-button-state"></div>
             <div class="gsi-material-button-content-wrapper">
               <div class="gsi-material-button-icon">
@@ -182,7 +190,7 @@
       <div class="px-8 py-4 bg-gray-100 text-center">
         <p class="text-sm text-amber-700">
           Already have an account?
-          <router-link to="/login" class="font-medium text-amber-600 hover:underline">Log in</router-link>
+          <router-link to="/auth/login" class="font-medium text-amber-600 hover:underline">Log in</router-link>
         </p>
       </div>
     </div>
@@ -195,7 +203,7 @@
       class="text-white fixed bottom-4 right-4 z-50 max-w-xs"
     >
       <v-icon color="green" class="mr-2">mdi-check-circle</v-icon>
-      Registration successful!
+      Please check your email to verify your account!
     </v-snackbar>
 
     <v-snackbar
@@ -227,11 +235,13 @@ export default {
       email: '',
       password: '',
       error: null,
+      errors: {},
       showSuccessSnackbar: false,
       showErrorSnackbar: false,
       capsLockOn: false,
       showPassword: false,
-      passwordError: null
+      passwordError: null,
+      isLoading: false
     };
   },
   computed: {
@@ -264,41 +274,46 @@ export default {
     checkCapsLock(event) {
       this.capsLockOn = event.getModifierState && event.getModifierState('CapsLock');
     },
-
     async register() {
+      this.isLoading = true;
+      this.error = null;
+      this.errors = {};
+
       try {
-        const response = await apiClient.post('/api/register', {
+        await apiClient.get('/sanctum/csrf-cookie', { withCredentials: true });
+        const response = await apiClient.post('/api/register/pending', {
           name: this.name,
           username: this.username,
           email: this.email,
-          password: this.password,
-        });
+          password: this.password
+        }, { withCredentials: true });
 
-        // Automatically log in the user after registration
-        const loginResponse = await apiClient.post('/api/login', {
-          email: this.email,
-          password: this.password,
-          device_name: 'web',
-        });
+        // Guardar el email para la página de espera
+        localStorage.setItem('pendingEmail', this.email);
 
-        localStorage.setItem('token', loginResponse.data.token);
-        this.error = null;
         this.showSuccessSnackbar = true;
+        const successMessage = response.data.message.includes('resent')
+          ? 'Verification email resent. Please check your inbox!'
+          : 'Please verify your email to complete registration!';
 
         setTimeout(() => {
           this.showSuccessSnackbar = false;
-          this.$router.push('/complete-profile');
+          this.$router.push({ path: '/auth/check-email', query: { email: response.data.email } });
         }, 3000);
       } catch (err) {
-        this.error = err.response?.data?.message || 'Registration failed. Please check your details.';
+        if (err.response?.status === 422) {
+          this.errors = err.response.data.errors || {};
+          this.error = 'Please check your inputs';
+        } else {
+          this.error = err.response?.data?.message || 'Registration failed';
+        }
         this.showErrorSnackbar = true;
-
-        setTimeout(() => {
-          this.showErrorSnackbar = false;
-        }, 3000);
+        setTimeout(() => (this.showErrorSnackbar = false), 3000);
+      } finally {
+        this.isLoading = false;
       }
-    },
-  },
+    }
+  }
 };
 </script>
 

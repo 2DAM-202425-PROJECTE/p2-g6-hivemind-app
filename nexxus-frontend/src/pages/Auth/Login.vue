@@ -28,7 +28,7 @@
         <div class="mb-4">
           <div class="flex justify-between items-center mb-1">
             <label for="password" class="block text-sm font-medium text-amber-800">Password</label>
-            <router-link to="/forgot-password" class="text-xs text-amber-600 hover:underline">Forgot Password?</router-link>
+            <router-link to="/auth/forgot-password" class="text-xs text-amber-600 hover:underline">Forgot Password?</router-link>
           </div>
           <div class="relative">
             <input
@@ -137,7 +137,7 @@
       <div class="px-8 py-4 bg-gray-100 text-center">
         <p class="text-sm text-amber-700">
           Don't have an account?
-          <router-link to="/register" class="font-medium text-amber-600 hover:underline">Sign up</router-link>
+          <router-link to="/auth/register" class="font-medium text-amber-600 hover:underline">Sign up</router-link>
         </p>
       </div>
     </div>
