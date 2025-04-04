@@ -214,6 +214,9 @@ export default {
       this.saveRememberMe();
 
       try {
+
+        await apiClient.get('/sanctum/csrf-cookie', { withCredentials: true });
+        
         const response = await apiClient.post('/api/login', {
           email: this.email,
           password: this.password,
