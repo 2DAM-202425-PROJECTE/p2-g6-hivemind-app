@@ -429,6 +429,18 @@ const removeEditLocation = () => {
 const submitPost = async () => {
   try {
     const token = localStorage.getItem('token');
+
+    if (!token) {
+      console.error('No token available');
+      return;
+    }
+
+    // Check if currentUser is defined
+    if (!currentUser.value || !currentUser.value.id) {
+      console.error('Current user is not defined');
+      alert('Error: User not found. Please log in again.');
+      return;
+    }
     const now = new Date();
     const publishDate = now.toISOString().slice(0, 19).replace('T', ' ');
 
