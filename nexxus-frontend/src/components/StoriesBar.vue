@@ -134,8 +134,7 @@ const deleteStory = async (id) => {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
-    this.userId = response.data.id;
-    showStoryModal.value = false;
+    //showStoryModal.value = false;
     showSuccessPopup.value = true;
     await fetchStories();
 
