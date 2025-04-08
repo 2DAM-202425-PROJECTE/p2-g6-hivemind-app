@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden max-w-5xl mx-auto mb-5">
+  <div :class="['bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden max-w-5xl mx-auto mb-5', equippedBackgroundClass]">
     <!-- Banner -->
     <div class="relative w-full h-48 bg-gray-200 dark:bg-gray-700">
       <img
@@ -39,7 +39,9 @@
       <div class="pt-20 flex flex-col md:flex-row md:items-start">
         <!-- User info -->
         <div class="flex-1">
-          <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ user.name }}</h3>
+          <h3 :class="['text-2xl font-bold text-gray-900 dark:text-white', getNameEffectClass(user.equipped_name_effect_path)]">
+            {{ user.name }}
+          </h3>
           <div class="text-sm text-gray-500 dark:text-gray-400">@{{ user.username }}</div>
           <div v-if="user.description" class="mt-2 text-sm text-gray-600 dark:text-gray-300">
             {{ user.description }}
@@ -90,273 +92,79 @@
         </div>
       </div>
     </div>
-
-    <!-- Inventory Modal -->
-    <div
-      v-if="showInventory"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      @click="closeInventoryOnBackdrop"
-    >
-      <div
-        class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto"
-        @click.stop
-      >
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white">Inventory</h3>
-          <button @click="showInventory = false" class="text-gray-600 dark:text-gray-300 hover:text-red-500">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div v-if="inventoryCategories.length > 0" class="cosmetics-grid">
-          <div v-for="category in inventoryCategories" :key="category.title" class="category-card">
-            <h3 class="category-title">{{ category.title }}</h3>
-            <p class="category-description">{{ category.description }}</p>
-            <div class="items-grid">
-              <div v-for="item in category.items" :key="item.id" class="cosmetic-item">
-                <img :src="item.icon_url" :alt="item.name" class="cosmetic-icon" />
-                <h4 class="item-name">{{ item.name }}</h4>
-                <p class="item-price">{{ formatPrice(item.price) }}</p>
-                <button
-                  v-if="!item.isEquipped"
-                  @click="equipItem(item)"
-                  class="buy-button"
-                >
-                  Equip
-                </button>
-                <button
-                  v-else
-                  @click="unequipItem(item)"
-                  class="buy-button unequip-button"
-                >
-                  Unequip
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div v-else class="text-center text-gray-500">
-          No items in inventory
-        </div>
-      </div>
-    </div>
-
-    <!-- Equip Confirmation Popup -->
-    <div
-      v-if="showEquipPopup"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      @click="closeEquipPopupOnBackdrop"
-    >
-      <div
-        class="bg-white dark:bg-gray-800 rounded-lg p-4"
-        @click.stop
-      >
-        <p class="text-gray-900 dark:text-white">{{ equippedItemName }}</p>
-        <button
-          @click="showEquipPopup = false"
-          class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          OK
-        </button>
-      </div>
-    </div>
   </div>
+
+  <!-- Inventory Modal -->
+  <InventoryModal
+    v-if="showInventory"
+    :user="user"
+    @close="showInventory = false"
+    @update-user="updateUser"
+  />
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import apiClient from '@/axios.js';
+import InventoryModal from './InventoryModal.vue';
 
 const props = defineProps({
-  user: {
-    type: Object,
-    required: true,
-  },
-  isCurrentUser: {
-    type: Boolean,
-    required: true,
-  },
-  editProfile: {
-    type: Function,
-    required: true,
-  },
-  connectSocial: {
-    type: Function,
-    default: () => console.log('Connect Social clicked'),
-  },
-  shareProfile: {
-    type: Function,
-    required: true,
-  },
+  user: { type: Object, required: true },
+  isCurrentUser: { type: Boolean, required: true },
+  editProfile: { type: Function, required: true },
+  connectSocial: { type: Function, default: () => console.log('Connect Social clicked') },
+  shareProfile: { type: Function, required: true },
 });
 
-// Reactive state
 const showInventory = ref(false);
-const showEquipPopup = ref(false);
-const equippedItemName = ref('');
-const inventory = ref([]);
-const inventoryCategories = ref([]);
 
-// Close inventory modal when clicking on the backdrop
-const closeInventoryOnBackdrop = (event) => {
-  if (event.target === event.currentTarget) {
-    showInventory.value = false;
-  }
-};
+const equippedBackgroundClass = computed(() => {
+  return props.user.equipped_background_path ? `bg-[url(${props.user.equipped_background_path})]` : '';
+});
 
-// Close equip confirmation popup when clicking on the backdrop
-const closeEquipPopupOnBackdrop = (event) => {
-  if (event.target === event.currentTarget) {
-    showEquipPopup.value = false;
-  }
-};
-
-// Equip item function
-const equipItem = async (item) => {
-  equippedItemName.value = `${item.name} has been equipped`;
-  showEquipPopup.value = true;
-
-  if (item.type === 'profile_icon') {
-    try {
-      const response = await apiClient.post('/api/user/update-equipped-profile-icon', {
-        userId: props.user.id,
-        equippedProfileIconPath: item.icon_url,
-      }, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      // Update the local user equipped profile icon path
-      props.user.equipped_profile_icon_path = item.icon_url;
-      item.isEquipped = true; // Mark this item as equipped
-      // Unequip any other items of the same type
-      inventory.value.forEach(i => {
-        if (i.type === item.type && i.id !== item.id) {
-          i.isEquipped = false;
-        }
-      });
-      console.log('Profile icon equipped successfully:', response.data);
-    } catch (error) {
-      console.error('Failed to equip profile icon:', error);
-    }
-  }
-};
-
-// Unequip item function
-const unequipItem = async (item) => {
-  if (item.type === 'profile_icon') {
-    try {
-      const response = await apiClient.post('/api/user/update-equipped-profile-icon', {
-        userId: props.user.id,
-        equippedProfileIconPath: null,
-      }, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      props.user.equipped_profile_icon_path = null;
-      item.isEquipped = false;
-      equippedItemName.value = `${item.name} has been unequipped`;
-      showEquipPopup.value = true;
-      console.log('Profile icon unequipped successfully:', response.data);
-    } catch (error) {
-      console.error('Failed to unequip profile icon:', error);
-    }
-  }
-};
-
-// Format price to match shop page
-const formatPrice = (price) => {
-  if (typeof price === 'string') return price; // Already formatted
-  return price === 0 ? 'Free' : `${price} Credits`;
-};
-
-// Categorize inventory items like shop page
-const categorizeInventory = (items) => {
-  return [
-    {
-      title: 'Profile Icons',
-      description: 'Stand out with unique profile icons that showcase your personality',
-      items: items.filter(item => item.name.includes('Icon')),
-    },
-    {
-      title: 'Backgrounds',
-      description: 'Transform your profile with stunning background themes',
-      items: items.filter(item =>
-        ['Galaxy', 'Night City', 'Mountain', 'Blossom', 'Ocean', 'Forest', 'Desert', 'Space'].includes(item.name)
-      ),
-    },
-    {
-      title: 'Animations',
-      description: 'Add dynamic effects to make your profile come alive',
-      items: items.filter(item =>
-        ['Sparkle', 'Wind', 'Fire', 'Wave', 'Rainbow', 'Glitch', 'Pulse', 'Orbit'].includes(item.name)
-      ),
-    },
-    {
-      title: 'Emojis',
-      description: 'Express yourself with premium animated emojis',
-      items: items.filter(item => item.name.includes('Emoji')),
-    },
-    {
-      title: 'Name Effects',
-      description: 'Make your username stand out with eye-catching effects',
-      items: items.filter(item =>
-        ['Gradient', 'Neon', 'Gold', 'Rainbow', 'Glitter', 'Shadow', 'Pixel', 'Cosmic'].includes(item.name)
-      ),
-    },
-    {
-      title: 'Profile Frames',
-      description: 'Frame your profile picture with stunning borders',
-      items: items.filter(item => item.name.includes('Frame')),
-    },
-  ].filter(category => category.items.length > 0); // Only include categories with items
-};
-
-// Load inventory from API and categorize
-const loadInventory = async () => {
-  try {
-    const response = await apiClient.get(`/api/user/${props.user.id}/inventory`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    });
-    console.log('API Response:', response.data); // Log the API response
-    const mappedInventory = response.data.map(item => ({
-      id: item.id,
-      name: item.item.name,
-      price: item.item.price,
-      icon_url: item.item.iconUrl,
-      type: item.item.type || (item.item.name.includes('Icon') ? 'profile_icon' : 'other'),
-      isEquipped: item.item.iconUrl === props.user.equipped_profile_icon_path
-    }));
-    inventory.value = mappedInventory;
-    inventoryCategories.value = categorizeInventory(mappedInventory);
-    console.log('Mapped Inventory:', inventory.value);
-    console.log('Categorized Inventory:', inventoryCategories.value);
-  } catch (error) {
-    console.error('Failed to load inventory:', error);
-  }
-};
-
-// Load equipped state when the profile is loaded
 const loadEquippedState = async () => {
+  if (!props.user?.id) return;
   try {
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('No authentication token found.');
     const response = await apiClient.get(`/api/user/${props.user.id}/equipped-items`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
-    console.log('Equipped Items Response:', response.data);
-    // Assuming the API returns an object with equipped items
-    if (response.data.equipped_profile_icon_path) {
-      props.user.equipped_profile_icon_path = response.data.equipped_profile_icon_path;
-    }
+    props.user.equipped_profile_icon_path = response.data.equipped_profile_icon_path;
+    props.user.equipped_background_path = response.data.equipped_background_path;
+    props.user.equipped_name_effect_path = response.data.equipped_name_effect_path;
   } catch (error) {
-    console.error('Failed to load equipped state:', error);
+    console.error('Failed to load equipped state:', error.response?.data || error.message);
   }
 };
 
-// Lifecycle hooks
+const updateUser = (updatedFields) => {
+  Object.assign(props.user, updatedFields);
+};
+
+const getNameEffectClass = (path) => {
+  if (!path) return '';
+  if (path.includes('lamp.svg')) return 'soft-glow';
+  if (path.includes('blend.svg')) return 'gradient-fade';
+  if (path.includes('badge.svg')) return 'golden-outline';
+  if (path.includes('vibrate.svg')) return 'dark-pulse';
+  if (path.includes('stars.svg')) return 'cosmic-shine';
+  if (path.includes('lightbulb.svg')) return 'neon-edge';
+  if (path.includes('snowflake.svg')) return 'frost-glow';
+  if (path.includes('flame.svg')) return 'fire-flicker';
+  if (path.includes('gem.svg')) return 'emerald-sheen';
+  if (path.includes('shadow.svg')) return 'shadow-drift';
+  if (path.includes('zap.svg')) return 'electric-glow';
+  if (path.includes('moon.svg')) return 'lunar-haze';
+  if (path.includes('sun.svg')) return 'solar-flare';
+  if (path.includes('waves.svg')) return 'wave-shimmer';
+  if (path.includes('diamond.svg')) return 'crystal-pulse';
+  if (path.includes('rainbow.svg')) return 'rainbow-gleam';
+  return '';
+};
+
 onMounted(() => {
-  console.log('isCurrentUser in ProfileHeader:', props.isCurrentUser);
-  loadEquippedState(); // Load equipped state first
-  loadInventory(); // Then load inventory to compare equipped state
+  loadEquippedState();
 });
 </script>
 
@@ -370,110 +178,142 @@ onMounted(() => {
   transform: translateX(-50%);
 }
 
-.cosmetics-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
+/* Name Effect Styles */
+.soft-glow {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
 }
 
-.category-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.gradient-fade {
+  background: linear-gradient(to right, #ff7e5f, #feb47b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
-.category-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #000;
-  margin-bottom: 0.5rem;
+.golden-outline {
+  color: #fff;
+  text-shadow: 0 0 2px #ffd700, 0 0 4px #ffd700, 0 0 6px #ffd700;
 }
 
-.category-description {
-  color: #666;
-  margin-bottom: 1rem;
-  font-size: 0.95rem;
+.dark-pulse {
+  color: #fff;
+  animation: darkPulse 1.5s infinite;
 }
 
-.items-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+.cosmic-shine {
+  color: #fff;
+  text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 15px #00ffff;
 }
 
-@media (min-width: 768px) {
-  .items-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+.neon-edge {
+  color: #fff;
+  text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff;
 }
 
-@media (min-width: 480px) and (max-width: 767px) {
-  .items-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.frost-glow {
+  color: #e0f7ff;
+  text-shadow: 0 0 8px rgba(173, 216, 230, 0.8);
 }
 
-@media (max-width: 479px) {
-  .items-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.fire-flicker {
+  color: #ff4500;
+  animation: fireFlicker 0.5s infinite;
 }
 
-.cosmetic-item {
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  text-align: center;
-  transition: background-color 0.3s;
+.emerald-sheen {
+  color: #00ff7f;
+  text-shadow: 0 0 6px rgba(0, 255, 127, 0.7);
 }
 
-.cosmetic-item:hover {
-  background: #e9ecef;
+.shadow-drift {
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  animation: shadowDrift 2s infinite;
 }
 
-.cosmetic-icon {
-  width: 2rem;
-  height: 2rem;
-  margin-bottom: 0.5rem;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
+.electric-glow {
+  color: #00b7eb;
+  text-shadow: 0 0 5px #00b7eb, 0 0 10px #00b7eb;
+  animation: electricGlow 1s infinite;
 }
 
-.item-name {
-  font-size: 1rem;
-  font-weight: 500;
-  color: #000;
-  margin-bottom: 0.25rem;
+.lunar-haze {
+  color: #d3d3d3;
+  text-shadow: 0 0 8px rgba(211, 211, 211, 0.6);
 }
 
-.item-price {
-  font-size: 0.9rem;
-  color: #000;
-  margin-bottom: 0.5rem;
+.solar-flare {
+  color: #ffeb3b;
+  text-shadow: 0 0 6px #ffeb3b, 0 0 12px #ffeb3b;
+  animation: solarFlare 1.2s infinite;
 }
 
-.buy-button {
-  background-color: grey;
-  color: white;
-  border: none;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 0.5rem;
-  transition: background-color 0.3s;
+.wave-shimmer {
+  color: #1e90ff;
+  text-shadow: 0 0 5px #1e90ff;
+  animation: waveShimmer 2s infinite;
 }
 
-.buy-button:hover {
-  background-color: darkgrey;
+.crystal-pulse {
+  color: #b9f2ff;
+  text-shadow: 0 0 5px #b9f2ff, 0 0 10px #b9f2ff;
+  animation: crystalPulse 1.5s infinite;
 }
 
-.unequip-button {
-  background-color: #dc3545;
+.rainbow-gleam {
+  background: linear-gradient(45deg, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0000ff, #8000ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rainbowGleam 3s infinite;
 }
 
-.unequip-button:hover {
-  background-color: #c82333;
+/* Animations */
+@keyframes darkPulse {
+  0% { text-shadow: 0 0 5px #000; }
+  50% { text-shadow: 0 0 10px #000; }
+  100% { text-shadow: 0 0 5px #000; }
+}
+
+@keyframes fireFlicker {
+  0% { text-shadow: 0 0 5px #ff4500; }
+  50% { text-shadow: 0 0 10px #ff4500, 0 0 15px #ff8c00; }
+  100% { text-shadow: 0 0 5px #ff4500; }
+}
+
+@keyframes shadowDrift {
+  0% { text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); }
+  50% { text-shadow: 4px 4px 6px rgba(0, 0, 0, 0.7); }
+  100% { text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); }
+}
+
+@keyframes electricGlow {
+  0% { text-shadow: 0 0 5px #00b7eb; }
+  50% { text-shadow: 0 0 10px #00b7eb, 0 0 15px #00b7eb; }
+  100% { text-shadow: 0 0 5px #00b7eb; }
+}
+
+@keyframes solarFlare {
+  0% { text-shadow: 0 0 6px #ffeb3b; }
+  50% { text-shadow: 0 0 12px #ffeb3b, 0 0 18px #ffeb3b; }
+  100% { text-shadow: 0 0 6px #ffeb3b; }
+}
+
+@keyframes waveShimmer {
+  0% { text-shadow: 0 0 5px #1e90ff; }
+  50% { text-shadow: 0 0 10px #1e90ff; }
+  100% { text-shadow: 0 0 5px #1e90ff; }
+}
+
+@keyframes crystalPulse {
+  0% { text-shadow: 0 0 5px #b9f2ff; }
+  50% { text-shadow: 0 0 10px #b9f2ff, 0 0 15px #b9f2ff; }
+  100% { text-shadow: 0 0 5px #b9f2ff; }
+}
+
+@keyframes rainbowGleam {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 </style>

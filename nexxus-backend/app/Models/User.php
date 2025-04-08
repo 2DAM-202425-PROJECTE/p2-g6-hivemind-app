@@ -32,6 +32,12 @@ class User extends Authenticatable
         'banner_photo_path',
         'credits',
         'email_verified_at',
+        'equipped_profile_icon_path',
+        'equipped_profile_frame_path',
+        'equipped_background_path', // Added for Backgrounds
+        'equipped_animation_path', // Added for Animations
+        'equipped_name_effect_path', // Added for Name Effects
+        'equipped_badge_path', // Added for Profile Badges
     ];
 
     protected $hidden = [
@@ -63,17 +69,11 @@ class User extends Authenticatable
         return $this->hasMany(Post::class, 'id_user');
     }
 
-    /**
-     * Sobrescribir el método por defecto de Jetstream para usar laravolt/avatar
-     */
     protected function defaultProfilePhotoUrl()
     {
         return Avatar::create($this->name)->toBase64();
     }
 
-    /**
-     * Obtener la URL de la foto de perfil
-     */
     public function getProfilePhotoUrlAttribute()
     {
         if ($this->profile_photo_path) {
@@ -87,9 +87,36 @@ class User extends Authenticatable
         return $value ? asset('storage/' . $value) : null;
     }
 
-    /**
-     * Obtener las iniciales del nombre (opcional, si lo necesitas en otro lugar)
-     */
+    public function getEquippedProfileIconPathAttribute($value)
+    {
+        return $value;
+    }
+
+    public function getEquippedProfileFramePathAttribute($value)
+    {
+        return $value;
+    }
+
+    public function getEquippedBackgroundPathAttribute($value)
+    {
+        return $value;
+    }
+
+    public function getEquippedAnimationPathAttribute($value)
+    {
+        return $value;
+    }
+
+    public function getEquippedNameEffectPathAttribute($value)
+    {
+        return $value;
+    }
+
+    public function getEquippedBadgePathAttribute($value)
+    {
+        return $value;
+    }
+
     protected function getInitials()
     {
         $words = explode(' ', trim($this->name));

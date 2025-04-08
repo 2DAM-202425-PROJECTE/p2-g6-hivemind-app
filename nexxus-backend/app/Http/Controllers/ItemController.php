@@ -34,8 +34,8 @@ class ItemController extends Controller
     {
         try {
             $subscriptions = Item::whereIn('id', [1, 2, 3])->get();
-            $creditPacks = Item::whereIn('id', [4, 5, 6, 7])->get();
-            $cosmetics = Item::whereNotIn('id', [1, 2, 3, 4, 5, 6, 7])->get();
+            $creditPacks = Item::whereIn('id', [4, 5, 6, 7, 8, 9, 10, 11])->get();
+            $cosmetics = Item::whereNotIn('id', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])->get();
 
             return response()->json([
                 'subscriptions' => $subscriptions,

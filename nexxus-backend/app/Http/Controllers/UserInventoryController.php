@@ -9,12 +9,27 @@ use Illuminate\Support\Facades\Auth;
 
 class UserInventoryController extends Controller
 {
-    public function index()
+    public function index($id)
     {
-        $user = Auth::user();
-        $inventory = UserInventory::where('user_id', $user->id)->with('item')->get();
+        $userId = Auth::id();
+        if ($userId != $id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
 
-        return response()->json($inventory);
+        $inventory = UserInventory::where('user_id', $id)->with('item')->get();
+        $formattedInventory = $inventory->map(function ($inventoryItem) {
+            return [
+                'id' => $inventoryItem->id,
+                'item' => [
+                    'name' => $inventoryItem->item->name,
+                    'price' => $inventoryItem->item->price,
+                    'iconUrl' => $inventoryItem->item->iconUrl,
+                    'type' => $inventoryItem->item->type ?? (str_contains($inventoryItem->item->name, 'Icon') ? 'profile_icon' : (str_contains($inventoryItem->item->name, 'Frame') ? 'profile_frame' : 'other')),
+                ],
+            ];
+        });
+
+        return response()->json($formattedInventory, 200);
     }
 
     public function store(Request $request)

@@ -21,13 +21,19 @@
       <section class="trending-section">
         <h2 class="section-title">Trending Items</h2>
         <div class="trending-grid">
-          <div v-for="item in trendingItems" :key="item.id" class="trending-item">
-            <div class="item-icon">
-              <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" />
+          <div v-for="item in trendingItems" :key="item.id" class="trending-item" :class="{ 'purchased': isPurchased(item.id) }">
+            <div class="item-icon" :class="{ 'background-preview': item.type === 'background' }">
+              <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" @error="handleImageError(item)" />
             </div>
             <h3 class="item-name">{{ item.name }}</h3>
             <p class="item-price">{{ formatPrice(item.price) }}</p>
-            <button @click="goToPurchase(item.id)" class="buy-button">Purchase</button>
+            <button
+              @click="goToPurchase(item.id)"
+              class="buy-button"
+              :disabled="isPurchased(item.id)"
+            >
+              {{ isPurchased(item.id) ? 'Owned' : 'Purchase' }}
+            </button>
           </div>
         </div>
       </section>
@@ -36,11 +42,17 @@
       <section class="subscriptions-section">
         <h2 class="section-title">Subscriptions</h2>
         <div class="subscription-grid">
-          <div v-for="tier in subscriptionTiers" :key="tier.id" class="subscription-card">
-            <img :src="tier.iconUrl" :alt="tier.name" class="cosmetic-icon" />
+          <div v-for="tier in subscriptionTiers" :key="tier.id" class="subscription-card" :class="{ 'purchased': isPurchased(tier.id) }">
+            <img :src="tier.iconUrl" :alt="tier.name" class="cosmetic-icon" @error="handleImageError(tier)" />
             <h3 class="tier-title">{{ tier.name }}</h3>
             <p class="tier-price">{{ formatPrice(tier.price) }}</p>
-            <button @click="goToPurchase(tier.id)" class="buy-button">Purchase</button>
+            <button
+              @click="goToPurchase(tier.id)"
+              class="buy-button"
+              :disabled="isPurchased(tier.id)"
+            >
+              {{ isPurchased(tier.id) ? 'Owned' : 'Purchase' }}
+            </button>
           </div>
         </div>
       </section>
@@ -50,7 +62,7 @@
         <h2 class="section-title">Buy Credits</h2>
         <div class="credits-grid">
           <div v-for="credit in creditPacks" :key="credit.id" class="credit-card">
-            <img :src="credit.iconUrl" :alt="credit.name" class="credit-icon" />
+            <img :src="credit.iconUrl" :alt="credit.name" class="credit-icon" @error="handleImageError(credit)" />
             <h3 class="credit-amount">{{ credit.name }}</h3>
             <p class="credit-price">{{ formatPrice(credit.price) }}</p>
             <button @click="goToPurchase(credit.id)" class="buy-button">Purchase</button>
@@ -66,11 +78,19 @@
             <h3 class="category-title">{{ category.title }}</h3>
             <p class="category-description">{{ category.description }}</p>
             <div class="items-grid">
-              <div v-for="item in category.items" :key="item.id" class="cosmetic-item">
-                <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" />
+              <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'purchased': isPurchased(item.id), 'background-item': item.type === 'background' }">
+                <div class="item-preview" :class="{ 'background-preview': item.type === 'background' }">
+                  <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" @error="handleImageError(item)" />
+                </div>
                 <h4 class="item-name">{{ item.name }}</h4>
                 <p class="item-price">{{ formatPrice(item.price) }}</p>
-                <button @click="goToPurchase(item.id)" class="buy-button">Purchase</button>
+                <button
+                  @click="goToPurchase(item.id)"
+                  class="buy-button"
+                  :disabled="isPurchased(item.id)"
+                >
+                  {{ isPurchased(item.id) ? 'Owned' : 'Purchase' }}
+                </button>
               </div>
             </div>
           </div>
@@ -98,31 +118,62 @@ export default {
       subscriptionTiers: [],
       creditPacks: [],
       cosmeticCategories: [],
+      userInventory: [],
+      userId: null,
+      fallbackImage: 'https://api.iconify.design/lucide/image-off.svg',
     };
   },
   computed: {
     trendingItems() {
       const allItems = this.cosmeticCategories.flatMap(category => category.items);
-      return this.shuffleArray([...allItems]).slice(0, 5); // Randomly select 5 items
+      return this.shuffleArray([...allItems]).slice(0, 5);
     },
   },
   created() {
+    this.fetchCurrentUser();
     this.fetchCategorizedItems();
   },
   methods: {
+    async fetchCurrentUser() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+
+        const response = await apiClient.get('/api/user', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        this.userId = response.data.id;
+        await this.fetchUserInventory();
+      } catch (error) {
+        console.error('Failed to fetch current user:', error);
+      }
+    },
+    async fetchUserInventory() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await apiClient.get(`/api/user/${this.userId}/inventory`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        this.userInventory = response.data.map(item => item.item_id);
+      } catch (error) {
+        console.error('Failed to fetch user inventory:', error);
+      }
+    },
     async fetchCategorizedItems() {
       try {
         const response = await apiClient.get('/api/shop/categorized-items', {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
         this.subscriptionTiers = response.data.subscriptions.map(tier => ({
           ...tier,
           price: tier.price === 0 ? 'Free' : `${tier.price}€/month`
         }));
-        this.creditPacks = response.data.creditPacks.map(pack => ({
-          ...pack,
-          price: `${pack.price}€`
-        }));
+        this.creditPacks = response.data.creditPacks
+          .sort((a, b) => parseInt(a.name) - parseInt(b.name)) // Sort by credit amount
+          .map(pack => ({
+            ...pack,
+            price: `${pack.price}€`
+          }));
         this.cosmeticCategories = this.categorizeCosmetics(response.data.cosmetics);
       } catch (error) {
         console.error('Failed to fetch categorized items:', error);
@@ -133,43 +184,55 @@ export default {
         {
           title: 'Profile Icons',
           description: 'Stand out with unique profile icons that showcase your personality',
-          items: cosmetics.filter(item => item.name.includes('Icon')),
+          items: cosmetics.filter(item =>
+            ['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem', 'Thunder Bolt', 'Moon Glow', 'Sun Flare',
+              'Flame Crest', 'Snowflake Spark', 'Leaf Whisper', 'Wave Ripple', 'Cloud Drift', 'Gear Spin', 'Anchor Drop', 'Feather Light'].includes(item.name)
+          ),
         },
         {
           title: 'Backgrounds',
           description: 'Transform your profile with stunning background themes',
           items: cosmetics.filter(item =>
-            ['Galaxy', 'Night City', 'Mountain', 'Blossom', 'Ocean', 'Forest', 'Desert', 'Space'].includes(item.name)
+            ['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes',
+              'Mountain Peak', 'Northern Lights', 'Lush Valley', 'Dusk Metropolis', 'Golden Fields', 'Frosty Tundra', 'Volcanic Ash', 'Nebula Cloud'].includes(item.name)
           ),
         },
         {
           title: 'Animations',
           description: 'Add dynamic effects to make your profile come alive',
           items: cosmetics.filter(item =>
-            ['Sparkle', 'Wind', 'Fire', 'Wave', 'Rainbow', 'Glitch', 'Pulse', 'Orbit'].includes(item.name)
+            ['Gentle Sparkle', 'Fading Pulse', 'Soft Ripple', 'Orbit Glow', 'Subtle Glitch', 'Twirl Flash', 'Pulse Wave', 'Star Burst',
+              'Stellar Rain', 'Vortex Spin', 'Flame Dance', 'Frost Swirl', 'Electric Surge', 'Dusk Transition', 'Rainbow Pulse', 'Bubble Pop'].includes(item.name)
           ),
-        },
-        {
-          title: 'Emojis',
-          description: 'Express yourself with premium animated emojis',
-          items: cosmetics.filter(item => item.name.includes('Emoji')),
         },
         {
           title: 'Name Effects',
           description: 'Make your username stand out with eye-catching effects',
           items: cosmetics.filter(item =>
-            ['Gradient', 'Neon', 'Gold', 'Rainbow', 'Glitter', 'Shadow', 'Pixel', 'Cosmic'].includes(item.name)
+            ['Soft Glow', 'Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker',
+              'Emerald Sheen', 'Shadow Drift', 'Electric Glow', 'Lunar Haze', 'Solar Flare', 'Wave Shimmer', 'Crystal Pulse', 'Rainbow Gleam'].includes(item.name)
           ),
         },
         {
           title: 'Profile Frames',
           description: 'Frame your profile picture with stunning borders',
-          items: cosmetics.filter(item => item.name.includes('Frame')),
+          items: cosmetics.filter(item =>
+            ['Golden Ring', 'Crystal Edge', 'Star Border', 'Cloud Frame', 'Tech Circuit', 'Leaf Wreath', 'Wave Crest', 'Pixel Grid',
+              'Flame Halo', 'Frost Ring', 'Gear Frame', 'Moon Orbit', 'Sun Burst', 'Ivy Crown', 'Neon Circuit', 'Starfield Edge'].includes(item.name)
+          ),
         },
-      ].filter(category => category.items.length > 0); // Only include categories with items
+        {
+          title: 'Profile Badges',
+          description: 'Show off your status with exclusive profile badges',
+          items: cosmetics.filter(item =>
+            ['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge', 'Legend Badge', 'Pioneer Badge', 'Guardian Badge',
+              'Warrior Badge', 'Sage Badge', 'Star Gazer Badge', 'Trailblazer Badge', 'Elementalist Badge', 'Innovator Badge', 'Nomad Badge', 'Champion Badge'].includes(item.name)
+          ),
+        },
+      ].filter(category => category.items.length > 0);
     },
     formatPrice(price) {
-      if (typeof price === 'string') return price; // Already formatted
+      if (typeof price === 'string') return price;
       return price === 0 ? 'Free' : `${price} Credits`;
     },
     shuffleArray(array) {
@@ -180,7 +243,16 @@ export default {
       return array;
     },
     goToPurchase(itemId) {
-      this.$router.push({ path: `/purchase/${itemId}` });
+      if (!this.isPurchased(itemId)) {
+        this.$router.push({ path: `/purchase/${itemId}` });
+      }
+    },
+    isPurchased(itemId) {
+      return this.userInventory.includes(itemId);
+    },
+    handleImageError(item) {
+      console.warn(`Image failed to load for ${item.name}: ${item.iconUrl}`);
+      item.iconUrl = this.fallbackImage;
     },
   },
 };
@@ -320,7 +392,7 @@ section {
 /* Credits Section */
 .credits-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
 }
 
@@ -358,6 +430,19 @@ section {
   text-align: center;
 }
 
+.background-item .item-preview {
+  height: 100px;
+  overflow: hidden;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.background-preview .cosmetic-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .cosmetic-icon {
   width: 2rem;
   height: 2rem;
@@ -371,6 +456,21 @@ section {
 .cosmetic-item h4,
 .cosmetic-item p {
   color: #000;
+}
+
+/* Purchased Item Styling */
+.purchased {
+  background: #e0e0e0;
+  opacity: 0.7;
+}
+
+.purchased .buy-button {
+  background-color: #a0a0a0;
+  cursor: not-allowed;
+}
+
+.purchased .buy-button:hover {
+  background-color: #a0a0a0;
 }
 
 /* Responsive Design */
@@ -388,7 +488,6 @@ section {
   }
 
   .subscription-grid,
-  .credits-grid,
   .cosmetics-grid {
     grid-template-columns: 1fr;
   }
