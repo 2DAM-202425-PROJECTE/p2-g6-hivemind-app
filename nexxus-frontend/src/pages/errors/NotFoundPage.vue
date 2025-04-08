@@ -13,7 +13,7 @@
       </p>
       <div class="flex gap-5 justify-center">
         <router-link
-            to="/"
+            to="/home"
             class="btn-primary"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">

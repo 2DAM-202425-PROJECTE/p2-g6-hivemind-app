@@ -256,6 +256,7 @@ import axios from '../axios';
 import { clearAuthToken } from '../auth';
 import NotificationsModal from './NotificationsModal.vue';
 import { generateAvatar } from '../utils/avatar';
+import apiClient from "../axios";
 
 const router = useRouter();
 const menu = ref(false);
@@ -320,7 +321,7 @@ const logout = async () => {
   try {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No token found');
-    await axios.post('/api/logout', {}, { headers: { Authorization: `Bearer ${token}` } });
+    await apiClient.post('/api/logout');
     localStorage.removeItem('token');
     clearAuthToken();
     user.value = null;

@@ -298,7 +298,7 @@ export default {
 
         setTimeout(() => {
           this.showSuccessSnackbar = false;
-          this.$router.push({ path: '/auth/check-email', query: { email: response.data.email } });
+          this.$router.push({ path: '/auth/check-email', query: { email: this.email } });
         }, 3000);
       } catch (err) {
         if (err.response?.status === 422) {

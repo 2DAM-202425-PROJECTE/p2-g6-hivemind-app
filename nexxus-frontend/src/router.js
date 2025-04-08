@@ -85,24 +85,49 @@ const router = createRouter({
   routes,
 });
 
+// router.beforeEach(async (to, from, next) => {
+//   const publicRoutes = ['Login', 'Register', 'CheckEmail', 'VerifyEmail', 'ForgotPassword', 'ResetPassword'];
+//
+//   if (publicRoutes.includes(to.name)) {
+//     return next();
+//   }
+//
+//   // Buscar el token en localStorage en lugar de cookie
+//   const token = localStorage.getItem('token');
+//
+//   if (!token) {
+//     return next('/auth/login');
+//   }
+//
+//   try {
+//     // Verificar el token con el backend
+//     apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+//     const response = await apiClient.get('/api/user');
+//     console.log('User authenticated:', response.data);
+//     return next();
+//   } catch (error) {
+//     console.warn('Authentication failed:', error.response?.status);
+//     // Limpiar el token si la autenticación falla
+//     localStorage.removeItem('token');
+//     return next('/auth/login');
+//   }
+// });
+
 router.beforeEach(async (to, from, next) => {
-  const authCookie = document.cookie.split('auth_token=')[1]?.split(';')[0];
-  const publicRoutes = ['Login', 'Register', 'CheckEmail' ,'VerifyEmail', 'ForgotPassword', 'ResetPassword'];
+  const publicRoutes = ['Login', 'Register', 'CheckEmail', 'VerifyEmail', 'ForgotPassword', 'ResetPassword'];
 
   if (publicRoutes.includes(to.name)) {
     return next();
   }
 
-  if (!authCookie) {
-    return next('/auth/login');
-  }
-
   try {
-    await apiClient.get('/api/user', { withCredentials: true }); // Cookie is sent automatically
-    next();
+    const response = await apiClient.get('/api/check-auth');
+    console.log('Authentication check:', response.data);
+    return next();
   } catch (error) {
-    document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-    next('/auth/login');
+    console.warn('Authentication failed:', error.response?.status);
+    console.log('Error details:', error.response?.data);
+    return next('/auth/login');
   }
 });
 

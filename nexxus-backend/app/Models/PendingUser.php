@@ -12,6 +12,7 @@ class PendingUser extends Model
         'email',
         'password',
         'verification_token',
+        'expires_at',
     ];
 
     public $timestamps = false;

@@ -168,6 +168,7 @@
 <script>
 import apiClient from '../../axios.js';
 import {EyeIcon, EyeSlashIcon, LockClosedIcon} from '@heroicons/vue/24/outline';
+import router from "@/router.js";
 
 export default {
   components: {
@@ -180,7 +181,6 @@ export default {
       email: '',
       password: '',
       rememberMe: false,
-      deviceName: 'web',
       error: null,
       showSuccessSnackbar: false,
       showErrorSnackbar: false,
@@ -214,17 +214,16 @@ export default {
       this.saveRememberMe();
 
       try {
-
         await apiClient.get('/sanctum/csrf-cookie', { withCredentials: true });
 
         const response = await apiClient.post('/api/login', {
           email: this.email,
           password: this.password,
-          device_name: this.deviceName,
           remember_me: this.rememberMe
         }, {
           withCredentials: true
         });
+
         localStorage.setItem('token', response.data.token);
         this.showSuccessSnackbar = true;
 
@@ -241,13 +240,17 @@ export default {
           case 401:
             this.error = 'Invalid email or password';
             break;
+          case 403:
+            await router.push({ path: '/auth/check-email', query: { email: this.email } });
+            this.error = 'Email not verified. Please verify your email';
+            break;
           case 422:
             this.error = 'Validation error. Please check your inputs';
             break;
           case 429:
-            const seconds = parseInt(message.match(/\d+/)[0], 10); // Extract seconds from message
+            { const seconds = parseInt(message.match(/\d+/)[0], 10);
             this.error = `Too many attempts. Try again in ${Math.ceil(seconds / 60)} minutes`;
-            break;
+            break; }
           default:
             this.error = message;
         }
