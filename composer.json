@@ -1,5 +1,6 @@
 {
     "require": {
-        "laravolt/avatar": "^6.1"
+        "laravolt/avatar": "^6.1",
+      "ext-http": "*"
     }
 }
