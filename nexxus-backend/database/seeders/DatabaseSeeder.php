@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('password'),
             'profile_photo_path' => null,
             'banner_photo_path' => null,
+            'email_verified_at' => now(),
         ]);
 
         $adminUser = User::factory()->withPersonalTeam()->create([
@@ -36,6 +37,7 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('admin'),
             'profile_photo_path' => null,
             'banner_photo_path' => null,
+            'email_verified_at' => now(),
         ]);
 
         $normalUser = User::factory()->withPersonalTeam()->create([
@@ -45,6 +47,7 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('user'),
             'profile_photo_path' => null,
             'banner_photo_path' => null,
+            'email_verified_at' => now(),
         ]);
 
         // Crear usuarios aleatorios

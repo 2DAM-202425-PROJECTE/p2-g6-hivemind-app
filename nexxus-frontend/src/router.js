@@ -1,11 +1,18 @@
 // router/index.js
 import { createRouter, createWebHistory } from "vue-router";
 import { setAuthToken } from "./auth.js";
+import apiClient from './axios.js';
 
 // Pages
+// Auth Pages
+import Login from "./pages/Auth/Login.vue";
+import Register from "./pages/Auth/Register.vue";
+import VerifyEmail from "./pages/Auth/VerifyEmail.vue";
+import ForgotPassword from "./pages/Auth/ForgotPassword.vue";
+import ResetPassword from "./pages/Auth/ResetPassword.vue";
+import CheckEmail from "@/pages/Auth/CheckEmail.vue";
+
 import HomePage from "./pages/HomePage.vue";
-import Login from "./pages/Login.vue";
-import Register from "./pages/Register.vue";
 import ProfilePage from "./pages/ProfilePage.vue";
 import About from "./pages/About.vue";
 import PrivacyPolicy from "./pages/PrivacyPolicyPage.vue";
@@ -18,7 +25,7 @@ import PurchasePage from "./pages/PurchasePage.vue";
 import AppSettingsPage from "./pages/AppSettingsPage.vue";
 import AccountSettingsPage from "./pages/AccountSettingsPage.vue";
 import CompleteProfilePage from "./pages/CompleteProfilePage.vue";
-import UserMediaPage from "./components/Profile/UserMediaPage.vue"; // New combined component
+import UserMediaPage from "./components/Profile/UserMediaPage.vue";
 import VideosPage from "./pages/VideosPage.vue";
 import LiveStreamsPage from "./pages/LiveStreamsPage.vue";
 import NotFoundPage from "./pages/errors/NotFoundPage.vue";
@@ -33,12 +40,20 @@ export const routes = [
     path: "/",
     redirect: (to) => {
       const isAuthenticated = !!localStorage.getItem("token");
-      return isAuthenticated ? "/home" : "/login";
+      return isAuthenticated ? "/home" : "/auth/login";
     },
   },
+  // Auth Routes
+  { path: "/auth/login", name: "Login", component: Login },
+  { path: "/auth/register", name: "Register", component: Register },
+  { path: '/auth/check-email', name: 'CheckEmail', component: CheckEmail, props: route => ({ email: route.query.email })},
+  { path: '/auth/verify-email', name: 'VerifyEmail', component: VerifyEmail, props: route => ({ token: route.query.token, email: route.query.email }) },
+  { path: "/auth/forgot-password", name: "ForgotPassword", component: ForgotPassword },
+  { path: "/auth/reset-password/:token", name: "ResetPassword", component: ResetPassword },
+
+
+  // Other app Routes
   { path: "/home", name: "Home", component: HomePage },
-  { path: "/login", name: "Login", component: Login },
-  { path: "/register", name: "Register", component: Register },
   { path: "/profile/:username", name: "Profile", component: ProfilePage, props: true },
   { path: "/about", name: "About", component: About },
   { path: "/privacy-policy", name: "PrivacyPolicy", component: PrivacyPolicy },
@@ -70,15 +85,49 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, from, next) => {
-  const isAuthenticated = !!localStorage.getItem("token");
-  const publicRoutes = ["Login", "Register"];
+// router.beforeEach(async (to, from, next) => {
+//   const publicRoutes = ['Login', 'Register', 'CheckEmail', 'VerifyEmail', 'ForgotPassword', 'ResetPassword'];
+//
+//   if (publicRoutes.includes(to.name)) {
+//     return next();
+//   }
+//
+//   // Buscar el token en localStorage en lugar de cookie
+//   const token = localStorage.getItem('token');
+//
+//   if (!token) {
+//     return next('/auth/login');
+//   }
+//
+//   try {
+//     // Verificar el token con el backend
+//     apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+//     const response = await apiClient.get('/api/user');
+//     console.log('User authenticated:', response.data);
+//     return next();
+//   } catch (error) {
+//     console.warn('Authentication failed:', error.response?.status);
+//     // Limpiar el token si la autenticación falla
+//     localStorage.removeItem('token');
+//     return next('/auth/login');
+//   }
+// });
 
-  if (!isAuthenticated && !publicRoutes.includes(to.name)) {
-    next("/login");
-  } else {
-    if (isAuthenticated) setAuthToken(localStorage.getItem("token"));
-    next();
+router.beforeEach(async (to, from, next) => {
+  const publicRoutes = ['Login', 'Register', 'CheckEmail', 'VerifyEmail', 'ForgotPassword', 'ResetPassword'];
+
+  if (publicRoutes.includes(to.name)) {
+    return next();
+  }
+
+  try {
+    const response = await apiClient.get('/api/check-auth');
+    console.log('Authentication check:', response.data);
+    return next();
+  } catch (error) {
+    console.warn('Authentication failed:', error.response?.status);
+    console.log('Error details:', error.response?.data);
+    return next('/auth/login');
   }
 });
 

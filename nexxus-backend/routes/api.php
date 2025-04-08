@@ -12,13 +12,28 @@ use App\Http\Controllers\LikeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\StoryController;
+use App\Models\Story;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use App\Models\User;
 
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']);
+Route::post('/register/pending', [AuthController::class, 'registerPending']);
+Route::get('/verify-email/{token}', [AuthController::class, 'verifyEmail']);
+Route::get('/check-verification', [AuthController::class, 'checkVerification']);
+Route::post('/resend-verification', [AuthController::class, 'resendVerification']);
 
-Route::middleware('auth:sanctum')->group(function () {
-    // Login and logout
+Route::middleware(['auth:sanctum', 'verified'])->group(function ()
+{
+    // Check if the user is authenticated and log the user ID
+    Route::get('/check-auth', function (Request $request) {
+        return response()->json([
+            'authenticated' => true,
+            'message' => 'User is authenticated',
+        ]);
+    });
+
+    //logout
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', function (Request $request) {
         return $request->user();
