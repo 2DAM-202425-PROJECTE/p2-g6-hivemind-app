@@ -1,0 +1,88 @@
+/* src/assets/styles/nameEffects.css */
+
+/* Name Effect Styles */
+.soft-glow {
+    color: #fff;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 1), 0 0 30px rgba(255, 255, 255, 0.8);
+}
+
+.gradient-fade {
+    background: linear-gradient(to right, #ff7e5f, #feb47b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: rgba(255, 255, 255, 0.1); /* Slight opacity instead of transparent for font visibility */
+    text-shadow: 0 0 5px rgba(255, 126, 95, 0.5);
+}
+
+.golden-outline {
+    color: #fff;
+    text-shadow: 0 0 2px #ffd700, 0 0 6px #ffd700, 0 0 12px #ffd700;
+}
+
+.dark-pulse {
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 1), 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.cosmic-shine {
+    color: #fff;
+    text-shadow: 0 0 8px #00ffff, 0 0 16px #00ffff, 0 0 24px #00ffff;
+}
+
+.neon-edge {
+    color: #fff;
+    text-shadow: 0 0 8px #ff00ff, 0 0 16px #ff00ff, 0 0 24px #ff00ff;
+}
+
+.frost-glow {
+    color: #e0f7ff;
+    text-shadow: 0 0 12px rgba(173, 216, 230, 1), 0 0 24px rgba(173, 216, 230, 0.8);
+}
+
+.fire-flicker {
+    color: #ff4500;
+    text-shadow: 0 0 10px #ff4500, 0 0 20px #ff8c00, 0 0 30px #ff8c00;
+}
+
+.emerald-sheen {
+    color: #00ff7f;
+    text-shadow: 0 0 10px rgba(0, 255, 127, 1), 0 0 20px rgba(0, 255, 127, 0.8);
+}
+
+.phantom-haze {
+    color: #d3d3d3;
+    text-shadow: 0 0 15px rgba(128, 128, 128, 0.8), 0 0 30px rgba(128, 128, 128, 0.6), 0 0 45px rgba(128, 128, 128, 0.4);
+}
+
+.electric-glow {
+    color: #00b7eb;
+    text-shadow: 0 0 10px #00b7eb, 0 0 20px #00b7eb, 0 0 30px #00b7eb;
+}
+
+.lunar-haze {
+    color: #d3d3d3;
+    text-shadow: 0 0 12px rgba(211, 211, 211, 0.8), 0 0 24px rgba(211, 211, 211, 0.6);
+}
+
+.solar-flare {
+    color: #ffeb3b;
+    text-shadow: 0 0 10px #ffeb3b, 0 0 20px #ffeb3b, 0 0 30px #ffeb3b;
+}
+
+.wave-shimmer {
+    color: #1e90ff;
+    text-shadow: 0 0 8px #1e90ff, 0 0 16px #1e90ff, 0 0 24px #1e90ff;
+}
+
+.crystal-pulse {
+    color: #b9f2ff;
+    text-shadow: 0 0 12px #b9f2ff, 0 0 24px #b9f2ff, 0 0 36px #b9f2ff;
+}
+
+.rainbow-gleam {
+    background: linear-gradient(45deg, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0000ff, #8000ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: rgba(255, 255, 255, 0.1); /* Slight opacity for font visibility */
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3);
+}

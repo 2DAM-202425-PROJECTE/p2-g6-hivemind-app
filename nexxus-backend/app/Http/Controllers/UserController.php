@@ -166,18 +166,23 @@ class UserController extends Controller
         return response()->json(['message' => 'Background updated successfully']);
     }
 
-    public function updateEquippedAnimation(Request $request)
+    public function updateEquippedProfileFont(Request $request)
     {
-        $request->validate([
-            'userId' => 'required|integer|exists:users,id',
-            'equippedAnimationPath' => 'nullable|string',
-        ]);
+        try {
+            $request->validate([
+                'userId' => 'required|integer|exists:users,id',
+                'equipped_profile_font_path' => 'nullable|string',
+            ]);
 
-        $user = User::find($request->input('userId'));
-        $user->equipped_animation_path = $request->input('equippedAnimationPath');
-        $user->save();
+            $user = User::findOrFail($request->input('userId'));
+            $user->equipped_profile_font_path = $request->input('equipped_profile_font_path');
+            $user->save();
 
-        return response()->json(['message' => 'Equipped animation updated successfully'], 200);
+            return response()->json(['message' => 'Profile font updated successfully', 'user' => $user], 200);
+        } catch (\Exception $e) {
+            \Log::error('Failed to update profile font: ' . $e->getMessage());
+            return response()->json(['message' => 'Server Error', 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function updateEquippedNameEffect(Request $request)
@@ -263,9 +268,9 @@ class UserController extends Controller
         $user->equipped_profile_icon_path = $user->equipped_profile_icon_path;
         $user->equipped_profile_frame_path = $user->equipped_profile_frame_path;
         $user->equipped_background_path = $user->equipped_background_path;
-        $user->equipped_animation_path = $user->equipped_animation_path;
         $user->equipped_name_effect_path = $user->equipped_name_effect_path;
         $user->equipped_badge_path = $user->equipped_badge_path;
+        $user->equipped_profile_font_path = $user->equipped_profile_font_path; // Added
 
         return $user;
     }

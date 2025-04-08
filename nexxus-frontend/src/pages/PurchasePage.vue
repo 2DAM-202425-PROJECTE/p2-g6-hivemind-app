@@ -21,7 +21,9 @@
                 :alt="item.name || 'Product Image'"
                 class="item-icon"
               >
-              <h2>{{ item.name || item.title || 'Unnamed Product' }}</h2>
+              <h2 :class="[item.type === 'name_effect' ? getNameEffectClass(item.iconUrl) : '', item.type === 'profile_font' ? getProfileFontClass(item.name) : '']">
+                {{ item.name || item.title || 'Unnamed Product' }}
+              </h2>
               <p class="price">{{ item.price || 'Price not available' }}</p>
               <p v-if="item.description" class="description">{{ item.description }}</p>
               <ul v-if="item.features" class="features">
@@ -239,6 +241,7 @@
 import NavBar from '../components/NavBar.vue';
 import AppFooter from '../components/AppFooter.vue';
 import apiClient from '@/axios.js';
+import { getNameEffectClass } from '@/utils/nameEffects'; // Import utility
 
 export default {
   name: 'PurchasePage',
@@ -313,6 +316,28 @@ export default {
     this.fetchCurrentUser();
   },
   methods: {
+    getNameEffectClass, // Add method from utility
+    getProfileFontClass(name) { // Custom method for font preview
+      switch (name) {
+        case 'Pixel Art': return 'font-pixel-art';
+        case 'Comic Sans': return 'font-comic-sans';
+        case 'Gothic': return 'font-gothic';
+        case 'Cursive': return 'font-cursive';
+        case 'Typewriter': return 'font-typewriter';
+        case 'Bubble': return 'font-bubble';
+        case 'Neon': return 'font-neon';
+        case 'Graffiti': return 'font-graffiti';
+        case 'Retro': return 'font-retro';
+        case 'Cyberpunk': return 'font-cyberpunk';
+        case 'Western': return 'font-western';
+        case 'Chalkboard': return 'font-chalkboard';
+        case 'Horror': return 'font-horror';
+        case 'Futuristic': return 'font-futuristic';
+        case 'Handwritten': return 'font-handwritten';
+        case 'Bold Script': return 'font-bold-script';
+        default: return '';
+      }
+    },
     async fetchItemById(id) {
       try {
         const token = localStorage.getItem('token');
@@ -413,8 +438,10 @@ export default {
 };
 </script>
 
-<!-- Styles remain unchanged -->
 <style scoped>
+@import '../styles/nameEffects.css';
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Chalkduster&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
+
 .purchase-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
@@ -742,6 +769,24 @@ export default {
   padding: 1.5rem;
   border-radius: 12px;
 }
+
+/* Profile Font Styles */
+.font-pixel-art { font-family: 'Press Start 2P', cursive; }
+.font-comic-sans { font-family: 'Comic Neue', cursive; }
+.font-gothic { font-family: 'Black Ops One', cursive; }
+.font-cursive { font-family: 'Dancing Script', cursive; }
+.font-typewriter { font-family: 'Courier Prime', monospace; }
+.font-bubble { font-family: 'Bungee', cursive; }
+.font-neon { font-family: 'Orbitron', sans-serif; }
+.font-graffiti { font-family: 'Wallpoet', cursive; }
+.font-retro { font-family: 'VT323', monospace; }
+.font-cyberpunk { font-family: 'Monoton', cursive; }
+.font-western { font-family: 'Special Elite', cursive; }
+.font-chalkboard { font-family: 'Chalkduster', cursive; }
+.font-horror { font-family: 'Creepster', cursive; }
+.font-futuristic { font-family: 'Audiowide', cursive; }
+.font-handwritten { font-family: 'Caveat', cursive; }
+.font-bold-script { font-family: 'Permanent Marker', cursive; }
 
 @media (max-width: 768px) {
   .purchase-content {

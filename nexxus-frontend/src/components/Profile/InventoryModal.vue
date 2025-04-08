@@ -4,7 +4,7 @@
     @click="closeInventoryOnBackdrop"
   >
     <div
-      class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-5xl max-h-[90vh]"
+      class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto"
       @click.stop
     >
       <div class="flex justify-between items-center mb-4">
@@ -23,18 +23,10 @@
               <h4 class="item-name">{{ item.name }}</h4>
               <p class="item-price">{{ formatPrice(item.price) }}</p>
               <button
-                v-if="!item.isEquipped"
-                @click="equipItem(item)"
-                class="buy-button"
+                :class="['buy-button', item.isEquipped ? 'unequip-button' : '']"
+                @click="item.isEquipped ? unequipItem(item) : equipItem(item)"
               >
-                Equip
-              </button>
-              <button
-                v-else
-                @click="unequipItem(item)"
-                class="buy-button unequip-button"
-              >
-                Unequip
+                {{ item.isEquipped ? 'Unequip' : 'Equip' }}
               </button>
             </div>
           </div>
@@ -94,19 +86,19 @@ const equipItem = async (item) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found.');
-      const response = await apiClient.post(endpoint, {
-        userId: props.user.id,
-        [field]: path,
-      }, {
+      const payload = { userId: props.user.id, [field]: path };
+      console.log('Sending payload:', payload); // Debug log
+      const response = await apiClient.post(endpoint, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const updatedFields = { [field]: path };
-      emit('update-user', updatedFields);
       item.isEquipped = true;
       inventory.value.forEach(i => {
         if (i.type === item.type && i.id !== item.id) i.isEquipped = false;
       });
+      inventory.value = [...inventory.value];
       inventoryCategories.value = categorizeInventory(inventory.value);
+      emit('update-user', { [field]: path });
+      console.log('Equipped item:', { field, path, item });
     } catch (error) {
       console.error(`Failed to equip ${field}:`, error.response?.data || error.message);
     }
@@ -117,19 +109,19 @@ const equipItem = async (item) => {
       await updateEquipped('/api/user/update-equipped-profile-icon', 'equipped_profile_icon_path', item.icon_url);
       break;
     case 'profile_frame':
-      await updateEquipped('/api/user/update-equipped-profile-frame', 'equipped_profile_frame_path', item.icon_url);
+      await updateEquipped('/api/user/update-equipped-profile-frame', 'equippedProfileFramePath', item.icon_url);
       break;
     case 'background':
       await updateEquipped('/api/user/update-equipped-background', 'equipped_background_path', item.icon_url);
-      break;
-    case 'animation':
-      await updateEquipped('/api/user/update-equipped-animation', 'equipped_animation_path', item.icon_url);
       break;
     case 'name_effect':
       await updateEquipped('/api/user/update-equipped-name-effect', 'equipped_name_effect_path', item.icon_url);
       break;
     case 'badge':
-      await updateEquipped('/api/user/update-equipped-badge', 'equipped_badge_path', item.icon_url);
+      await updateEquipped('/api/user/update-equipped-badge', 'equippedBadgePath', item.icon_url);
+      break;
+    case 'profile_font':
+      await updateEquipped('/api/user/update-equipped-profile-font', 'equipped_profile_font_path', item.name);
       break;
   }
 };
@@ -145,12 +137,13 @@ const unequipItem = async (item) => {
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const updatedFields = { [field]: null };
-      emit('update-user', updatedFields);
       item.isEquipped = false;
+      inventory.value = [...inventory.value]; // Trigger reactivity
       equippedItemName.value = `${item.name} has been unequipped`;
       showEquipPopup.value = true;
       inventoryCategories.value = categorizeInventory(inventory.value);
+      emit('update-user', { [field]: null });
+      console.log('Unequipped item:', { field, item }); // Debug log
     } catch (error) {
       console.error(`Failed to unequip ${field}:`, error.response?.data || error.message);
     }
@@ -161,19 +154,19 @@ const unequipItem = async (item) => {
       await updateUnequipped('/api/user/update-equipped-profile-icon', 'equipped_profile_icon_path');
       break;
     case 'profile_frame':
-      await updateUnequipped('/api/user/update-equipped-profile-frame', 'equipped_profile_frame_path');
+      await updateUnequipped('/api/user/update-equipped-profile-frame', 'equippedProfileFramePath');
       break;
     case 'background':
       await updateUnequipped('/api/user/update-equipped-background', 'equipped_background_path');
-      break;
-    case 'animation':
-      await updateUnequipped('/api/user/update-equipped-animation', 'equipped_animation_path');
       break;
     case 'name_effect':
       await updateUnequipped('/api/user/update-equipped-name-effect', 'equipped_name_effect_path');
       break;
     case 'badge':
-      await updateUnequipped('/api/user/update-equipped-badge', 'equipped_badge_path');
+      await updateUnequipped('/api/user/update-equipped-badge', 'equippedBadgePath');
+      break;
+    case 'profile_font':
+      await updateUnequipped('/api/user/update-equipped-profile-font', 'equipped_profile_font_path');
       break;
   }
 };
@@ -187,11 +180,11 @@ const categorizeInventory = (items) => {
   const categorized = [
     { title: 'Profile Icons', description: 'Stand out with unique profile icons', items: items.filter(item => item.type === 'profile_icon') },
     { title: 'Backgrounds', description: 'Transform your profile with stunning themes', items: items.filter(item => { if (item.type === 'background') item.isBackground = true; return item.type === 'background'; }) },
-    { title: 'Animations', description: 'Add dynamic effects', items: items.filter(item => item.type === 'animation') },
     { title: 'Name Effects', description: 'Make your username pop', items: items.filter(item => item.type === 'name_effect') },
     { title: 'Profile Frames', description: 'Frame your profile picture', items: items.filter(item => item.type === 'profile_frame') },
     { title: 'Profile Badges', description: 'Show off your status', items: items.filter(item => item.type === 'badge') },
-    { title: 'Other Items', description: 'Miscellaneous items', items: items.filter(item => !['profile_icon', 'background', 'animation', 'name_effect', 'profile_frame', 'badge'].includes(item.type)) },
+    { title: 'Profile Fonts', description: 'Customize your text style', items: items.filter(item => item.type === 'profile_font') },
+    { title: 'Other Items', description: 'Miscellaneous items', items: items.filter(item => !['profile_icon', 'background', 'name_effect', 'profile_frame', 'badge', 'profile_font'].includes(item.type)) },
   ].filter(category => category.items.length > 0);
   return categorized;
 };
@@ -202,7 +195,6 @@ const loadInventory = async () => {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token found.');
     const response = await apiClient.get(`/api/user/${props.user.id}/inventory`, { headers: { Authorization: `Bearer ${token}` } });
-    console.log('Raw API response:', response.data);
     const mappedInventory = response.data.map(item => {
       const itemData = item.item || item;
       return {
@@ -214,9 +206,9 @@ const loadInventory = async () => {
         isEquipped: checkIfEquipped(itemData),
       };
     });
-    console.log('Mapped inventory:', mappedInventory);
     inventory.value = mappedInventory;
     inventoryCategories.value = categorizeInventory(mappedInventory);
+    console.log('Loaded inventory:', mappedInventory); // Debug log
   } catch (error) {
     console.error('Failed to load inventory:', error.response?.data || error.message);
   }
@@ -226,15 +218,15 @@ const determineItemType = (itemName) => {
   if (['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem', 'Thunder Bolt', 'Moon Glow', 'Sun Flare',
     'Flame Crest', 'Snowflake Spark', 'Leaf Whisper', 'Wave Ripple', 'Cloud Drift', 'Gear Spin', 'Anchor Drop', 'Feather Light'].includes(itemName)) return 'profile_icon';
   if (['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes',
-    'Mountain Peak', 'Northern Lights', 'Lush Valley', 'Dusk Metropolis', 'Golden Fields', 'Frosty Tundra', 'Volcanic Ash', 'Nebula Cloud'].includes(itemName)) return 'background';
-  if (['Gentle Sparkle', 'Fading Pulse', 'Soft Ripple', 'Orbit Glow', 'Subtle Glitch', 'Twirl Flash', 'Pulse Wave', 'Star Burst',
-    'Stellar Rain', 'Vortex Spin', 'Flame Dance', 'Frost Swirl', 'Electric Surge', 'Dusk Transition', 'Rainbow Pulse', 'Bubble Pop'].includes(itemName)) return 'animation';
+    'Mountain Peak', 'Polar Glow', 'Lush Valley', 'Dusk Metropolis', 'Golden Fields', 'Snowy Plains', 'Volcanic Ash', 'Nebula Cloud'].includes(itemName)) return 'background';
   if (['Soft Glow', 'Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker',
-    'Emerald Sheen', 'Shadow Drift', 'Electric Glow', 'Lunar Haze', 'Solar Flare', 'Wave Shimmer', 'Crystal Pulse', 'Rainbow Gleam'].includes(itemName)) return 'name_effect';
+    'Emerald Sheen', 'Phantom Haze', 'Electric Glow', 'Lunar Haze', 'Solar Flare', 'Wave Shimmer', 'Crystal Pulse', 'Rainbow Gleam'].includes(itemName)) return 'name_effect';
   if (['Golden Ring', 'Crystal Edge', 'Star Border', 'Cloud Frame', 'Tech Circuit', 'Leaf Wreath', 'Wave Crest', 'Pixel Grid',
     'Flame Halo', 'Frost Ring', 'Gear Frame', 'Moon Orbit', 'Sun Burst', 'Ivy Crown', 'Neon Circuit', 'Starfield Edge'].includes(itemName)) return 'profile_frame';
   if (['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge', 'Legend Badge', 'Pioneer Badge', 'Guardian Badge',
     'Warrior Badge', 'Sage Badge', 'Star Gazer Badge', 'Trailblazer Badge', 'Elementalist Badge', 'Innovator Badge', 'Nomad Badge', 'Champion Badge'].includes(itemName)) return 'badge';
+  if (['Pixel Art', 'Comic Sans', 'Gothic', 'Cursive', 'Typewriter', 'Bubble', 'Neon', 'Graffiti', 'Retro', 'Cyberpunk',
+    'Western', 'Chalkboard', 'Horror', 'Futuristic', 'Handwritten', 'Bold Script'].includes(itemName)) return 'profile_font';
   return 'other';
 };
 
@@ -242,10 +234,10 @@ const checkIfEquipped = (item) => {
   const iconUrl = item.iconUrl || item.icon_url;
   if (item.type === 'profile_icon') return iconUrl === props.user.equipped_profile_icon_path;
   if (item.type === 'background') return iconUrl === props.user.equipped_background_path;
-  if (item.type === 'animation') return iconUrl === props.user.equipped_animation_path;
   if (item.type === 'name_effect') return iconUrl === props.user.equipped_name_effect_path;
   if (item.type === 'profile_frame') return iconUrl === props.user.equipped_profile_frame_path;
   if (item.type === 'badge') return iconUrl === props.user.equipped_badge_path;
+  if (item.type === 'profile_font') return item.name === props.user.equipped_profile_font_path;
   return false;
 };
 
@@ -350,16 +342,5 @@ onMounted(() => {
 
 .unequip-button:hover {
   background-color: #c82333;
-}
-
-.fixed.inset-0 {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.bg-white.dark\:bg-gray-800.rounded-lg.p-6.w-full.max-w-5xl {
-  max-height: 90vh;
 }
 </style>

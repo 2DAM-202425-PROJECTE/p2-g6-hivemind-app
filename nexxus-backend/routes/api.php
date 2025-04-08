@@ -81,7 +81,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/update-equipped-profile-frame', [UserController::class, 'updateEquippedProfileFrame']);
     Route::post('/user/update-equipped-profile-icon', [UserController::class, 'updateEquippedProfileIcon']);
     Route::post('/user/update-equipped-background', [UserController::class, 'updateEquippedBackground']);
-    Route::post('/user/update-equipped-animation', [UserController::class, 'updateEquippedAnimation']); // Added
+    Route::post('/user/update-equipped-profile-font', [UserController::class, 'updateEquippedProfileFont']);
     Route::post('/user/update-equipped-name-effect', [UserController::class, 'updateEquippedNameEffect']); // Added
     Route::post('/user/update-equipped-badge', [UserController::class, 'updateEquippedBadge']); // Added
     Route::post('/user/process-credit-purchase', [UserController::class, 'processCreditPurchase']);

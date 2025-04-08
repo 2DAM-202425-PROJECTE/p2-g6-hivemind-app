@@ -33,10 +33,10 @@ class User extends Authenticatable
         'credits',
         'equipped_profile_icon_path',
         'equipped_profile_frame_path',
-        'equipped_background_path', // Added for Backgrounds
-        'equipped_animation_path', // Added for Animations
-        'equipped_name_effect_path', // Added for Name Effects
-        'equipped_badge_path', // Added for Profile Badges
+        'equipped_background_path',
+        'equipped_name_effect_path',
+        'equipped_badge_path',
+        'equipped_profile_font_path',
     ];
 
     protected $hidden = [

@@ -82,7 +82,9 @@
                 <div class="item-preview" :class="{ 'background-preview': item.type === 'background' }">
                   <img :src="item.iconUrl" :alt="item.name" class="cosmetic-icon" @error="handleImageError(item)" />
                 </div>
-                <h4 class="item-name">{{ item.name }}</h4>
+                <h4 :class="['item-name', category.title === 'Name Effects' ? getNameEffectClass(item.iconUrl) : '', category.title === 'Profile Fonts' ? getProfileFontClass(item.name) : '']">
+                  {{ item.name }}
+                </h4>
                 <p class="item-price">{{ formatPrice(item.price) }}</p>
                 <button
                   @click="goToPurchase(item.id)"
@@ -106,6 +108,7 @@
 import NavBar from '../components/NavBar.vue';
 import AppFooter from '../components/AppFooter.vue';
 import apiClient from '@/axios.js';
+import { getNameEffectClass } from '@/utils/nameEffects';
 
 export default {
   name: 'ShopPage',
@@ -134,6 +137,28 @@ export default {
     this.fetchCategorizedItems();
   },
   methods: {
+    getNameEffectClass,
+    getProfileFontClass(name) {
+      switch (name) {
+        case 'Pixel Art': return 'font-pixel-art';
+        case 'Comic Sans': return 'font-comic-sans';
+        case 'Gothic': return 'font-gothic';
+        case 'Cursive': return 'font-cursive';
+        case 'Typewriter': return 'font-typewriter';
+        case 'Bubble': return 'font-bubble';
+        case 'Neon': return 'font-neon';
+        case 'Graffiti': return 'font-graffiti';
+        case 'Retro': return 'font-retro';
+        case 'Cyberpunk': return 'font-cyberpunk';
+        case 'Western': return 'font-western';
+        case 'Chalkboard': return 'font-chalkboard';
+        case 'Horror': return 'font-horror';
+        case 'Futuristic': return 'font-futuristic';
+        case 'Handwritten': return 'font-handwritten';
+        case 'Bold Script': return 'font-bold-script';
+        default: return '';
+      }
+    },
     async fetchCurrentUser() {
       try {
         const token = localStorage.getItem('token');
@@ -159,6 +184,20 @@ export default {
         console.error('Failed to fetch user inventory:', error);
       }
     },
+    async equipFont(fontPath) {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+
+        await apiClient.post('/api/user/update-equipped-profile-font', { font_path: fontPath }, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        this.$router.push({ path: '/profile' }); // Redirect to profile page to see the changes
+      } catch (error) {
+        console.error('Failed to equip font:', error);
+      }
+    },
     async fetchCategorizedItems() {
       try {
         const response = await apiClient.get('/api/shop/categorized-items', {
@@ -169,7 +208,7 @@ export default {
           price: tier.price === 0 ? 'Free' : `${tier.price}€/month`
         }));
         this.creditPacks = response.data.creditPacks
-          .sort((a, b) => parseInt(a.name) - parseInt(b.name)) // Sort by credit amount
+          .sort((a, b) => parseInt(a.name) - parseInt(b.name))
           .map(pack => ({
             ...pack,
             price: `${pack.price}€`
@@ -194,15 +233,15 @@ export default {
           description: 'Transform your profile with stunning background themes',
           items: cosmetics.filter(item =>
             ['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes',
-              'Mountain Peak', 'Northern Lights', 'Lush Valley', 'Dusk Metropolis', 'Golden Fields', 'Frosty Tundra', 'Volcanic Ash', 'Nebula Cloud'].includes(item.name)
+              'Mountain Peak', 'Polar Glow', 'Lush Valley', 'Dusk Metropolis', 'Golden Fields', 'Snowy Plains', 'Volcanic Ash', 'Nebula Cloud'].includes(item.name)
           ),
         },
         {
-          title: 'Animations',
-          description: 'Add dynamic effects to make your profile come alive',
+          title: 'Profile Fonts',
+          description: 'Customize your profile text with extreme and unique fonts',
           items: cosmetics.filter(item =>
-            ['Gentle Sparkle', 'Fading Pulse', 'Soft Ripple', 'Orbit Glow', 'Subtle Glitch', 'Twirl Flash', 'Pulse Wave', 'Star Burst',
-              'Stellar Rain', 'Vortex Spin', 'Flame Dance', 'Frost Swirl', 'Electric Surge', 'Dusk Transition', 'Rainbow Pulse', 'Bubble Pop'].includes(item.name)
+            ['Pixel Art', 'Comic Sans', 'Gothic', 'Cursive', 'Typewriter', 'Bubble', 'Neon', 'Graffiti',
+              'Retro', 'Cyberpunk', 'Western', 'Chalkboard', 'Horror', 'Futuristic', 'Handwritten', 'Bold Script'].includes(item.name)
           ),
         },
         {
@@ -210,7 +249,7 @@ export default {
           description: 'Make your username stand out with eye-catching effects',
           items: cosmetics.filter(item =>
             ['Soft Glow', 'Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker',
-              'Emerald Sheen', 'Shadow Drift', 'Electric Glow', 'Lunar Haze', 'Solar Flare', 'Wave Shimmer', 'Crystal Pulse', 'Rainbow Gleam'].includes(item.name)
+              'Emerald Sheen', 'Phantom Haze', 'Electric Glow', 'Lunar Haze', 'Solar Flare', 'Wave Shimmer', 'Crystal Pulse', 'Rainbow Gleam'].includes(item.name)
           ),
         },
         {
@@ -259,6 +298,9 @@ export default {
 </script>
 
 <style scoped>
+@import '../styles/nameEffects.css';
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Chalkduster&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
+
 .shop-container {
   min-height: 100vh;
   background-color: #f0f2f5;
@@ -354,7 +396,6 @@ section {
   margin-bottom: 1.5rem;
 }
 
-/* Trending Section */
 .trending-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -374,7 +415,6 @@ section {
   color: #000;
 }
 
-/* Subscription Grid */
 .subscription-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -389,7 +429,6 @@ section {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Credits Section */
 .credits-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -409,7 +448,6 @@ section {
   color: #000;
 }
 
-/* Cosmetics Section */
 .cosmetics-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -458,7 +496,6 @@ section {
   color: #000;
 }
 
-/* Purchased Item Styling */
 .purchased {
   background: #e0e0e0;
   opacity: 0.7;
@@ -473,7 +510,6 @@ section {
   background-color: #a0a0a0;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .shop-content {
     padding: 1rem;
@@ -516,4 +552,22 @@ section {
 .buy-button:hover {
   background-color: darkgrey;
 }
+
+/* Profile Font Styles */
+.font-pixel-art { font-family: 'Press Start 2P', cursive; }
+.font-comic-sans { font-family: 'Comic Neue', cursive; }
+.font-gothic { font-family: 'Black Ops One', cursive; }
+.font-cursive { font-family: 'Dancing Script', cursive; }
+.font-typewriter { font-family: 'Courier Prime', monospace; }
+.font-bubble { font-family: 'Bungee', cursive; }
+.font-neon { font-family: 'Orbitron', sans-serif; }
+.font-graffiti { font-family: 'Wallpoet', cursive; }
+.font-retro { font-family: 'VT323', monospace; }
+.font-cyberpunk { font-family: 'Monoton', cursive; }
+.font-western { font-family: 'Special Elite', cursive; }
+.font-chalkboard { font-family: 'Chalkduster', cursive; }
+.font-horror { font-family: 'Creepster', cursive; }
+.font-futuristic { font-family: 'Audiowide', cursive; }
+.font-handwritten { font-family: 'Caveat', cursive; }
+.font-bold-script { font-family: 'Permanent Marker', cursive; }
 </style>

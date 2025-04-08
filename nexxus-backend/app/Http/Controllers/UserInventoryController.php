@@ -24,7 +24,11 @@ class UserInventoryController extends Controller
                     'name' => $inventoryItem->item->name,
                     'price' => $inventoryItem->item->price,
                     'iconUrl' => $inventoryItem->item->iconUrl,
-                    'type' => $inventoryItem->item->type ?? (str_contains($inventoryItem->item->name, 'Icon') ? 'profile_icon' : (str_contains($inventoryItem->item->name, 'Frame') ? 'profile_frame' : 'other')),
+                    'type' => $inventoryItem->item->type ?? (
+                        str_contains($inventoryItem->item->name, 'Font') ? 'font' :
+                            (str_contains($inventoryItem->item->name, 'Icon') ? 'profile_icon' :
+                                (str_contains($inventoryItem->item->name, 'Frame') ? 'profile_frame' : 'other'))
+                        ),
                 ],
             ];
         });

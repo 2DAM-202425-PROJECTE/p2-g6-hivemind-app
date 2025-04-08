@@ -18,20 +18,32 @@
 
     <!-- Content -->
     <div class="relative px-6 pb-6">
-      <!-- Profile photo with equipped icon -->
+      <!-- Profile photo with equipped icon and frame -->
       <div class="absolute -top-16 left-6 flex flex-col items-center">
-        <!-- Equipped Profile Icon (e.g., Crown) -->
         <img
           v-if="user.equipped_profile_icon_path"
           :src="user.equipped_profile_icon_path"
           alt="Equipped Profile Icon"
           class="equipped-icon"
         />
-        <!-- Profile Photo -->
+        <div class="relative">
+          <img
+            :src="user.profile_photo_url"
+            alt="Profile Pic"
+            class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-md object-cover"
+          />
+          <img
+            v-if="user.equipped_profile_frame_path"
+            :src="user.equipped_profile_frame_path"
+            alt="Equipped Profile Frame"
+            class="absolute inset-0 w-32 h-32 object-contain"
+          />
+        </div>
         <img
-          :src="user.profile_photo_url"
-          alt="Profile Pic"
-          class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-md object-cover"
+          v-if="user.equipped_badge_path"
+          :src="user.equipped_badge_path"
+          alt="Equipped Badge"
+          class="equipped-badge"
         />
       </div>
 
@@ -39,7 +51,13 @@
       <div class="pt-20 flex flex-col md:flex-row md:items-start">
         <!-- User info -->
         <div class="flex-1">
-          <h3 :class="['text-2xl font-bold text-gray-900 dark:text-white', getNameEffectClass(user.equipped_name_effect_path)]">
+          <h3
+            :class="[
+              'text-2xl font-bold text-gray-900 dark:text-white',
+              getNameEffectClass(user.equipped_name_effect_path),
+              profileFontClass
+            ]"
+          >
             {{ user.name }}
           </h3>
           <div class="text-sm text-gray-500 dark:text-gray-400">@{{ user.username }}</div>
@@ -94,7 +112,6 @@
     </div>
   </div>
 
-  <!-- Inventory Modal -->
   <InventoryModal
     v-if="showInventory"
     :user="user"
@@ -107,6 +124,7 @@
 import { ref, onMounted, computed } from 'vue';
 import apiClient from '@/axios.js';
 import InventoryModal from './InventoryModal.vue';
+import { getNameEffectClass } from '@/utils/nameEffects';
 
 const props = defineProps({
   user: { type: Object, required: true },
@@ -119,7 +137,31 @@ const props = defineProps({
 const showInventory = ref(false);
 
 const equippedBackgroundClass = computed(() => {
-  return props.user.equipped_background_path ? `bg-[url(${props.user.equipped_background_path})]` : '';
+  return props.user.equipped_background_path ? `bg-[url(${props.user.equipped_background_path})] bg-cover bg-center` : '';
+});
+
+const profileFontClass = computed(() => {
+  console.log('Equipped Font:', props.user.equipped_profile_font_path); // Debug log
+  if (!props.user.equipped_profile_font_path) return '';
+  switch (props.user.equipped_profile_font_path) {
+    case 'Pixel Art': return 'font-pixel-art';
+    case 'Comic Sans': return 'font-comic-sans';
+    case 'Gothic': return 'font-gothic';
+    case 'Cursive': return 'font-cursive';
+    case 'Typewriter': return 'font-typewriter';
+    case 'Bubble': return 'font-bubble';
+    case 'Neon': return 'font-neon';
+    case 'Graffiti': return 'font-graffiti';
+    case 'Retro': return 'font-retro';
+    case 'Cyberpunk': return 'font-cyberpunk';
+    case 'Western': return 'font-western';
+    case 'Chalkboard': return 'font-chalkboard';
+    case 'Horror': return 'font-horror';
+    case 'Futuristic': return 'font-futuristic';
+    case 'Handwritten': return 'font-handwritten';
+    case 'Bold Script': return 'font-bold-script';
+    default: return '';
+  }
 });
 
 const loadEquippedState = async () => {
@@ -130,9 +172,15 @@ const loadEquippedState = async () => {
     const response = await apiClient.get(`/api/user/${props.user.id}/equipped-items`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    props.user.equipped_profile_icon_path = response.data.equipped_profile_icon_path;
-    props.user.equipped_background_path = response.data.equipped_background_path;
-    props.user.equipped_name_effect_path = response.data.equipped_name_effect_path;
+    Object.assign(props.user, {
+      equipped_profile_icon_path: response.data.equipped_profile_icon_path,
+      equipped_profile_frame_path: response.data.equipped_profile_frame_path,
+      equipped_background_path: response.data.equipped_background_path,
+      equipped_name_effect_path: response.data.equipped_name_effect_path,
+      equipped_profile_font_path: response.data.equipped_profile_font_path,
+      equipped_badge_path: response.data.equipped_badge_path,
+    });
+    console.log('Loaded equipped state:', props.user); // Debug log
   } catch (error) {
     console.error('Failed to load equipped state:', error.response?.data || error.message);
   }
@@ -140,27 +188,7 @@ const loadEquippedState = async () => {
 
 const updateUser = (updatedFields) => {
   Object.assign(props.user, updatedFields);
-};
-
-const getNameEffectClass = (path) => {
-  if (!path) return '';
-  if (path.includes('lamp.svg')) return 'soft-glow';
-  if (path.includes('blend.svg')) return 'gradient-fade';
-  if (path.includes('badge.svg')) return 'golden-outline';
-  if (path.includes('vibrate.svg')) return 'dark-pulse';
-  if (path.includes('stars.svg')) return 'cosmic-shine';
-  if (path.includes('lightbulb.svg')) return 'neon-edge';
-  if (path.includes('snowflake.svg')) return 'frost-glow';
-  if (path.includes('flame.svg')) return 'fire-flicker';
-  if (path.includes('gem.svg')) return 'emerald-sheen';
-  if (path.includes('shadow.svg')) return 'shadow-drift';
-  if (path.includes('zap.svg')) return 'electric-glow';
-  if (path.includes('moon.svg')) return 'lunar-haze';
-  if (path.includes('sun.svg')) return 'solar-flare';
-  if (path.includes('waves.svg')) return 'wave-shimmer';
-  if (path.includes('diamond.svg')) return 'crystal-pulse';
-  if (path.includes('rainbow.svg')) return 'rainbow-gleam';
-  return '';
+  console.log('Updated user:', props.user); // Debug log
 };
 
 onMounted(() => {
@@ -169,6 +197,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@import '../../styles/nameEffects.css';
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
+
 .equipped-icon {
   width: 2rem;
   height: 2rem;
@@ -176,144 +207,32 @@ onMounted(() => {
   top: -1.5rem;
   left: 50%;
   transform: translateX(-50%);
+  z-index: 10;
 }
 
-/* Name Effect Styles */
-.soft-glow {
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+.equipped-badge {
+  width: 1.5rem;
+  height: 1.5rem;
+  position: absolute;
+  bottom: -0.5rem;
+  right: -0.5rem;
+  z-index: 10;
 }
 
-.gradient-fade {
-  background: linear-gradient(to right, #ff7e5f, #feb47b);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.golden-outline {
-  color: #fff;
-  text-shadow: 0 0 2px #ffd700, 0 0 4px #ffd700, 0 0 6px #ffd700;
-}
-
-.dark-pulse {
-  color: #fff;
-  animation: darkPulse 1.5s infinite;
-}
-
-.cosmic-shine {
-  color: #fff;
-  text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 15px #00ffff;
-}
-
-.neon-edge {
-  color: #fff;
-  text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff;
-}
-
-.frost-glow {
-  color: #e0f7ff;
-  text-shadow: 0 0 8px rgba(173, 216, 230, 0.8);
-}
-
-.fire-flicker {
-  color: #ff4500;
-  animation: fireFlicker 0.5s infinite;
-}
-
-.emerald-sheen {
-  color: #00ff7f;
-  text-shadow: 0 0 6px rgba(0, 255, 127, 0.7);
-}
-
-.shadow-drift {
-  color: #fff;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  animation: shadowDrift 2s infinite;
-}
-
-.electric-glow {
-  color: #00b7eb;
-  text-shadow: 0 0 5px #00b7eb, 0 0 10px #00b7eb;
-  animation: electricGlow 1s infinite;
-}
-
-.lunar-haze {
-  color: #d3d3d3;
-  text-shadow: 0 0 8px rgba(211, 211, 211, 0.6);
-}
-
-.solar-flare {
-  color: #ffeb3b;
-  text-shadow: 0 0 6px #ffeb3b, 0 0 12px #ffeb3b;
-  animation: solarFlare 1.2s infinite;
-}
-
-.wave-shimmer {
-  color: #1e90ff;
-  text-shadow: 0 0 5px #1e90ff;
-  animation: waveShimmer 2s infinite;
-}
-
-.crystal-pulse {
-  color: #b9f2ff;
-  text-shadow: 0 0 5px #b9f2ff, 0 0 10px #b9f2ff;
-  animation: crystalPulse 1.5s infinite;
-}
-
-.rainbow-gleam {
-  background: linear-gradient(45deg, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0000ff, #8000ff);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: rainbowGleam 3s infinite;
-}
-
-/* Animations */
-@keyframes darkPulse {
-  0% { text-shadow: 0 0 5px #000; }
-  50% { text-shadow: 0 0 10px #000; }
-  100% { text-shadow: 0 0 5px #000; }
-}
-
-@keyframes fireFlicker {
-  0% { text-shadow: 0 0 5px #ff4500; }
-  50% { text-shadow: 0 0 10px #ff4500, 0 0 15px #ff8c00; }
-  100% { text-shadow: 0 0 5px #ff4500; }
-}
-
-@keyframes shadowDrift {
-  0% { text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); }
-  50% { text-shadow: 4px 4px 6px rgba(0, 0, 0, 0.7); }
-  100% { text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); }
-}
-
-@keyframes electricGlow {
-  0% { text-shadow: 0 0 5px #00b7eb; }
-  50% { text-shadow: 0 0 10px #00b7eb, 0 0 15px #00b7eb; }
-  100% { text-shadow: 0 0 5px #00b7eb; }
-}
-
-@keyframes solarFlare {
-  0% { text-shadow: 0 0 6px #ffeb3b; }
-  50% { text-shadow: 0 0 12px #ffeb3b, 0 0 18px #ffeb3b; }
-  100% { text-shadow: 0 0 6px #ffeb3b; }
-}
-
-@keyframes waveShimmer {
-  0% { text-shadow: 0 0 5px #1e90ff; }
-  50% { text-shadow: 0 0 10px #1e90ff; }
-  100% { text-shadow: 0 0 5px #1e90ff; }
-}
-
-@keyframes crystalPulse {
-  0% { text-shadow: 0 0 5px #b9f2ff; }
-  50% { text-shadow: 0 0 10px #b9f2ff, 0 0 15px #b9f2ff; }
-  100% { text-shadow: 0 0 5px #b9f2ff; }
-}
-
-@keyframes rainbowGleam {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
+.font-pixel-art { font-family: 'Press Start 2P', cursive; }
+.font-comic-sans { font-family: 'Comic Neue', cursive; }
+.font-gothic { font-family: 'Black Ops One', cursive; }
+.font-cursive { font-family: 'Dancing Script', cursive; }
+.font-typewriter { font-family: 'Courier Prime', monospace; }
+.font-bubble { font-family: 'Bungee', cursive; }
+.font-neon { font-family: 'Orbitron', sans-serif; }
+.font-graffiti { font-family: 'Wallpoet', cursive; }
+.font-retro { font-family: 'VT323', monospace; }
+.font-cyberpunk { font-family: 'Monoton', cursive; }
+.font-western { font-family: 'Special Elite', cursive; }
+.font-chalkboard { font-family: 'Creepster', cursive; }
+.font-horror { font-family: 'Creepster', cursive; }
+.font-futuristic { font-family: 'Audiowide', cursive; }
+.font-handwritten { font-family: 'Caveat', cursive; }
+.font-bold-script { font-family: 'Permanent Marker', cursive; }
 </style>
