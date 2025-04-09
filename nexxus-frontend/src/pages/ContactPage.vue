@@ -1,26 +1,26 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 text-gray-800 p-6">
+  <div class="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 text-gray-800 p-32">
     <Navbar />
     <div class="max-w-2xl mx-auto animate-fade-in">
       <!-- Header with subtle bee theme -->
       <div class="text-center mb-8">
-        <h1 class="text-4xl font-extrabold mb-2 gradient-text">
-          <span class="animate-letter" style="--order: 1">C</span>
-          <span class="animate-letter" style="--order: 2">o</span>
-          <span class="animate-letter" style="--order: 3">n</span>
-          <span class="animate-letter" style="--order: 4">t</span>
-          <span class="animate-letter" style="--order: 5">a</span>
-          <span class="animate-letter" style="--order: 6">c</span>
-          <span class="animate-letter" style="--order: 7">t</span>
-          <span class="animate-letter" style="--order: 8"> </span>
-          <span class="animate-letter" style="--order: 9">T</span>
-          <span class="animate-letter" style="--order: 10">h</span>
-          <span class="animate-letter" style="--order: 11">e</span>
-          <span class="animate-letter" style="--order: 12"> </span>
-          <span class="animate-letter" style="--order: 13">H</span>
-          <span class="animate-letter" style="--order: 14">i</span>
-          <span class="animate-letter" style="--order: 15">v</span>
-          <span class="animate-letter" style="--order: 16">e</span>
+        <h1 class="text-4xl font-extrabold mb-2">
+          <span class="animate-letter gradient-text" style="--order: 1">C</span>
+          <span class="animate-letter gradient-text" style="--order: 2">o</span>
+          <span class="animate-letter gradient-text" style="--order: 3">n</span>
+          <span class="animate-letter gradient-text" style="--order: 4">t</span>
+          <span class="animate-letter gradient-text" style="--order: 5">a</span>
+          <span class="animate-letter gradient-text" style="--order: 6">c</span>
+          <span class="animate-letter gradient-text" style="--order: 7">t</span>
+          <span class="animate-letter gradient-text" style="--order: 8">&nbsp;</span>
+          <span class="animate-letter gradient-text" style="--order: 9">T</span>
+          <span class="animate-letter gradient-text" style="--order: 10">h</span>
+          <span class="animate-letter gradient-text" style="--order: 11">e</span>
+          <span class="animate-letter gradient-text" style="--order: 12">&nbsp;</span>
+          <span class="animate-letter gradient-text" style="--order: 13">H</span>
+          <span class="animate-letter gradient-text" style="--order: 14">i</span>
+          <span class="animate-letter gradient-text" style="--order: 15">v</span>
+          <span class="animate-letter gradient-text" style="--order: 16">e</span>
         </h1>
         <p class="text-lg text-amber-800">
           Our worker bees are ready to help. Send us your message and we'll get back to you soon.
@@ -36,18 +36,22 @@
             v-model="name"
             label="Your Name"
             :rules="[rules.required]"
-            required
+            readonly
             outlined
             class="mb-4"
+            hint="This is your registered name"
+            persistent-hint
           ></v-text-field>
 
           <v-text-field
             v-model="email"
             label="Your Email"
             :rules="[rules.required, rules.email]"
-            required
+            readonly
             outlined
             class="mb-4"
+            hint="This is your registered email"
+            persistent-hint
           ></v-text-field>
 
           <v-textarea
@@ -106,9 +110,7 @@ const rules = {
 
 const fetchUserId = async () => {
   try {
-    const response = await apiClient.get("/api/user", {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
+    const response = await apiClient.get("/api/user");
     userId.value = response.data.id;
     name.value = response.data.name;
     email.value = response.data.email;
