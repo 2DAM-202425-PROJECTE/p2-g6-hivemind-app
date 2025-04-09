@@ -36,7 +36,6 @@
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
               autocomplete="current-password"
-              minlength="8"
               placeholder="Enter 8 characters or more"
               required
               class="w-full p-3 bg-gray-100 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 hover:bg-gray-50 hover:shadow-sm"

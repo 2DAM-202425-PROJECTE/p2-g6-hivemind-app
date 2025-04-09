@@ -1,32 +1,85 @@
 <template>
-  <div class="contact-container">
+  <div class="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 text-gray-800 p-6">
     <Navbar />
-    <h1>Contact Us</h1>
-    <p class="contact-description">We would love to hear from you! Please fill out the form below to get in touch with us.</p>
-    <div class="contact-card">
-      <v-form ref="form" v-model="valid">
-        <input type="hidden" name="_token" :value="csrfToken" />
-        <v-text-field
-          v-model="name"
-          label="Name"
-          :rules="[rules.required]"
-          required
-        ></v-text-field>
-        <v-text-field
-          v-model="email"
-          label="Email"
-          :rules="[rules.required, rules.email]"
-          required
-        ></v-text-field>
-        <v-textarea
-          v-model="message"
-          label="Message"
-          :rules="[rules.required]"
-          required
-        ></v-textarea>
-        <v-btn :disabled="!valid" @click="submit">Submit</v-btn>
-      </v-form>
-      <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
+    <div class="max-w-2xl mx-auto animate-fade-in">
+      <!-- Header with subtle bee theme -->
+      <div class="text-center mb-8">
+        <h1 class="text-4xl font-extrabold mb-2 gradient-text">
+          <span class="animate-letter" style="--order: 1">C</span>
+          <span class="animate-letter" style="--order: 2">o</span>
+          <span class="animate-letter" style="--order: 3">n</span>
+          <span class="animate-letter" style="--order: 4">t</span>
+          <span class="animate-letter" style="--order: 5">a</span>
+          <span class="animate-letter" style="--order: 6">c</span>
+          <span class="animate-letter" style="--order: 7">t</span>
+          <span class="animate-letter" style="--order: 8"> </span>
+          <span class="animate-letter" style="--order: 9">T</span>
+          <span class="animate-letter" style="--order: 10">h</span>
+          <span class="animate-letter" style="--order: 11">e</span>
+          <span class="animate-letter" style="--order: 12"> </span>
+          <span class="animate-letter" style="--order: 13">H</span>
+          <span class="animate-letter" style="--order: 14">i</span>
+          <span class="animate-letter" style="--order: 15">v</span>
+          <span class="animate-letter" style="--order: 16">e</span>
+        </h1>
+        <p class="text-lg text-amber-800">
+          Our worker bees are ready to help. Send us your message and we'll get back to you soon.
+        </p>
+      </div>
+
+      <!-- Form with bee-themed elements -->
+      <div class="bg-white rounded-xl shadow-lg p-8">
+        <v-form ref="form" v-model="valid">
+          <input type="hidden" name="_token" :value="csrfToken" />
+
+          <v-text-field
+            v-model="name"
+            label="Your Name"
+            :rules="[rules.required]"
+            required
+            outlined
+            class="mb-4"
+          ></v-text-field>
+
+          <v-text-field
+            v-model="email"
+            label="Your Email"
+            :rules="[rules.required, rules.email]"
+            required
+            outlined
+            class="mb-4"
+          ></v-text-field>
+
+          <v-textarea
+            v-model="message"
+            label="Your Message"
+            :rules="[rules.required]"
+            required
+            outlined
+            class="mb-6"
+            hint="What's buzzing on your mind?"
+          ></v-textarea>
+
+          <v-btn
+            :disabled="!valid"
+            @click="submit"
+            class="btn-primary"
+            large
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+            Send to Hive
+          </v-btn>
+        </v-form>
+
+        <p v-if="successMessage" class="mt-4 text-center text-emerald-600 font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          {{ successMessage }}
+        </p>
+      </div>
     </div>
     <Footer />
   </div>
@@ -47,8 +100,8 @@ const userId = ref('')
 const successMessage = ref('')
 
 const rules = {
-  required: value => !!value || 'Required.',
-  email: value => /.+@.+\..+/.test(value) || 'E-mail must be valid.',
+  required: value => !!value || 'Required field',
+  email: value => /.+@.+\..+/.test(value) || 'Please enter a valid email',
 }
 
 const fetchUserId = async () => {
@@ -60,7 +113,7 @@ const fetchUserId = async () => {
     name.value = response.data.name;
     email.value = response.data.email;
   } catch (error) {
-    console.error("Error al obtenir l'ID de l'usuari:", error.response?.data || error.message);
+    console.error("Error getting user ID:", error.response?.data || error.message);
   }
 };
 
@@ -81,7 +134,7 @@ const submit = async () => {
         email: email.value,
         message: message.value,
       });
-      successMessage.value = 'Form sent successfully!';
+      successMessage.value = 'Message sent to the hive successfully!';
       message.value = '';
     } catch (error) {
       console.error('Error:', error)
@@ -91,53 +144,54 @@ const submit = async () => {
 </script>
 
 <style scoped>
-.contact-container {
-  font-family: Arial, sans-serif;
-  padding: 20px;
-  padding-top: 80px; /* Add padding to the top */
-  background-color: #f0f2f5;
-  min-height: 100vh;
-  color: #1c1e21;
-  padding-bottom: 90px;
+/* Reuse your existing animations */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-h1 {
-  font-size: 24px;
-  margin-bottom: 10px;
-  text-align: center;
+@keyframes letter {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
-.contact-description {
-  font-size: 16px;
-  margin-bottom: 20px;
-  text-align: center;
-  color: #555;
+.animate-fade-in {
+  animation: fade-in 1s ease-out;
 }
 
-.contact-card {
-  background: white;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  max-width: 800px;
-  margin: 0 auto;
-  width: 100%;
+.animate-letter {
+  display: inline-block;
+  opacity: 0;
+  animation: letter 0.5s ease-out forwards;
+  animation-delay: calc(var(--order) * 0.1s);
 }
 
-.v-btn {
-  display: block;
-  margin: 20px auto;
-  background-color: #7f7f7f;
-  color: white;
+.gradient-text {
+  background-image: linear-gradient(to right, #F59E0B, #D97706);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
-.v-btn:hover {
-  background-color: #5f5f5f;
+/* Button styles matching your theme */
+.btn-primary {
+  @apply px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center;
+  @apply bg-gradient-to-r from-amber-500 to-amber-400 text-amber-900;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.success-message {
-  color: #000000;
-  text-align: center;
-  margin-top: 20px;
+.btn-primary:hover {
+  @apply bg-gradient-to-r from-amber-600 to-amber-500 transform -translate-y-0.5;
+  box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);
+}
+
+/* Form styling */
+.v-text-field, .v-textarea {
+  border-radius: 8px;
+}
+
+.v-input__slot {
+  background-color: #fff8f0 !important;
+  border: 1px solid #f3e8d3 !important;
 }
 </style>
