@@ -219,8 +219,6 @@ export default {
           email: this.email,
           password: this.password,
           remember_me: this.rememberMe
-        }, {
-          withCredentials: true
         });
 
         localStorage.setItem('token', response.data.token);

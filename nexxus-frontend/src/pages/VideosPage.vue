@@ -108,6 +108,7 @@ import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import axios from 'axios';
 import { generateAvatar } from '@/utils/avatar';
+import apiClient from "@/axios.js";
 
 const router = useRouter();
 const videos = ref([]);
@@ -131,32 +132,19 @@ onMounted(async () => {
 
 const fetchVideos = async () => {
   try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('No token found, redirecting to login');
-      router.push('/login');
-      return;
-    }
-
     // Fetch users
-    const usersResult = await axios.get(`${API_BASE_URL}/api/users`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const usersResult = await apiClient.get(`/api/users`);
     users.value = usersResult.data.data.reduce((acc, user) => {
       acc[user.id] = { name: user.name, username: user.username, profile_photo_path: user.profile_photo_path };
       return acc;
     }, {});
 
     // Fetch current user
-    const currentUserResult = await axios.get(`${API_BASE_URL}/api/user`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const currentUserResult = await apiClient.get(`/api/user`);
     currentUser.value = currentUserResult.data;
 
     // Fetch posts and filter videos
-    const postsResult = await axios.get(`${API_BASE_URL}/api/posts`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const postsResult = await apiClient.get(`/api/posts`);
     console.log('Raw API posts response:', postsResult.data.data); // Debug API response
     const allPosts = postsResult.data.data || [];
     const videoPosts = allPosts.filter(post =>
@@ -183,11 +171,8 @@ const fetchVideos = async () => {
 
 const fetchCommentCountFallback = async (videoId) => {
   try {
-    const token = localStorage.getItem('token');
     console.log(`Fetching comments for video ${videoId} from /api/posts/${videoId}/comments`);
-    const response = await axios.get(`${API_BASE_URL}/api/posts/${videoId}/comments`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const response = await apiClient.get(`/api/posts/${videoId}/comments`);
     console.log(`Comments response for video ${videoId}:`, response.data);
     const comments = response.data.data || response.data || [];
     return Array.isArray(comments) ? comments.length : 0;
@@ -237,23 +222,17 @@ const toggleLike = async (video) => {
   try {
     const token = localStorage.getItem('token');
     if (video.liked_by_user) {
-      await axios.delete(`${API_BASE_URL}/api/posts/${video.id}/like`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiClient.delete(`/api/posts/${video.id}/like`);
       video.liked_by_user = false;
       video.likes_count -= 1;
     } else {
-      await axios.post(`${API_BASE_URL}/api/posts/${video.id}/like`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiClient.post(`/api/posts/${video.id}/like`);
       video.liked_by_user = true;
       video.likes_count += 1;
     }
   } catch (error) {
     console.error('Error toggling like:', error.response?.data || error.message);
-    const postResult = await axios.get(`${API_BASE_URL}/api/posts/${video.id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const postResult = await apiClient.get(`/api/posts/${video.id}`);
     video.liked_by_user = postResult.data.data.liked_by_user;
     video.likes_count = postResult.data.data.likes_count;
     video.comments_count = postResult.data.data.comments_count ?? await fetchCommentCountFallback(video.id);
@@ -292,11 +271,7 @@ const saveEditVideo = async () => {
     formData.append('_method', 'PUT');
     if (editVideoFile.value) formData.append('file', editVideoFile.value);
 
-    const response = await axios.post(
-      `${API_BASE_URL}/api/posts/${selectedVideo.value.id}`,
-      formData,
-      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
-    );
+    const response = await apiClient.post(`/api/posts/${selectedVideo.value.id}`, formData);
 
     const updatedVideo = response.data.post || response.data.data;
     updatedVideo.comments_count = updatedVideo.comments_count ?? await fetchCommentCountFallback(updatedVideo.id);
@@ -321,12 +296,9 @@ const cancelDelete = () => {
 };
 
 const confirmDelete = async () => {
-  const token = localStorage.getItem('token');
   try {
     isDeleting.value = true;
-    await axios.delete(`${API_BASE_URL}/api/posts/${itemToDelete.value}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    await apiClient.delete(`/api/posts/${itemToDelete.value}`);
     videos.value = videos.value.filter(video => video.id !== itemToDelete.value);
   } catch (error) {
     console.error('Error deleting video:', error.response?.data || error.message);
@@ -339,10 +311,9 @@ const confirmDelete = async () => {
 
 const reportVideo = async (video) => {
   try {
-    const token = localStorage.getItem('token');
-    await axios.post(`${API_BASE_URL}/api/posts/${video.id}/report`, {
+    await apiClient.post(`/api/posts/${video.id}/report`, {
       reason: prompt('Please enter reason for reporting:')
-    }, { headers: { Authorization: `Bearer ${token}` } });
+    });
     alert('Video reported successfully');
     videoMenuVisible.value = null;
     video.comments_count = await fetchCommentCountFallback(video.id);

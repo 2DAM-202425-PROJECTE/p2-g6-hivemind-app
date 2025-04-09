@@ -286,7 +286,7 @@ export default {
           username: this.username,
           email: this.email,
           password: this.password
-        }, { withCredentials: true });
+        });
 
         // Guardar el email para la página de espera
         localStorage.setItem('pendingEmail', this.email);
