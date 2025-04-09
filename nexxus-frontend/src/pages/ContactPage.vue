@@ -35,7 +35,6 @@
           <v-text-field
             v-model="name"
             label="Your Name"
-            :rules="[rules.required]"
             readonly
             outlined
             class="mb-4"
@@ -46,7 +45,6 @@
           <v-text-field
             v-model="email"
             label="Your Email"
-            :rules="[rules.required, rules.email]"
             readonly
             outlined
             class="mb-4"
@@ -57,32 +55,46 @@
           <v-textarea
             v-model="message"
             label="Your Message"
-            :rules="[rules.required]"
+            maxlength="1000"
             required
             outlined
             class="mb-6"
             hint="What's buzzing on your mind?"
           ></v-textarea>
 
-          <v-btn
-            :disabled="!valid"
-            @click="submit"
-            class="btn-primary"
-            large
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-            Send to Hive
-          </v-btn>
-        </v-form>
+          <div class="flex items-center">
+            <v-btn
+              :disabled="!valid || loading"
+              @click="submit"
+              class="btn-primary"
+              large
+            >
+              <v-progress-circular v-if="loading" indeterminate size="20" class="mr-2" />
+              <template v-else>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+                Send to Hive
+              </template>
+            </v-btn>
 
-        <p v-if="successMessage" class="mt-4 text-center text-emerald-600 font-medium">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          </svg>
-          {{ successMessage }}
-        </p>
+            <p v-if="successMessage" class="ml-6 text-emerald-600 font-medium transition-all duration-1000 ease-in-out"
+               :class="successMessage ? 'opacity-100' : 'transition-all duration-500 opacity-0'">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              {{ successMessage }}
+            </p>
+
+            <p v-if="errorMessage" class="ml-6 text-red-600 font-medium transition-all duration-1000 ease-in-out"
+               :class="errorMessage ? 'opacity-100' : 'opacity-0'">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {{ errorMessage }}
+            </p>
+          </div>
+        </v-form>
       </div>
     </div>
     <Footer />
@@ -102,11 +114,8 @@ const message = ref('')
 const csrfToken = ref('')
 const userId = ref('')
 const successMessage = ref('')
-
-const rules = {
-  required: value => !!value || 'Required field',
-  email: value => /.+@.+\..+/.test(value) || 'Please enter a valid email',
-}
+const errorMessage = ref('');
+const loading = ref(false);
 
 const fetchUserId = async () => {
   try {
@@ -129,20 +138,29 @@ onMounted(async () => {
 
 const submit = async () => {
   if (valid.value) {
+    loading.value = true;
     try {
-      await apiClient.post("/api/contact/submit", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      await apiClient.post('/api/contact/submit', {
         name: name.value,
         email: email.value,
         message: message.value,
       });
       successMessage.value = 'Message sent to the hive successfully!';
       message.value = '';
+
+      setTimeout(() => {
+        successMessage.value = null;
+      }, 3000);
     } catch (error) {
-      console.error('Error:', error)
+      errorMessage.value = error.response?.data?.message || 'Something went wrong. Please try again.';
+      setTimeout(() => {
+        errorMessage.value = null;
+      }, 3000);
+    } finally {
+      loading.value = false;
     }
   }
-}
+};
 </script>
 
 <style scoped>
