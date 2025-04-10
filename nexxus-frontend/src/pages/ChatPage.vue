@@ -19,8 +19,8 @@
             </svg>
           </div>
 
-          <h3 class="text-xl font-bold text-gray-800 mt-4">Buzz into a chat</h3>
-          <p class="text-gray-600 mt-2">Select a hive conversation to start messaging with your swarm</p>
+          <h3 class="text-xl font-bold text-amber-800 mt-4">Buzz into a chat</h3>
+          <p class="text-amber-600 mt-2">Select a hive conversation to start messaging with your swarm</p>
         </div>
       </div>
     </div>
