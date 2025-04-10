@@ -34,9 +34,10 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
-import axios from 'axios';
+import apiClient from "@/axios.js";
 
 import CreateStoryImage from './CreateStoryImage.vue';
+
 
 
 const users = ref([]);
@@ -64,29 +65,15 @@ const props = defineProps({
 
 onMounted(async () => {
 
+  const usersResult = await apiClient.get('/api/users');
+  users.value = usersResult.data.data;
+  console.log(users.value);
 
-const token = localStorage.getItem('token');
-const usersResult = await axios.get('http://localhost:8000/api/users', {
-  headers: {
-    Authorization: `Bearer ${token}`,
-    Accept: 'application/json'
-  }
-});
-users.value = usersResult.data.data;
-console.log(users.value);
-
-const storiesResult = await axios.get('http://localhost:8000/api/stories', {
-  headers: {
-    Authorization: `Bearer ${token}`,
-    Accept: 'application/json'
-  }
-});
-story.value = storiesResult.data;
+  const storiesResult = await apiClient.get('/api/stories');
+  story.value = storiesResult.data;
 
 
-  const userResult = await axios.get('http://localhost:8000/api/user', {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-  });
+  const userResult = await apiClient.get('/api/user');
   currentUser.value = userResult.data;
 });
 
@@ -119,21 +106,13 @@ const getStoryImagePath = (path) => {
 };
 
 const fetchStories = async () => {
-  const response = await axios.get('http://localhost:8000/api/stories', {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
-    },
-  });
+  const response = await apiClient.get('/api/stories');
   story.value = response.data;
 };
 
 const deleteStory = async (id) => {
   try {
-    await axios.delete(`http://localhost:8000/api/stories/${id}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
+    await apiClient.delete(`/api/stories/${id}`);
     //showStoryModal.value = false;
     showSuccessPopup.value = true;
     await fetchStories();
@@ -150,11 +129,7 @@ const deleteStory = async (id) => {
 
 const deleteStoryConfirmed = async () => {
   try {
-    await axios.delete(`http://localhost:8000/api/stories/${storyIdToDelete.value}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
+    await apiClient.delete(`/api/stories/${storyIdToDelete.value}`);
     showStoryModal.value = false; // Close the story modal
     showDeleteConfirm.value = false; // Close the confirmation dialog
     showSuccessPopup.value = true; // Show success popup
@@ -186,11 +161,7 @@ const submitNewStory = async () => {
   if (newStoryFile.value) formData.append('file', newStoryFile.value);
 
   try {
-    await axios.post('/api/stories', formData, {
-
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' },
-
-    });
+    await apiClient.post('/api/stories', formData);
     showCreateStoryModal.value = false;
     await fetchStories();
   } catch (error) {

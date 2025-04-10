@@ -201,7 +201,7 @@ const loadInventory = async () => {
   try {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token found.');
-    const response = await apiClient.get(`/api/user/${props.user.id}/inventory`, { headers: { Authorization: `Bearer ${token}` } });
+    const response = await apiClient.get(`/api/user/${props.user.id}/inventory`);
     console.log('Raw API response:', response.data);
     const mappedInventory = response.data.map(item => {
       const itemData = item.item || item;
