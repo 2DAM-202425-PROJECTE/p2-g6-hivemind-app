@@ -1,6 +1,5 @@
 // router/index.js
 import { createRouter, createWebHistory } from "vue-router";
-import { setAuthToken } from "./auth.js";
 import apiClient from './axios.js';
 
 // Pages
@@ -14,10 +13,10 @@ import CheckEmail from "@/pages/Auth/CheckEmail.vue";
 
 import HomePage from "./pages/HomePage.vue";
 import ProfilePage from "./pages/ProfilePage.vue";
-import About from "./pages/About.vue";
-import PrivacyPolicy from "./pages/PrivacyPolicyPage.vue";
-import TermsOfService from "./pages/TermsOfServicePage.vue";
-import ContactPage from "./pages/ContactPage.vue";
+import About from "./pages/Footer/About.vue";
+import PrivacyPolicy from "./pages/Footer/PrivacyPolicyPage.vue";
+import TermsOfService from "./pages/Footer/TermsOfServicePage.vue";
+import ContactPage from "./pages/Footer/ContactPage.vue";
 import ChatPage from "./pages/ChatPage.vue";
 import ServerPage from "./pages/ServerPage.vue";
 import ShopPage from "./pages/ShopPage.vue";
@@ -84,34 +83,6 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
 });
-
-// router.beforeEach(async (to, from, next) => {
-//   const publicRoutes = ['Login', 'Register', 'CheckEmail', 'VerifyEmail', 'ForgotPassword', 'ResetPassword'];
-//
-//   if (publicRoutes.includes(to.name)) {
-//     return next();
-//   }
-//
-//   // Buscar el token en localStorage en lugar de cookie
-//   const token = localStorage.getItem('token');
-//
-//   if (!token) {
-//     return next('/auth/login');
-//   }
-//
-//   try {
-//     // Verificar el token con el backend
-//     apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-//     const response = await apiClient.get('/api/user');
-//     console.log('User authenticated:', response.data);
-//     return next();
-//   } catch (error) {
-//     console.warn('Authentication failed:', error.response?.status);
-//     // Limpiar el token si la autenticación falla
-//     localStorage.removeItem('token');
-//     return next('/auth/login');
-//   }
-// });
 
 router.beforeEach(async (to, from, next) => {
   const publicRoutes = ['Login', 'Register', 'CheckEmail', 'VerifyEmail', 'ForgotPassword', 'ResetPassword'];

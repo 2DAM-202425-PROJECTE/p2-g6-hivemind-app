@@ -117,6 +117,7 @@ import { ref, defineProps, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import {generateAvatar} from "@/utils/avatar.js";
+import apiClient from "@/axios.js";
 
 const router = useRouter();
 const props = defineProps({
@@ -183,9 +184,7 @@ const viewPost = async (postId) => {
       if (currentUsername) {
         username = currentUsername;
       } else {
-        const userResponse = await axios.get(`http://localhost:8000/api/users/id/${post.id_user}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const userResponse = await apiClient.get(`/api/users/id/${post.id_user}`);
         username = userResponse.data.username;
       }
     }
@@ -211,11 +210,7 @@ watch(() => props.userPosts, (newPosts) => {
 const deletePost = async (postId) => {
   isDeleting.value = true;
   try {
-    await axios.delete(`http://localhost:8000/api/posts/${postId}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
+    await apiClient.delete(`/api/posts/${postId}`);
 
     if (Array.isArray(props.userPosts)) {
       const index = props.userPosts.findIndex(post => post.id === postId);
@@ -260,16 +255,7 @@ const saveEditPost = async () => {
       formData.append('file', editPostFile.value);
     }
 
-    const response = await axios.post(
-      `http://localhost:8000/api/posts/${selectedPost.value.id}`,
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
+    const response = await apiClient.post(`/api/posts/${selectedPost.value.id}`, formData);
 
     const updatedPost = response.data.post;
     const index = props.userPosts.findIndex(p => p.id === selectedPost.value.id);
@@ -287,10 +273,8 @@ const saveEditPost = async () => {
 const reportPost = async (post) => {
   try {
     const token = localStorage.getItem('token');
-    await axios.post(`http://localhost:8000/api/posts/${post.id}/report`, {
+    await apiClient.post(`/api/posts/${post.id}/report`, {
       reason: prompt('Please enter reason for reporting:'),
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
     });
     alert('Post reported successfully');
   } catch (error) {

@@ -105,8 +105,7 @@ export default {
     async checkVerification() {
       try {
         const response = await apiClient.get('/api/check-verification', {
-          params: { email: this.email },
-          withCredentials: true,
+          params: { email: this.email }
         });
         if (response.data.verified) {
           this.$router.push('/profile');
@@ -123,7 +122,7 @@ export default {
     },
     async resendEmail() {
       try {
-        await apiClient.post('/api/resend-verification', { email: this.email }, { withCredentials: true });
+        await apiClient.post('/api/resend-verification', { email: this.email });
         this.showSuccessSnackbar = true;
         setTimeout(() => (this.showSuccessSnackbar = false), 3000);
       } catch (err) {

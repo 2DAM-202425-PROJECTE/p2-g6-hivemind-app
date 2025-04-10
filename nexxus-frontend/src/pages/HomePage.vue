@@ -177,16 +177,9 @@ import axios from 'axios';
 import { generateAvatar } from '@/utils/avatar';
 import VEmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
-
-const loadTwemoji = () => {
-  const script = document.createElement('script');
-  script.src = 'https://twemoji.maxcdn.com/v/latest/twemoji.min.js';
-  script.crossOrigin = 'anonymous';
-  document.head.appendChild(script);
-};
+import apiClient from "@/axios.js";
 
 onMounted(() => {
-  loadTwemoji();
   fetchPosts(1, true);
   window.addEventListener('scroll', handleScroll);
   window.addEventListener('click', handleClickOutside);
@@ -242,9 +235,7 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
       return;
     }
 
-    const result = await axios.get(`http://localhost:8000/api/posts?page=${page}`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-    });
+    const result = await apiClient.get(`/api/posts?page=${page}`);
 
     if (initialLoad) {
       posts.value = result.data.data;
@@ -259,9 +250,7 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
       noMorePosts.value = true;
     }
 
-    const usersResult = await axios.get('http://localhost:8000/api/users', {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-    });
+    const usersResult = await apiClient.get('/api/users');
 
     if (!usersResult.data || !usersResult.data.data) {
       console.error('Estructura inesperada en la respuesta de usuarios:', usersResult.data);
@@ -273,14 +262,10 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
       return acc;
     }, {});
 
-    const userResult = await axios.get('http://localhost:8000/api/user', {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-    });
+    const userResult = await apiClient.get('/api/user');
     currentUser.value = userResult.data;
 
-    const storiesResult = await axios.get('http://localhost:8000/api/stories', {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-    });
+    const storiesResult = await apiClient.get('/api/stories');
     stories.value = storiesResult.data;
   } catch (error) {
     console.error('Error al obtener datos', error.response?.data || error.message);
@@ -451,11 +436,7 @@ const submitPost = async () => {
     if (newPostFile.value) formData.append('file', newPostFile.value);
     if (selectedLocation.value) formData.append('location', selectedLocation.value.name);
 
-    const response = await axios.post(
-      'http://localhost:8000/api/posts',
-      formData,
-      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
-    );
+    await apiClient.post('/api/posts', formData);
 
     await fetchPosts(1, true);
     newPostContent.value = '';
@@ -527,11 +508,10 @@ const toggleLike = async (post) => {
   const token = localStorage.getItem('token');
   if (!token) return console.error('No token available');
 
-  const url = `http://localhost:8000/api/posts/${post.id}/like`;
   const method = post.liked_by_user ? 'delete' : 'post';
 
   try {
-    await axios({ method, url, headers: { Authorization: `Bearer ${token}` } });
+    await apiClient[method](`/api/posts/${post.id}/like`);
     post.liked_by_user = !post.liked_by_user;
     post.likes_count += post.liked_by_user ? 1 : -1;
   } catch (error) {
@@ -575,16 +555,7 @@ const saveEditPost = async () => {
       formData.append('file', editPostFile.value);
     }
 
-    const response = await axios.post(
-      `http://localhost:8000/api/posts/${selectedPost.value.id}`,
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
+    const response = await apiClient.put(`/api/posts/${selectedPost.value.id}`, formData);
 
     const updatedPost = response.data.post;
     const postIndex = posts.value.findIndex(p => p.id === selectedPost.value.id);
@@ -609,9 +580,7 @@ const isPostFromUser = (post) => post.id_user === currentUser.value.id;
 const deletePost = async (postId) => {
   isDeleting.value = true;
   try {
-    await axios.delete(`http://localhost:8000/api/posts/${postId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    });
+    await apiClient.delete(`/api/posts/${postId}`);
     posts.value = posts.value.filter(post => post.id !== postId);
   } catch (error) {
     console.error('Error deleting post:', error.response?.data || error.message);

@@ -226,9 +226,7 @@ const saveProfile = async () => {
   }
 
   try {
-    const response = await apiClient.post('/api/user/profile/update', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await apiClient.post('/api/user/profile/update', formData);
     emit('save', response.data.user);
     successMessage.value = 'Profile updated successfully!';
     errorMessage.value = '';

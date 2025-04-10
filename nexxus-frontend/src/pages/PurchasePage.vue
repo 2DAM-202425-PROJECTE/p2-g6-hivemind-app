@@ -343,9 +343,7 @@ export default {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
 
-        const response = await apiClient.get(`/api/shop/items/${id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        });
+        const response = await apiClient.get(`/api/shop/items/${id}`);
         this.item = response.data;
       } catch (error) {
         console.error(`Failed to fetch item with ID ${id}:`, error);
@@ -358,9 +356,7 @@ export default {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
 
-        const response = await apiClient.get('/api/user', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        });
+        const response = await apiClient.get('/api/user');
         this.user = response.data;
         this.userCredits = response.data.credits || 1000;
       } catch (error) {
@@ -380,8 +376,7 @@ export default {
         console.log('Sending payload:', { userId: this.user.id, itemId: this.item.id });
         const response = await apiClient.post(
           '/api/user/process-credit-purchase',
-          { userId: this.user.id, itemId: this.item.id },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { userId: this.user.id, itemId: this.item.id }
         );
 
         if (response.data.error) {

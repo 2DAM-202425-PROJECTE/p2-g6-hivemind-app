@@ -218,9 +218,7 @@ const loadEquippedState = async () => {
   try {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token found.');
-    const response = await apiClient.get(`/api/user/${props.user.id}/equipped-items`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await apiClient.get(`/api/user/${props.user.id}/equipped-items`);
     Object.assign(props.user, {
       equipped_profile_icon_path: response.data.equipped_profile_icon_path,
       equipped_profile_theme: response.data.equipped_profile_theme,
