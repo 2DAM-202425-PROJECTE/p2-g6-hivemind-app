@@ -30,8 +30,6 @@
       <!-- Form with bee-themed elements -->
       <div class="bg-white rounded-xl shadow-lg p-8">
         <v-form ref="form" v-model="valid">
-          <input type="hidden" name="_token" :value="csrfToken" />
-
           <v-text-field
             v-model="name"
             label="Your Name"
@@ -111,7 +109,6 @@ const valid = ref(false)
 const name = ref('')
 const email = ref('')
 const message = ref('')
-const csrfToken = ref('')
 const userId = ref('')
 const successMessage = ref('')
 const errorMessage = ref('');
@@ -119,12 +116,13 @@ const loading = ref(false);
 
 const fetchUserId = async () => {
   try {
-    const response = await apiClient.get("/api/user");
+    const response = await apiClient.get('/api/user');
     userId.value = response.data.id;
     name.value = response.data.name;
     email.value = response.data.email;
   } catch (error) {
-    console.error("Error getting user ID:", error.response?.data || error.message);
+    errorMessage.value = 'Failed to load your data. Please log in again.';
+    console.error('Error getting user ID:', error.response?.data || error.message);
   }
 };
 

@@ -32,6 +32,6 @@ class ContactController extends Controller
             return response()->json(['message' => 'Failed to send message. Please try again later.'], 500);
         }
 
-        return response()->json(['message' => 'Form submitted successfully.']);
+        return response()->json(['message' => 'Form submitted successfully.'], 201);
     }
 }
