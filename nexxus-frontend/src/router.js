@@ -85,34 +85,6 @@ const router = createRouter({
   routes,
 });
 
-// router.beforeEach(async (to, from, next) => {
-//   const publicRoutes = ['Login', 'Register', 'CheckEmail', 'VerifyEmail', 'ForgotPassword', 'ResetPassword'];
-//
-//   if (publicRoutes.includes(to.name)) {
-//     return next();
-//   }
-//
-//   // Buscar el token en localStorage en lugar de cookie
-//   const token = localStorage.getItem('token');
-//
-//   if (!token) {
-//     return next('/auth/login');
-//   }
-//
-//   try {
-//     // Verificar el token con el backend
-//     apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-//     const response = await apiClient.get('/api/user');
-//     console.log('User authenticated:', response.data);
-//     return next();
-//   } catch (error) {
-//     console.warn('Authentication failed:', error.response?.status);
-//     // Limpiar el token si la autenticación falla
-//     localStorage.removeItem('token');
-//     return next('/auth/login');
-//   }
-// });
-
 router.beforeEach(async (to, from, next) => {
   const publicRoutes = ['Login', 'Register', 'CheckEmail', 'VerifyEmail', 'ForgotPassword', 'ResetPassword'];
 

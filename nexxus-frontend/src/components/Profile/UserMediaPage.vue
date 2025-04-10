@@ -201,8 +201,8 @@ import { ref, onMounted, nextTick, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
-import axios from 'axios';
 import { generateAvatar } from '@/utils/avatar';
+import apiClient from "@/axios.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -245,12 +245,9 @@ const addReply = async (parentId) => {
   if (!replies.value[parentId]?.trim()) return;
 
   try {
-    const token = localStorage.getItem('token');
-    const response = await axios.post(`${API_BASE_URL}/api/posts/${selectedMedia.value.id}/comments`, {
+    const response = await apiClient.post(`/api/posts/${selectedMedia.value.id}/comments`, {
       content: replies.value[parentId],
       parent_id: parentId, // Include parent_id in the request
-    }, {
-      headers: { Authorization: `Bearer ${token}` },
     });
 
     const parentComment = comments.value.find(comment => comment.id === parentId);
@@ -297,9 +294,7 @@ onMounted(async () => {
       ? new URL(document.referrer).pathname
       : '/';
 
-    const usersResult = await axios.get(`${API_BASE_URL}/api/users`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const usersResult = await apiClient.get(`/api/users`);
 
     // Assign the nested comments structure
     // comments.value = commentsResult.data || [];
@@ -311,9 +306,7 @@ onMounted(async () => {
     }, {});
 
     console.log('Fetching user data for username:', username);
-    const userResult = await axios.get(`${API_BASE_URL}/api/user/${username}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const userResult = await apiClient.get(`/api/user/${username}`);
     console.log('User data:', userResult.data);
     user.value = userResult.data.user;
 
@@ -323,23 +316,17 @@ onMounted(async () => {
       return;
     }
     console.log('Fetching media with ID:', postId);
-    const postResult = await axios.get(`${API_BASE_URL}/api/posts/${postId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const postResult = await apiClient.get(`/api/posts/${postId}`);
     console.log('Media data:', postResult.data);
     selectedMedia.value = postResult.data.data;
 
     console.log('Fetching comments for media ID:', postId);
-    const commentsResult = await axios.get(`${API_BASE_URL}/api/posts/${postId}/comments`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const commentsResult = await apiClient.get(`/api/posts/${postId}/comments`);
     console.log('Comments data:', commentsResult.data);
     comments.value = commentsResult.data || [];
 
     console.log('Fetching current user');
-    const currentUserResult = await axios.get(`${API_BASE_URL}/api/user`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const currentUserResult = await apiClient.get(`/api/user`);
     console.log('Current user data:', currentUserResult.data);
     currentUser.value = currentUserResult.data;
 
@@ -412,25 +399,18 @@ const goToUserProfile = (username) => {
 
 const toggleLike = async (media) => {
   try {
-    const token = localStorage.getItem('token');
     if (media.liked_by_user) {
-      await axios.delete(`${API_BASE_URL}/api/posts/${media.id}/like`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiClient.delete(`/api/posts/${media.id}/like`);
       media.liked_by_user = false;
       media.likes_count -= 1;
     } else {
-      await axios.post(`${API_BASE_URL}/api/posts/${media.id}/like`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiClient.post(`/api/posts/${media.id}/like`);
       media.liked_by_user = true;
       media.likes_count += 1;
     }
   } catch (error) {
     console.error('Error toggling like:', error.response?.data || error.message);
-    const postResult = await axios.get(`${API_BASE_URL}/api/posts/${media.id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const postResult = await apiClient.get(`/api/posts/${media.id}`);
     media.liked_by_user = postResult.data.data.liked_by_user;
     media.likes_count = postResult.data.data.likes_count;
   }
@@ -439,11 +419,8 @@ const toggleLike = async (media) => {
 const addComment = async () => {
   if (!newComment.value.trim()) return;
   try {
-    const token = localStorage.getItem('token');
-    const response = await axios.post(`${API_BASE_URL}/api/posts/${selectedMedia.value.id}/comments`, {
+    const response = await apiClient.post(`/api/posts/${selectedMedia.value.id}/comments`, {
       content: newComment.value
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
     });
     comments.value.push(response.data);
     newComment.value = '';
@@ -471,19 +448,14 @@ const cancelDelete = () => {
 };
 
 const confirmDelete = async () => {
-  const token = localStorage.getItem('token');
   try {
     if (deleteType.value === 'media') {
       isDeleting.value = true;
-      await axios.delete(`${API_BASE_URL}/api/posts/${itemToDelete.value}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiClient.delete(`/api/posts/${itemToDelete.value}`);
       selectedMedia.value = null;
       router.push(previousRoute.value || '/');
     } else if (deleteType.value === 'comment') {
-      await axios.delete(`${API_BASE_URL}/api/comments/${itemToDelete.value}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiClient.delete(`/api/comments/${itemToDelete.value}`);
       comments.value = comments.value.filter(comment => comment.id !== itemToDelete.value);
     }
   } catch (error) {
@@ -558,7 +530,6 @@ const saveEditMedia = async () => {
   if (!selectedMedia.value) return;
 
   try {
-    const token = localStorage.getItem('token');
     const formData = new FormData();
     formData.append('description', editMediaDescription.value);
     formData.append('location', editMediaLocation.value ? editMediaLocation.value.name : '');
@@ -567,11 +538,7 @@ const saveEditMedia = async () => {
       formData.append('file', editMediaFile.value);
     }
 
-    const response = await axios.post(
-      `${API_BASE_URL}/api/posts/${selectedMedia.value.id}`,
-      formData,
-      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
-    );
+    const response = await apiClient.post(`/api/posts/${selectedMedia.value.id}`, formData);
 
     selectedMedia.value = response.data.post || response.data.data;
     editMediaPopup.value = false;
@@ -583,10 +550,9 @@ const saveEditMedia = async () => {
 
 const reportMedia = async (media) => {
   try {
-    const token = localStorage.getItem('token');
-    await axios.post(`${API_BASE_URL}/api/posts/${media.id}/report`, {
+    await apiClient.post(`/api/posts/${media.id}/report`, {
       reason: prompt('Please enter reason for reporting:')
-    }, { headers: { Authorization: `Bearer ${token}` } });
+    });
     alert(`${isVideo.value ? 'Video' : 'Post'} reported successfully`);
     mediaMenuVisible.value = null;
   } catch (error) {
