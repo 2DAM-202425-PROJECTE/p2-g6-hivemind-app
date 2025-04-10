@@ -1,6 +1,5 @@
 // router/index.js
 import { createRouter, createWebHistory } from "vue-router";
-import { setAuthToken } from "./auth.js";
 import apiClient from './axios.js';
 
 // Pages

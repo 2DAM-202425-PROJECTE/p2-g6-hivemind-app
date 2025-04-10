@@ -22,7 +22,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import axios from 'axios';
+import apiClient from "@/axios.js";
 
 const showCreateStoryModal = ref(false);
 const newStoryFile = ref(null);
@@ -37,13 +37,7 @@ computed(() => {
 
 const fetchUser = async () => {
   try {
-    const token = localStorage.getItem('token');
-    const response = await axios.get('http://localhost:8000/api/user', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-      },
-    });
+    const response = await apiClient.get('/api/user');
     currentUser.value = response.data;
   } catch (error) {
     console.error('Error fetching user:', error);
@@ -82,13 +76,7 @@ const submitNewStory = async () => {
   formData.append('id_user', userId);
 
   try {
-    const token = localStorage.getItem('token');
-    await axios.post('http://localhost:8000/api/stories', formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    await apiClient.post('/api/stories', formData);
 
     showCreateStoryModal.value = false;
     newStoryFile.value = null;

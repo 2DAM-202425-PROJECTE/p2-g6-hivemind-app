@@ -179,15 +179,7 @@ import VEmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 import apiClient from "@/axios.js";
 
-const loadTwemoji = () => {
-  const script = document.createElement('script');
-  script.src = 'https://twemoji.maxcdn.com/v/latest/twemoji.min.js';
-  script.crossOrigin = 'anonymous';
-  document.head.appendChild(script);
-};
-
 onMounted(() => {
-  loadTwemoji();
   fetchPosts(1, true);
   window.addEventListener('scroll', handleScroll);
   window.addEventListener('click', handleClickOutside);

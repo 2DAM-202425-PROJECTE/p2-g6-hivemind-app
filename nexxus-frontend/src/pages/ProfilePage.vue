@@ -20,7 +20,7 @@
     </div>
 
     <ProfileEditModal :is-open="isEditModalVisible" :user="user" @close="isEditModalVisible = false" @save="updateUserProfile" />
-    <ShareModal v-if="isModalVisible" :share-url="shareUrl" @close="isModalVisible = false" />
+    <ShareModal v-if="isModalVisible" :share-url="shareUrl" @close="isModalVisible = true" />
     <InventoryModal v-if="isInventoryModalVisible" :user="user" @close="isInventoryModalVisible = false" @update-user="updateUserProfile" />
     <Footer />
 
