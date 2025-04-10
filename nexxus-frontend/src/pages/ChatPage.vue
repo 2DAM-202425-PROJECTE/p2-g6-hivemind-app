@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 flex flex-col h-screen overflow-hidden">
+  <div class="h-screen bg-gradient-to-br from-amber-50 to-amber-100 flex flex-col overflow-hidden py-4">
     <Navbar />
     <div class="flex gap-5 flex-1 mt-16 mb-16 overflow-hidden px-4">
       <ChatList :chats="chats" @select-chat="selectChat" />
