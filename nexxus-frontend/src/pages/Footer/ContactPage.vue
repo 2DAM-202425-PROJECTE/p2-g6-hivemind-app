@@ -1,10 +1,10 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 text-gray-800 p-32">
     <Navbar />
-    <div class="max-w-2xl mx-auto animate-fade-in">
+    <div class="max-w-4xl mx-auto px-6 py-12 animate-fade-in">
       <!-- Header with subtle bee theme -->
-      <div class="text-center mb-8">
-        <h1 class="text-4xl font-extrabold mb-2">
+      <div class="text-center mb-12">
+        <h1 class="text-5xl font-extrabold mb-4">
           <span class="animate-letter gradient-text" style="--order: 1">C</span>
           <span class="animate-letter gradient-text" style="--order: 2">o</span>
           <span class="animate-letter gradient-text" style="--order: 3">n</span>

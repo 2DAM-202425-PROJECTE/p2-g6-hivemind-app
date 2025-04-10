@@ -13,10 +13,10 @@ import CheckEmail from "@/pages/Auth/CheckEmail.vue";
 
 import HomePage from "./pages/HomePage.vue";
 import ProfilePage from "./pages/ProfilePage.vue";
-import About from "./pages/About.vue";
-import PrivacyPolicy from "./pages/PrivacyPolicyPage.vue";
-import TermsOfService from "./pages/TermsOfServicePage.vue";
-import ContactPage from "./pages/ContactPage.vue";
+import About from "./pages/Footer/About.vue";
+import PrivacyPolicy from "./pages/Footer/PrivacyPolicyPage.vue";
+import TermsOfService from "./pages/Footer/TermsOfServicePage.vue";
+import ContactPage from "./pages/Footer/ContactPage.vue";
 import ChatPage from "./pages/ChatPage.vue";
 import ServerPage from "./pages/ServerPage.vue";
 import ShopPage from "./pages/ShopPage.vue";
