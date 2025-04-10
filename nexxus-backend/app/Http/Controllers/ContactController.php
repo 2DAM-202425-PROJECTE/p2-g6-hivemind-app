@@ -14,20 +14,26 @@ class ContactController extends Controller
 {
     public function submit(Request $request)
     {
+        // Validate the request data
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'message' => 'required|string',
+            'message' => 'required|string|max:1000',
         ]);
 
+        // Only allow the specified fields
         $data = $request->only('name', 'email', 'message');
 
-        // Send confirmation email to the user
-        Mail::to($data['email'])->send(new ContactConfirmation($data));
+        try {
+            // Send confirmation email to the user
+            Mail::to($data['email'])->send(new ContactConfirmation($data));
 
-        // Send notification email to the admin
-        Mail::to('hivemindnexxuscontact@gmail.com')->send(new ContactNotification($data));
+            // Send notification email to the admin
+            Mail::to('hivemindnexxuscontact@gmail.com')->send(new ContactNotification($data));
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to send message. Please try again later.'], 500);
+        }
 
-        return response()->json(['message' => 'Form submitted successfully.']);
+        return response()->json(['message' => 'Form submitted successfully.'], 201);
     }
 }
