@@ -14,12 +14,14 @@ class ContactController extends Controller
 {
     public function submit(Request $request)
     {
+        // Validate the request data
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'message' => 'required|string|max:1000',
         ]);
 
+        // Only allow the specified fields
         $data = $request->only('name', 'email', 'message');
 
         try {

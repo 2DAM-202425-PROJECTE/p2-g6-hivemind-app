@@ -114,6 +114,7 @@ const successMessage = ref('')
 const errorMessage = ref('');
 const loading = ref(false);
 
+// Fetch userid, name, and email from the logged-in user
 const fetchUserId = async () => {
   try {
     const response = await apiClient.get('/api/user');
@@ -126,6 +127,7 @@ const fetchUserId = async () => {
   }
 };
 
+// On component mount, fetch user data
 onMounted(async () => {
   try {
     fetchUserId();
@@ -138,6 +140,7 @@ const submit = async () => {
   if (valid.value) {
     loading.value = true;
     try {
+      // Call the API to submit the contact form
       await apiClient.post('/api/contact/submit', {
         name: name.value,
         email: email.value,
