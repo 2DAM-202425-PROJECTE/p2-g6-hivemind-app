@@ -106,9 +106,7 @@ const rules = {
 
 const fetchUserId = async () => {
   try {
-    const response = await apiClient.get("/api/user", {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
+    const response = await apiClient.get("/api/user");
     userId.value = response.data.id;
     name.value = response.data.name;
     email.value = response.data.email;
@@ -129,7 +127,6 @@ const submit = async () => {
   if (valid.value) {
     try {
       await apiClient.post("/api/contact/submit", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         name: name.value,
         email: email.value,
         message: message.value,
