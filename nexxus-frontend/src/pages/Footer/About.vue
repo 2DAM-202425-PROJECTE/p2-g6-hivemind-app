@@ -130,10 +130,10 @@ const technologies = [
 ];
 
 const team = [
-  { name: "Harry White", role: "Frontend Developer", initials: "H" },
-  { name: "Manel Méndez", role: "Frontend Developer", initials: "M" },
-  { name: "Gerard Moreno", role: "Backend Developer", initials: "G" },
-  { name: "Radostin Valeriev", role: "Backend Developer", initials: "R" }
+  { name: "Harry White", role: "Frontend Developer", initials: "HW" },
+  { name: "Manel Méndez", role: "Frontend Developer", initials: "MM" },
+  { name: "Gerard Moreno", role: "Backend Developer", initials: "GM" },
+  { name: "Radostin Valeriev", role: "Backend Developer", initials: "RV" }
 ];
 </script>
 
