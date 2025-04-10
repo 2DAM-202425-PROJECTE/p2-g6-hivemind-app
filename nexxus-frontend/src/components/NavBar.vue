@@ -252,8 +252,6 @@
 <script setup>
 import { ref, onMounted, watch, computed, nextTick, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from '../axios';
-import { clearAuthToken } from '../auth';
 import NotificationsModal from './NotificationsModal.vue';
 import { generateAvatar } from '../utils/avatar';
 import apiClient from "../axios";
@@ -299,7 +297,7 @@ const menuItems = ref([
 
 const fetchUser = async () => {
   try {
-    const response = await axios.get('/api/user');
+    const response = await apiClient.get('/api/user');
     user.value = response.data;
     updateMenuItems();
   } catch (error) {
@@ -319,16 +317,10 @@ const updateMenuItems = () => {
 
 const logout = async () => {
   try {
-    const token = localStorage.getItem('token');
-    if (!token) throw new Error('No token found');
     await apiClient.post('/api/logout');
-    localStorage.removeItem('token');
-    clearAuthToken();
-    user.value = null;
-    router.push('/');
+    await router.push('/auth/login');
   } catch (error) {
     console.error('Logout failed:', error);
-    alert('Logout failed.');
   }
 };
 
@@ -343,11 +335,10 @@ const submitPost = async () => {
   formData.append('publish_date', new Date().toISOString());
   if (postFile.value) formData.append('file', postFile.value);
   try {
-    await axios.post('/api/posts', formData, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' },
-    });
+    await apiClient.post('/api/posts', formData);
     postPopup.value = false;
     showPostSuccessSnackbar.value = true;
+
     setTimeout(() => {
       showPostSuccessSnackbar.value = false;
       postDescription.value = '';
@@ -377,9 +368,7 @@ const submitStory = async () => {
   formData.append('publish_date', new Date().toISOString());
   if (storyFile.value) formData.append('file', storyFile.value);
   try {
-    await axios.post('/api/stories', formData, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' },
-    });
+    await apiClient.post('/api/stories', formData);
     storyPopup.value = false;
     showStorySuccessSnackbar.value = true; // Use story-specific success snackbar
     setTimeout(() => {
@@ -408,7 +397,7 @@ const debouncedSearchUsers = debounce(async () => {
   }
   isSearching.value = true;
   try {
-    const response = await axios.get('/api/search/users', { params: { username: searchQuery.value } });
+    const response = await apiClient.get('/api/search/users', { params: { username: searchQuery.value } });
     searchResults.value = response.data.data || [];
     showSearchResults.value = true;
   } catch (error) {

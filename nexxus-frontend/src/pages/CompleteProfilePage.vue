@@ -204,9 +204,7 @@ const uploadProfilePic = (event) => {
 
 const fetchUser = async () => {
   try {
-    const response = await apiClient.get('/api/user', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    });
+    const response = await apiClient.get('/api/user');
     user.value = response.data;
   } catch (error) {
     console.error('Error fetching user:', error);
@@ -257,12 +255,7 @@ const saveProfile = async () => {
   if (bannerPhoto.value) formData.append('banner_photo', bannerPhoto.value);
 
   try {
-    const response = await apiClient.post('/api/user/profile/update', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
+    const response = await apiClient.post('/api/user/profile/update', formData);
     user.value = response.data.user;
     showSuccessSnackbar.value = true;
     errorMessage.value = '';

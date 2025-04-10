@@ -95,7 +95,7 @@ export default {
   methods: {
     async verifyEmailWithToken() {
       try {
-        await apiClient.get(`/api/verify-email/${this.token}`, { withCredentials: true });
+        await apiClient.get(`/api/verify-email/${this.token}`);
         // No redirect here, let user go back manually
       } catch (err) {
         this.error = err.response?.data?.message || 'Error al verificar el correo';

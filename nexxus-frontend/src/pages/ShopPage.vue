@@ -139,9 +139,7 @@ export default {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
 
-        const response = await apiClient.get('/api/user', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiClient.get('/api/user');
         this.userId = response.data.id;
         await this.fetchUserInventory();
       } catch (error) {
@@ -150,10 +148,7 @@ export default {
     },
     async fetchUserInventory() {
       try {
-        const token = localStorage.getItem('token');
-        const response = await apiClient.get(`/api/user/${this.userId}/inventory`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiClient.get(`/api/user/${this.userId}/inventory`);
         this.userInventory = response.data.map(item => item.item_id);
       } catch (error) {
         console.error('Failed to fetch user inventory:', error);
@@ -161,9 +156,7 @@ export default {
     },
     async fetchCategorizedItems() {
       try {
-        const response = await apiClient.get('/api/shop/categorized-items', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        });
+        const response = await apiClient.get('/api/shop/categorized-items');
         this.subscriptionTiers = response.data.subscriptions.map(tier => ({
           ...tier,
           price: tier.price === 0 ? 'Free' : `${tier.price}€/month`
