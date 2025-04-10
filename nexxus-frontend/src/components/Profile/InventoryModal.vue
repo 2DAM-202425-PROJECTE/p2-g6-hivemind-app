@@ -18,8 +18,8 @@
           <h3 class="category-title">{{ category.title }}</h3>
           <p class="category-description">{{ category.description }}</p>
           <div class="items-grid">
-            <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'background-item': item.isBackground }">
-              <img :src="item.icon_url" :alt="item.name" class="cosmetic-icon" />
+            <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'background-item': item.type === 'background', 'banner-item': item.type === 'custom_banner' }">
+              <img :src="getItemIconUrl(item)" :alt="item.name" class="cosmetic-icon" @error="handleImageError(item)" />
               <h4 class="item-name">{{ item.name }}</h4>
               <p class="item-price">{{ formatPrice(item.price) }}</p>
               <button
@@ -70,6 +70,27 @@ const equippedItemName = ref('');
 const inventory = ref([]);
 const inventoryCategories = ref([]);
 
+// Fallback image and icons for when GIFs fail to load
+const fallbackImage = 'https://api.iconify.design/lucide/image-off.svg';
+const fallbackIcons = {
+  'Cosmic Vortex': 'https://api.iconify.design/mdi/star-four-points.svg?color=%2300BFFF',
+  'Neon Cityscape': 'https://api.iconify.design/mdi/pulse.svg?color=%23FF4500',
+  'Firestorm Horizon': 'https://api.iconify.design/mdi/fire.svg?color=%23FF4500',
+  'Mystic Nebula': 'https://api.iconify.design/mdi/cloud.svg?color=%2300FFFF',
+  'Cyber Grid': 'https://api.iconify.design/mdi/grid.svg?color=%2300FFFF',
+  'Ethereal Waves': 'https://api.iconify.design/mdi/wave.svg?color=%2300FFFF',
+  'Ocean Surge': 'https://api.iconify.design/mdi/water.svg?color=%2300FFFF',
+  'Pixel Storm': 'https://api.iconify.design/mdi/lightning-bolt.svg?color=%23FF00FF',
+  'Lava Flow': 'https://api.iconify.design/mdi/lava.svg?color=%23FF4500',
+  'Frost Vortex': 'https://api.iconify.design/mdi/snowflake.svg?color=%2300FFFF',
+  'Steampunk Gears': 'https://api.iconify.design/mdi/cog.svg?color=%23FFD700',
+  'Lunar Eclipse': 'https://api.iconify.design/mdi/moon.svg?color=%23FFFFFF',
+  'Glitch Matrix': 'https://api.iconify.design/mdi/matrix.svg?color=%2300FF00',
+  'Aurora Dance': 'https://api.iconify.design/mdi/weather-night.svg?color=%2300FF00',
+  'Galactic Spin': 'https://api.iconify.design/mdi/galaxy.svg?color=%2300FFFF',
+  'Rainbow Flux': 'https://api.iconify.design/mdi/rainbow.svg?color=%23FF00FF',
+};
+
 const closeInventoryOnBackdrop = (event) => {
   if (event.target === event.currentTarget) emit('close');
 };
@@ -78,96 +99,86 @@ const closeEquipPopupOnBackdrop = (event) => {
   if (event.target === event.currentTarget) showEquipPopup.value = false;
 };
 
-const equipItem = async (item) => {
-  equippedItemName.value = `${item.name} has been equipped`;
-  showEquipPopup.value = true;
+// Method to get the item icon URL with fallback
+const getItemIconUrl = (item) => {
+  if (item.icon_url && !item.iconFailed) {
+    return item.icon_url;
+  }
+  return fallbackIcons[item.name] || fallbackImage;
+};
 
-  const updateEquipped = async (endpoint, field, path) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No authentication token found.');
-      const payload = { userId: props.user.id, [field]: path };
-      console.log('Sending payload:', payload); // Debug log
-      const response = await apiClient.post(endpoint, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      item.isEquipped = true;
-      inventory.value.forEach(i => {
-        if (i.type === item.type && i.id !== item.id) i.isEquipped = false;
-      });
-      inventory.value = [...inventory.value];
-      inventoryCategories.value = categorizeInventory(inventory.value);
-      emit('update-user', { [field]: path });
-      console.log('Equipped item:', { field, path, item });
-    } catch (error) {
-      console.error(`Failed to equip ${field}:`, error.response?.data || error.message);
+// Handle image load errors
+const handleImageError = (item) => {
+  console.warn(`Image failed to load for ${item.name}: ${item.icon_url}`);
+  item.iconFailed = true;
+  item.icon_url = fallbackIcons[item.name] || fallbackImage;
+};
+
+const updateEquipped = async (itemId, type, isUnequip = false) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('No authentication token found.');
+
+    let endpoint;
+    let payload;
+
+    if (type === 'custom_banner') {
+      endpoint = '/api/user/update-equipped-banner';
+      payload = isUnequip ? { banner_id: null } : { banner_id: itemId };
+    } else {
+      endpoint = `/api/user/update-equipped-${type}`;
+      payload = isUnequip ? { item_id: null } : { item_id: itemId };
     }
-  };
 
-  switch (item.type) {
-    case 'profile_icon':
-      await updateEquipped('/api/user/update-equipped-profile-icon', 'equipped_profile_icon_path', item.icon_url);
-      break;
-    case 'profile_frame':
-      await updateEquipped('/api/user/update-equipped-profile-frame', 'equippedProfileFramePath', item.icon_url);
-      break;
-    case 'background':
-      await updateEquipped('/api/user/update-equipped-background', 'equipped_background_path', item.icon_url);
-      break;
-    case 'name_effect':
-      await updateEquipped('/api/user/update-equipped-name-effect', 'equipped_name_effect_path', item.icon_url);
-      break;
-    case 'badge':
-      await updateEquipped('/api/user/update-equipped-badge', 'equippedBadgePath', item.icon_url);
-      break;
-    case 'profile_font':
-      await updateEquipped('/api/user/update-equipped-profile-font', 'equipped_profile_font_path', item.name);
-      break;
+    const response = await apiClient.post(endpoint, payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to ${isUnequip ? 'unequip' : 'equip'} ${type}:`, error.response?.data || error.message);
+    throw error;
+  }
+};
+
+const equipItem = async (item) => {
+  try {
+    equippedItemName.value = `${item.name} has been equipped`;
+    showEquipPopup.value = true;
+
+    const response = await updateEquipped(item.id, item.type);
+    item.isEquipped = true;
+
+    inventory.value.forEach(i => {
+      if (i.type === item.type && i.id !== item.id) i.isEquipped = false;
+    });
+    inventory.value = [...inventory.value];
+    inventoryCategories.value = categorizeInventory(inventory.value);
+
+    const field = item.type === 'custom_banner' ? 'equipped_banner_photo_path' : `equipped_${item.type}_path`;
+    emit('update-user', { [field]: item.icon_url });
+    console.log('Equipped item:', item);
+  } catch (error) {
+    console.error('Equip failed:', error);
   }
 };
 
 const unequipItem = async (item) => {
-  const updateUnequipped = async (endpoint, field) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No authentication token found.');
-      const response = await apiClient.post(endpoint, {
-        userId: props.user.id,
-        [field]: null,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      item.isEquipped = false;
-      inventory.value = [...inventory.value]; // Trigger reactivity
-      equippedItemName.value = `${item.name} has been unequipped`;
-      showEquipPopup.value = true;
-      inventoryCategories.value = categorizeInventory(inventory.value);
-      emit('update-user', { [field]: null });
-      console.log('Unequipped item:', { field, item }); // Debug log
-    } catch (error) {
-      console.error(`Failed to unequip ${field}:`, error.response?.data || error.message);
-    }
-  };
+  try {
+    equippedItemName.value = `${item.name} has been unequipped`;
+    showEquipPopup.value = true;
 
-  switch (item.type) {
-    case 'profile_icon':
-      await updateUnequipped('/api/user/update-equipped-profile-icon', 'equipped_profile_icon_path');
-      break;
-    case 'profile_frame':
-      await updateUnequipped('/api/user/update-equipped-profile-frame', 'equippedProfileFramePath');
-      break;
-    case 'background':
-      await updateUnequipped('/api/user/update-equipped-background', 'equipped_background_path');
-      break;
-    case 'name_effect':
-      await updateUnequipped('/api/user/update-equipped-name-effect', 'equipped_name_effect_path');
-      break;
-    case 'badge':
-      await updateUnequipped('/api/user/update-equipped-badge', 'equippedBadgePath');
-      break;
-    case 'profile_font':
-      await updateUnequipped('/api/user/update-equipped-profile-font', 'equipped_profile_font_path');
-      break;
+    const response = await updateEquipped(item.id, item.type, true);
+    item.isEquipped = false;
+
+    inventory.value = [...inventory.value];
+    inventoryCategories.value = categorizeInventory(inventory.value);
+
+    const field = item.type === 'custom_banner' ? 'equipped_banner_photo_path' : `equipped_${item.type}_path`;
+    emit('update-user', { [field]: null });
+    console.log('Unequipped item:', item);
+  } catch (error) {
+    console.error('Unequip failed:', error);
   }
 };
 
@@ -179,12 +190,12 @@ const formatPrice = (price) => {
 const categorizeInventory = (items) => {
   const categorized = [
     { title: 'Profile Icons', description: 'Stand out with unique profile icons', items: items.filter(item => item.type === 'profile_icon') },
-    { title: 'Backgrounds', description: 'Transform your profile with stunning themes', items: items.filter(item => { if (item.type === 'background') item.isBackground = true; return item.type === 'background'; }) },
+    { title: 'Backgrounds', description: 'Transform your profile with stunning themes', items: items.filter(item => item.type === 'background') },
     { title: 'Name Effects', description: 'Make your username pop', items: items.filter(item => item.type === 'name_effect') },
-    { title: 'Profile Frames', description: 'Frame your profile picture', items: items.filter(item => item.type === 'profile_frame') },
+    { title: 'Custom Banners', description: 'Enhance your profile header with animated 4K banners', items: items.filter(item => item.type === 'custom_banner') },
     { title: 'Profile Badges', description: 'Show off your status', items: items.filter(item => item.type === 'badge') },
     { title: 'Profile Fonts', description: 'Customize your text style', items: items.filter(item => item.type === 'profile_font') },
-    { title: 'Other Items', description: 'Miscellaneous items', items: items.filter(item => !['profile_icon', 'background', 'name_effect', 'profile_frame', 'badge', 'profile_font'].includes(item.type)) },
+    { title: 'Other Items', description: 'Miscellaneous items', items: items.filter(item => !['profile_icon', 'background', 'name_effect', 'custom_banner', 'badge', 'profile_font'].includes(item.type)) },
   ].filter(category => category.items.length > 0);
   return categorized;
 };
@@ -198,7 +209,7 @@ const loadInventory = async () => {
     const mappedInventory = response.data.map(item => {
       const itemData = item.item || item;
       return {
-        id: item.id,
+        id: itemData.id || item.id,
         name: itemData.name,
         price: itemData.price || 0,
         icon_url: itemData.iconUrl || itemData.icon_url,
@@ -208,7 +219,7 @@ const loadInventory = async () => {
     });
     inventory.value = mappedInventory;
     inventoryCategories.value = categorizeInventory(mappedInventory);
-    console.log('Loaded inventory:', mappedInventory); // Debug log
+    console.log('Loaded inventory:', mappedInventory);
   } catch (error) {
     console.error('Failed to load inventory:', error.response?.data || error.message);
   }
@@ -218,11 +229,11 @@ const determineItemType = (itemName) => {
   if (['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem', 'Thunder Bolt', 'Moon Glow', 'Sun Flare',
     'Flame Crest', 'Snowflake Spark', 'Leaf Whisper', 'Wave Ripple', 'Cloud Drift', 'Gear Spin', 'Anchor Drop', 'Feather Light'].includes(itemName)) return 'profile_icon';
   if (['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes',
-    'Mountain Peak', 'Polar Glow', 'Lush Valley', 'Dusk Metropolis', 'Golden Fields', 'Snowy Plains', 'Volcanic Ash', 'Nebula Cloud'].includes(itemName)) return 'background';
-  if (['Soft Glow', 'Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker',
-    'Emerald Sheen', 'Phantom Haze', 'Electric Glow', 'Lunar Haze', 'Solar Flare', 'Wave Shimmer', 'Crystal Pulse', 'Rainbow Gleam'].includes(itemName)) return 'name_effect';
-  if (['Golden Ring', 'Crystal Edge', 'Star Border', 'Cloud Frame', 'Tech Circuit', 'Leaf Wreath', 'Wave Crest', 'Pixel Grid',
-    'Flame Halo', 'Frost Ring', 'Gear Frame', 'Moon Orbit', 'Sun Burst', 'Ivy Crown', 'Neon Circuit', 'Starfield Edge'].includes(itemName)) return 'profile_frame';
+    'Mountain Peak', 'Polar Glow', 'Lush Valley', 'Dusk Metropolis', 'Golden Fields', 'Volcanic Ash', 'Nebula Cloud', 'Twilight Horizon'].includes(itemName)) return 'background';
+  if (['Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker',
+    'Emerald Sheen', 'Phantom Haze', 'Electric Glow', 'Solar Flare', 'Wave Shimmer', 'Crystal Pulse', 'Mystic Aura', 'Shadow Veil', 'Digital Pulse'].includes(itemName)) return 'name_effect';
+  if (['Cosmic Vortex', 'Neon Cityscape', 'Firestorm Horizon', 'Mystic Nebula', 'Cyber Grid', 'Ethereal Waves', 'Ocean Surge', 'Pixel Storm',
+    'Lava Flow', 'Frost Vortex', 'Steampunk Gears', 'Lunar Eclipse', 'Glitch Matrix', 'Aurora Dance', 'Galactic Spin', 'Rainbow Flux'].includes(itemName)) return 'custom_banner';
   if (['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge', 'Legend Badge', 'Pioneer Badge', 'Guardian Badge',
     'Warrior Badge', 'Sage Badge', 'Star Gazer Badge', 'Trailblazer Badge', 'Elementalist Badge', 'Innovator Badge', 'Nomad Badge', 'Champion Badge'].includes(itemName)) return 'badge';
   if (['Pixel Art', 'Comic Sans', 'Gothic', 'Cursive', 'Typewriter', 'Bubble', 'Neon', 'Graffiti', 'Retro', 'Cyberpunk',
@@ -235,7 +246,7 @@ const checkIfEquipped = (item) => {
   if (item.type === 'profile_icon') return iconUrl === props.user.equipped_profile_icon_path;
   if (item.type === 'background') return iconUrl === props.user.equipped_background_path;
   if (item.type === 'name_effect') return iconUrl === props.user.equipped_name_effect_path;
-  if (item.type === 'profile_frame') return iconUrl === props.user.equipped_profile_frame_path;
+  if (item.type === 'custom_banner') return iconUrl === props.user.equipped_banner_photo_path;
   if (item.type === 'badge') return iconUrl === props.user.equipped_badge_path;
   if (item.type === 'profile_font') return item.name === props.user.equipped_profile_font_path;
   return false;
@@ -291,7 +302,8 @@ onMounted(() => {
   background: #e9ecef;
 }
 
-.cosmetic-item.background-item .cosmetic-icon {
+.cosmetic-item.background-item .cosmetic-icon,
+.cosmetic-item.banner-item .cosmetic-icon {
   width: 100%;
   height: 80px;
   object-fit: cover;
@@ -299,7 +311,7 @@ onMounted(() => {
   margin-bottom: 0.5rem;
 }
 
-.cosmetic-item:not(.background-item) .cosmetic-icon {
+.cosmetic-item:not(.background-item):not(.banner-item) .cosmetic-icon {
   width: 2rem;
   height: 2rem;
   margin-bottom: 0.5rem;

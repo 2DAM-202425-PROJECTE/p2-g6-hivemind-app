@@ -33,9 +33,9 @@ class ItemController extends Controller
     public function categorizedItems()
     {
         try {
-            $subscriptions = Item::whereIn('id', [1, 2, 3])->get();
-            $creditPacks = Item::whereIn('id', [4, 5, 6, 7, 8, 9, 10, 11])->get();
-            $cosmetics = Item::whereNotIn('id', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])->get();
+            $subscriptions = Item::whereIn('id', range(1, 3))->get();
+            $creditPacks = Item::whereIn('id', range(4, 11))->get();
+            $cosmetics = Item::whereIn('id', range(12, 107))->get();
 
             return response()->json([
                 'subscriptions' => $subscriptions,

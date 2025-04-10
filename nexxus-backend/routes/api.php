@@ -33,7 +33,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function ()
         ]);
     });
 
-    //logout
+    // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', function (Request $request) {
         return $request->user();
@@ -93,12 +93,13 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function ()
 
     // Purchase and inventory routes
     Route::get('/user/{id}/equipped-items', [UserController::class, 'getEquippedItems']);
-    Route::post('/user/update-equipped-profile-frame', [UserController::class, 'updateEquippedProfileFrame']);
     Route::post('/user/update-equipped-profile-icon', [UserController::class, 'updateEquippedProfileIcon']);
+    Route::post('/user/update-equipped-profile-effect', [UserController::class, 'updateEquippedProfileEffect']);
+    Route::post('/user/update-equipped-banner', [UserController::class, 'updateEquippedBanner']);
     Route::post('/user/update-equipped-background', [UserController::class, 'updateEquippedBackground']);
     Route::post('/user/update-equipped-profile-font', [UserController::class, 'updateEquippedProfileFont']);
-    Route::post('/user/update-equipped-name-effect', [UserController::class, 'updateEquippedNameEffect']); // Added
-    Route::post('/user/update-equipped-badge', [UserController::class, 'updateEquippedBadge']); // Added
+    Route::post('/user/update-equipped-name-effect', [UserController::class, 'updateEquippedNameEffect']);
+    Route::post('/user/update-equipped-badge', [UserController::class, 'updateEquippedBadge']);
     Route::post('/user/process-credit-purchase', [UserController::class, 'processCreditPurchase']);
     Route::post('/user/update-credits', [UserController::class, 'updateCredits']);
     Route::get('/user/{id}/inventory', [UserInventoryController::class, 'index']);

@@ -18,6 +18,7 @@
     },
     "dependencies": {
         "@heroicons/vue": "^2.2.0",
+        "particles.js": "^2.0.0",
         "vue3-cookies": "^1.0.6"
     }
 }

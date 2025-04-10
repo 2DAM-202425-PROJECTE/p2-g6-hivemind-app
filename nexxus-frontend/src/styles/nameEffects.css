@@ -1,16 +1,11 @@
 /* src/assets/styles/nameEffects.css */
 
 /* Name Effect Styles */
-.soft-glow {
-    color: #fff;
-    text-shadow: 0 0 15px rgba(255, 255, 255, 1), 0 0 30px rgba(255, 255, 255, 0.8);
-}
-
 .gradient-fade {
     background: linear-gradient(to right, #ff7e5f, #feb47b);
     -webkit-background-clip: text;
     background-clip: text;
-    color: rgba(255, 255, 255, 0.1); /* Slight opacity instead of transparent for font visibility */
+    color: rgba(255, 255, 255, 0.1);
     text-shadow: 0 0 5px rgba(255, 126, 95, 0.5);
 }
 
@@ -59,11 +54,6 @@
     text-shadow: 0 0 10px #00b7eb, 0 0 20px #00b7eb, 0 0 30px #00b7eb;
 }
 
-.lunar-haze {
-    color: #d3d3d3;
-    text-shadow: 0 0 12px rgba(211, 211, 211, 0.8), 0 0 24px rgba(211, 211, 211, 0.6);
-}
-
 .solar-flare {
     color: #ffeb3b;
     text-shadow: 0 0 10px #ffeb3b, 0 0 20px #ffeb3b, 0 0 30px #ffeb3b;
@@ -79,10 +69,24 @@
     text-shadow: 0 0 12px #b9f2ff, 0 0 24px #b9f2ff, 0 0 36px #b9f2ff;
 }
 
-.rainbow-gleam {
-    background: linear-gradient(45deg, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0000ff, #8000ff);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: rgba(255, 255, 255, 0.1); /* Slight opacity for font visibility */
-    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3);
+.mystic-aura {
+    color: #ff00ff;
+    text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px rgba(255, 0, 255, 0.5);
+}
+
+.shadow-veil {
+    color: #333;
+    text-shadow: 0 0 15px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 0, 0, 0.6);
+}
+
+.digital-pulse {
+    color: #00ffff;
+    text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 15px #00ffff;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% { text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 15px #00ffff; }
+    50% { text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff; }
+    100% { text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 15px #00ffff; }
 }

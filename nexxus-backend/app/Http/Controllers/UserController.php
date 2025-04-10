@@ -131,25 +131,30 @@ class UserController extends Controller
 
     public function updateEquippedProfileIcon(Request $request)
     {
-        $user = User::find($request->userId);
-        $user->equipped_profile_icon_path = $request->equipped_profile_icon_path;
-        $user->save();
-
-        return response()->json(['message' => 'Profile icon updated successfully']);
-    }
-
-    public function updateEquippedProfileFrame(Request $request)
-    {
         $request->validate([
             'userId' => 'required|integer|exists:users,id',
-            'equippedProfileFramePath' => 'nullable|string',
+            'equipped_profile_icon_path' => 'nullable|string',
         ]);
 
         $user = User::find($request->input('userId'));
-        $user->equipped_profile_frame_path = $request->input('equippedProfileFramePath');
+        $user->equipped_profile_icon_path = $request->input('equipped_profile_icon_path');
         $user->save();
 
-        return response()->json(['message' => 'Equipped profile frame updated successfully'], 200);
+        return response()->json(['message' => 'Profile icon updated successfully'], 200);
+    }
+
+    public function updateEquippedCustomBanner(Request $request)
+    {
+        $request->validate([
+            'userId' => 'required|integer|exists:users,id',
+            'equipped_custom_banner' => 'nullable|string',
+        ]);
+
+        $user = User::find($request->input('userId'));
+        $user->equipped_custom_banner = $request->input('equipped_custom_banner');
+        $user->save();
+
+        return response()->json(['message' => 'Custom banner updated successfully'], 200);
     }
 
     public function updateEquippedBackground(Request $request)
@@ -197,6 +202,26 @@ class UserController extends Controller
         $user->save();
 
         return response()->json(['message' => 'Name effect updated successfully', 'user' => $user]);
+    }
+
+    public function updateEquippedBanner(Request $request)
+    {
+        try {
+            $user = auth()->user();
+
+            $request->validate([
+                'banner_id' => 'nullable|exists:items,id',
+            ]);
+
+            $bannerId = $request->input('banner_id');
+            $user->equipped_banner_photo_path = $bannerId ? Item::findOrFail($bannerId)->icon_url : null;
+            $user->save();
+
+            return response()->json(['message' => 'Banner updated successfully']);
+        } catch (\Exception $e) {
+            \Log::error('Failed to update banner: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to update banner', 'details' => $e->getMessage()], 500);
+        }
     }
 
     public function updateEquippedBadge(Request $request)
@@ -266,11 +291,11 @@ class UserController extends Controller
     private function appendEquippedItems($user)
     {
         $user->equipped_profile_icon_path = $user->equipped_profile_icon_path;
-        $user->equipped_profile_frame_path = $user->equipped_profile_frame_path;
+        $user->equipped_custom_banner = $user->equipped_custom_banner; // Updated from equipped_profile_effect
         $user->equipped_background_path = $user->equipped_background_path;
         $user->equipped_name_effect_path = $user->equipped_name_effect_path;
         $user->equipped_badge_path = $user->equipped_badge_path;
-        $user->equipped_profile_font_path = $user->equipped_profile_font_path; // Added
+        $user->equipped_profile_font_path = $user->equipped_profile_font_path;
 
         return $user;
     }
