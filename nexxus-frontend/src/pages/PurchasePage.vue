@@ -21,10 +21,10 @@
                 :alt="item.name || 'Product Image'"
                 class="item-icon"
               >
-              <h2 :class="[item.type === 'name_effect' ? getNameEffectClass(item.iconUrl) : '', item.type === 'profile_font' ? getProfileFontClass(item.name) : '']">
+              <h2 :class="[item.type === 'name_effect' ? getNameEffectClass(item.name) : '', item.type === 'profile_font' ? getProfileFontClass(item.name) : '']">
                 {{ item.name || item.title || 'Unnamed Product' }}
               </h2>
-              <p class="price">{{ item.price || 'Price not available' }}</p>
+              <p class="price">{{ formatPrice(item.price) }}</p>
               <p v-if="item.description" class="description">{{ item.description }}</p>
               <ul v-if="item.features" class="features">
                 <li v-for="(feature, index) in item.features" :key="index">{{ feature }}</li>
@@ -111,7 +111,7 @@
                     <form @submit.prevent="handlePurchase('bizum')" class="payment-form">
                       <div class="phone-input">
                         <v-select
-                          v-model="googlePayCountryCode"
+                          v-model="bizumCountryCode"
                           :items="countryCodes"
                           item-title="displayText"
                           item-value="code"
@@ -121,8 +121,8 @@
                           label="Country Code"
                         ></v-select>
                         <v-text-field
-                          v-model="googlePayPhone"
-                          :label="`Phone Number (${googlePayDigitLength} digits)`"
+                          v-model="bizumPhone"
+                          :label="`Phone Number (${bizumDigitLength} digits)`"
                           type="tel"
                           required
                           outlined
@@ -166,10 +166,10 @@
                     <h4>Pay with Credits</h4>
                     <div class="credits-info">
                       <p>Current Credits: <strong>{{ userCredits }}</strong></p>
-                      <p>Cost: <strong>{{ item.amount }} Credits</strong></p>
+                      <p>Cost: <strong>{{ item.amount || formatPrice(item.price) }}</strong></p>
                     </div>
                     <form @submit.prevent="handlePurchase" class="payment-form">
-                      <v-btn type="submit" color="primary" block :disabled="userCredits < item.amount">
+                      <v-btn type="submit" color="primary" block :disabled="userCredits < (item.amount || item.price)">
                         Pay with Credits
                       </v-btn>
                     </form>
@@ -195,7 +195,7 @@
           <p v-if="item && item.amount">
             You've successfully added <strong>{{ item.amount }} credits</strong> to your account using <strong>{{ selectedPaymentMethod }}</strong>.
           </p>
-          <p v-else-if="item && String(item.price).includes('Credits')">
+          <p v-else>
             You've successfully purchased <strong>{{ item.name || item.title }}</strong> using <strong>{{ selectedPaymentMethod }}</strong>.
           </p>
           <p>Your current credit balance is: <strong>{{ userCredits }} credits</strong>.</p>
@@ -241,7 +241,7 @@
 import NavBar from '../components/NavBar.vue';
 import AppFooter from '../components/AppFooter.vue';
 import apiClient from '@/axios.js';
-import { getNameEffectClass } from '@/utils/nameEffects'; // Import utility
+import { getNameEffectClass } from '@/utils/nameEffects';
 
 export default {
   name: 'PurchasePage',
@@ -268,7 +268,7 @@ export default {
       showSuccessDialog: false,
       showErrorDialog: false,
       errorMessage: '',
-      errorTitle: 'Purchase Failed!', // Default title
+      errorTitle: 'Purchase Failed!',
       countryCodes: [
         { name: 'Spain', code: '+34', digits: 9, displayText: 'Spain (+34)' },
         { name: 'United States', code: '+1', digits: 10, displayText: 'United States (+1)' },
@@ -316,8 +316,8 @@ export default {
     this.fetchCurrentUser();
   },
   methods: {
-    getNameEffectClass, // Add method from utility
-    getProfileFontClass(name) { // Custom method for font preview
+    getNameEffectClass,
+    getProfileFontClass(name) {
       switch (name) {
         case 'Pixel Art': return 'font-pixel-art';
         case 'Comic Sans': return 'font-comic-sans';
@@ -337,6 +337,10 @@ export default {
         case 'Bold Script': return 'font-bold-script';
         default: return '';
       }
+    },
+    formatPrice(price) {
+      if (typeof price === 'string') return price;
+      return price === 0 ? 'Free' : `${price} Credits`;
     },
     async fetchItemById(id) {
       try {
@@ -397,10 +401,10 @@ export default {
         throw new Error(error.message || 'Failed to process credit purchase');
       }
     },
-    async handlePurchase() {
+    async handlePurchase(method) {
       try {
         if (this.selectedPaymentMethod === 'credits') {
-          if (this.userCredits < this.item.amount) {
+          if (this.userCredits < (this.item.amount || this.item.price)) {
             this.errorTitle = 'Not Enough Credits!';
             throw new Error('Insufficient credits to complete this purchase.');
           }
@@ -408,7 +412,9 @@ export default {
         } else {
           const itemPrice = parseFloat(this.item.price);
           if (!isNaN(itemPrice) && itemPrice > 0) {
-            console.log(`Processing ${this.selectedPaymentMethod} payment - not implemented yet`);
+            // Simulate external payment processing (not implemented)
+            console.log(`Processing ${method || this.selectedPaymentMethod} payment for ${itemPrice}€`);
+            // Placeholder for actual payment gateway integration
             throw new Error('Non-credit payment methods are not yet implemented.');
           } else {
             throw new Error('Invalid item price');
@@ -427,7 +433,11 @@ export default {
     },
     closeErrorDialog() {
       this.showErrorDialog = false;
-      this.$router.push('/shop');
+      if (this.errorMessage === 'Insufficient credits to complete this purchase.') {
+        this.$router.push('/shop#buy-credits');
+      } else {
+        this.$router.push('/shop');
+      }
     },
   },
 };

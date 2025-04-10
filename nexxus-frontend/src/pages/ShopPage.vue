@@ -10,10 +10,10 @@
     <div class="shop-content container">
       <!-- Welcome Section -->
       <section class="welcome-section">
-        <h1 class="text-center title">Welcome to our product page!</h1>
+        <h1 class="text-center title">Welcome to Our Product Page!</h1>
         <p class="text-center subtitle">
-          Here you will find a wide range of subscriptions and credits to customize your profile.
-          Explore our options and choose the one that best suits your needs.
+          Discover a variety of subscriptions, credits, and cosmetics to personalize your profile.
+          Find the perfect option for you below!
         </p>
       </section>
 
@@ -23,7 +23,12 @@
         <div class="trending-grid">
           <div v-for="item in trendingItems" :key="item.id" class="trending-item" :class="{ 'purchased': isPurchased(item.id) }">
             <div class="item-icon" :class="{ 'background-preview': item.type === 'background', 'banner-preview': item.type === 'custom_banner' }">
-              <img :src="getItemIconUrl(item)" :alt="item.name" class="cosmetic-icon" @error="handleImageError(item)" />
+              <img
+                :src="item.iconUrl || fallbackImage"
+                :alt="item.name"
+                class="cosmetic-icon"
+                @error="handleImageError($event, item)"
+              />
             </div>
             <h3 class="item-name">{{ item.name }}</h3>
             <p class="item-price">{{ formatPrice(item.price) }}</p>
@@ -43,7 +48,12 @@
         <h2 class="section-title">Subscriptions</h2>
         <div class="subscription-grid">
           <div v-for="tier in subscriptionTiers" :key="tier.id" class="subscription-card" :class="{ 'purchased': isPurchased(tier.id) }">
-            <img :src="getItemIconUrl(tier)" :alt="tier.name" class="cosmetic-icon" @error="handleImageError(tier)" />
+            <img
+              :src="tier.iconUrl || fallbackImage"
+              :alt="tier.name"
+              class="cosmetic-icon"
+              @error="handleImageError($event, tier)"
+            />
             <h3 class="tier-title">{{ tier.name }}</h3>
             <p class="tier-price">{{ formatPrice(tier.price) }}</p>
             <button
@@ -62,7 +72,12 @@
         <h2 class="section-title">Buy Credits</h2>
         <div class="credits-grid">
           <div v-for="credit in creditPacks" :key="credit.id" class="credit-card">
-            <img :src="getItemIconUrl(credit)" :alt="credit.name" class="credit-icon" @error="handleImageError(credit)" />
+            <img
+              :src="credit.iconUrl || fallbackImage"
+              :alt="credit.name"
+              class="credit-icon"
+              @error="handleImageError($event, credit)"
+            />
             <h3 class="credit-amount">{{ credit.name }}</h3>
             <p class="credit-price">{{ formatPrice(credit.price) }}</p>
             <button @click="goToPurchase(credit.id)" class="buy-button">Purchase</button>
@@ -80,7 +95,12 @@
             <div class="items-grid">
               <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'purchased': isPurchased(item.id), 'background-item': item.type === 'background', 'banner-item': item.type === 'custom_banner', 'name-effect-item': item.type === 'name_effect' }">
                 <div class="item-preview" :class="{ 'background-preview': item.type === 'background', 'banner-preview': item.type === 'custom_banner', 'name-effect-preview': item.type === 'name_effect' }">
-                  <img :src="getItemIconUrl(item)" :alt="item.name" class="cosmetic-icon" @error="handleImageError(item)" />
+                  <img
+                    :src="item.iconUrl || fallbackImage"
+                    :alt="item.name"
+                    class="cosmetic-icon"
+                    @error="handleImageError($event, item)"
+                  />
                 </div>
                 <h4 :class="['item-name', category.title === 'Name Effects' ? getNameEffectClass(item.name) : '', category.title === 'Profile Fonts' ? getProfileFontClass(item.name) : '']">
                   {{ item.name }}
@@ -123,30 +143,17 @@ export default {
       userInventory: [],
       userId: null,
       fallbackImage: 'https://api.iconify.design/lucide/image-off.svg',
-      fallbackIcons: {
-        'Cosmic Vortex': 'https://media.tenor.com/5o2qbr5P5mUAAAAC/space-vortex.gif',
-        'Neon Cityscape': 'https://media.tenor.com/8vL1Z5j0Z7IAAAAC/neon-city.gif',
-        'Firestorm Horizon': 'https://media.tenor.com/2vL5z5z5z5IAAAAC/firestorm.gif',
-        'Mystic Nebula': 'https://media.tenor.com/1z5z5z5z5zIAAAAC/nebula-space.gif',
-        'Cyber Grid': 'https://media.tenor.com/3z5z5z5z5zIAAAAC/cyber-grid.gif',
-        'Ethereal Waves': 'https://media.tenor.com/4z5z5z5z5zIAAAAC/ethereal-waves.gif',
-        'Ocean Surge': 'https://media.tenor.com/5z5z5z5z5zIAAAAC/ocean-waves.gif',
-        'Pixel Storm': 'https://media.tenor.com/6z5z5z5z5zIAAAAC/pixel-storm.gif',
-        'Lava Flow': 'https://media.tenor.com/7z5z5z5z5zIAAAAC/lava-flow.gif',
-        'Frost Vortex': 'https://media.tenor.com/8z5z5z5z5zIAAAAC/frost-vortex.gif',
-        'Steampunk Gears': 'https://media.tenor.com/9z5z5z5z5zIAAAAC/steampunk-gears.gif',
-        'Lunar Eclipse': 'https://media.tenor.com/0z5z5z5z5zIAAAAC/lunar-eclipse.gif',
-        'Glitch Matrix': 'https://media.tenor.com/1z5z5z5z5zIAAAAC/glitch-matrix.gif',
-        'Aurora Dance': 'https://media.tenor.com/2z5z5z5z5zIAAAAC/aurora-borealis.gif',
-        'Galactic Spin': 'https://media.tenor.com/3z5z5z5z5zIAAAAC/galaxy-spin.gif',
-        'Rainbow Flux': 'https://media.tenor.com/4z5z5z5z5zIAAAAC/rainbow-flux.gif',
-      },
     };
   },
   computed: {
     trendingItems() {
       const allItems = this.cosmeticCategories.flatMap(category => category.items);
-      return this.shuffleArray([...allItems]).slice(0, 5);
+      const customBanners = allItems.filter(item => item.type === 'custom_banner');
+      const otherItems = allItems.filter(item => item.type !== 'custom_banner');
+      // Prioritize custom banners (3) and take 2 other items
+      const shuffledBanners = this.shuffleArray([...customBanners]).slice(0, 3);
+      const shuffledOthers = this.shuffleArray([...otherItems]).slice(0, 2);
+      return [...shuffledBanners, ...shuffledOthers];
     },
   },
   created() {
@@ -154,12 +161,6 @@ export default {
     this.fetchCategorizedItems();
   },
   methods: {
-    getItemIconUrl(item) {
-      if (item.iconUrl && !item.iconFailed) {
-        return item.iconUrl;
-      }
-      return this.fallbackIcons[item.name] || this.fallbackImage;
-    },
     getNameEffectClass(name) {
       if (!name) return '';
       return name.toLowerCase().replace(/\s+/g, '-');
@@ -189,7 +190,6 @@ export default {
       try {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
-
         const response = await apiClient.get('/api/user');
         this.userId = response.data.id;
         await this.fetchUserInventory();
@@ -247,7 +247,7 @@ export default {
         },
         {
           title: 'Custom Banners',
-          description: 'Enhance your profile header with animated 4K banners',
+          description: 'Enhance your profile header with vibrant animated banners',
           items: cosmetics.filter(item => item.type === 'custom_banner'),
         },
         {
@@ -276,10 +276,9 @@ export default {
     isPurchased(itemId) {
       return this.userInventory.includes(itemId);
     },
-    handleImageError(item) {
-      console.warn(`Image failed to load for ${item.name}: ${item.iconUrl}`);
-      item.iconFailed = true;
-      item.iconUrl = this.fallbackIcons[item.name] || this.fallbackImage;
+    handleImageError(event, item) {
+      console.warn(`Image failed to load for ${item.name} (ID: ${item.id}): ${item.iconUrl}`);
+      event.target.src = this.fallbackImage; // Set fallback image directly
     },
   },
 };
@@ -344,7 +343,7 @@ section {
 .tier-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; color: #000; }
 .tier-price { font-size: 1.25rem; color: #000; font-weight: bold; margin-bottom: 1.5rem; }
 
-.trending-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+.trending-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
 .trending-item { background: #fff; border-radius: 8px; padding: 1.5rem; text-align: center; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
 .trending-item h3, .trending-item p { color: #000; }
 
@@ -359,10 +358,11 @@ section {
 
 .background-item .item-preview,
 .banner-item .item-preview {
-  height: 100px;
+  height: 250px; /* Increased for better visibility of GIPHY animations */
   overflow: hidden;
   border-radius: 4px;
   margin-bottom: 0.5rem;
+  background-color: #e0e0e0; /* Light gray background for contrast */
 }
 
 .background-preview .cosmetic-icon,
@@ -370,7 +370,7 @@ section {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  animation: banner-preview-animation 10s infinite linear;
+  display: block;
 }
 
 .name-effect-item .item-preview {
@@ -398,6 +398,9 @@ section {
   .title { font-size: 2rem; }
   .section-title { font-size: 1.5rem; }
   .subscription-grid, .cosmetics-grid { grid-template-columns: 1fr; }
+  .background-item .item-preview,
+  .banner-item .item-preview { height: 180px; } /* Adjusted for smaller screens */
+  .trending-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 }
 
 .credit-icon {
@@ -413,7 +416,7 @@ section {
   background-color: grey;
   color: white;
   border: none;
-  padding: 0.25rem 0.5rem;
+  padding: 0.5rem 1rem; /* Slightly larger for better clickability */
   border-radius: 4px;
   cursor: pointer;
   margin-top: 0.5rem;
@@ -439,10 +442,4 @@ section {
 .font-futuristic { font-family: 'Audiowide', cursive; }
 .font-handwritten { font-family: 'Caveat', cursive; }
 .font-bold-script { font-family: 'Permanent Marker', cursive; }
-
-@keyframes banner-preview-animation {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
-}
 </style>

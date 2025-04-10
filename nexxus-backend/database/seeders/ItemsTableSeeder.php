@@ -9,6 +9,8 @@ class ItemsTableSeeder extends Seeder
 {
     public function run()
     {
+        DB::table('items')->truncate();
+
         $items = [
             // Subscriptions (IDs 1-3)
             ['id' => 1, 'name' => 'Basic', 'price' => 0.00, 'iconUrl' => 'https://api.iconify.design/lucide/sprout.svg', 'type' => 'subscription', 'theme_value' => null],
@@ -52,7 +54,7 @@ class ItemsTableSeeder extends Seeder
             ['id' => 33, 'name' => 'Forest Mist', 'price' => 300.00, 'iconUrl' => 'https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=3840&h=2160&fit=crop', 'type' => 'background', 'theme_value' => null],
             ['id' => 34, 'name' => 'Ocean Depth', 'price' => 350.00, 'iconUrl' => 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=3840&h=2160&fit=crop', 'type' => 'background', 'theme_value' => null],
             ['id' => 35, 'name' => 'Desert Dunes', 'price' => 320.00, 'iconUrl' => 'https://images.unsplash.com/photo-1503435980610-a51f3ddfee50?w=3840&h=2160&fit=crop', 'type' => 'background', 'theme_value' => null],
-            ['id' => 36, 'name' => 'Mountain Peak', 'price' => 380.00, 'iconUrl' => 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=3840&h=2160&fit=crop', 'type' => 'background', 'theme_value' => null],
+            ['id' => 36, 'name' => 'Mountain Peak', 'price' => 380.00, 'iconUrl' => 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=3840+h=2160&fit=crop', 'type' => 'background', 'theme_value' => null],
             ['id' => 37, 'name' => 'Polar Glow', 'price' => 450.00, 'iconUrl' => 'https://images.unsplash.com/photo-1483695028939-5bb13f8648b0?w=3840&h=2160&fit=crop', 'type' => 'background', 'theme_value' => null],
             ['id' => 38, 'name' => 'Lush Valley', 'price' => 340.00, 'iconUrl' => 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=3840&h=2160&fit=crop', 'type' => 'background', 'theme_value' => null],
             ['id' => 39, 'name' => 'Dusk Metropolis', 'price' => 410.00, 'iconUrl' => 'https://images.unsplash.com/photo-1536697246787-1f7ae568d89a?w=3840&h=2160&fit=crop', 'type' => 'background', 'theme_value' => null],
@@ -97,134 +99,134 @@ class ItemsTableSeeder extends Seeder
             ['id' => 74, 'name' => 'Shadow Veil', 'price' => 330.00, 'iconUrl' => 'https://api.iconify.design/lucide/shield.svg', 'type' => 'name_effect', 'theme_value' => null],
             ['id' => 75, 'name' => 'Digital Pulse', 'price' => 380.00, 'iconUrl' => 'https://api.iconify.design/mdi/pulse.svg?color=%2300FFFF', 'type' => 'name_effect', 'theme_value' => null],
 
-            // Custom Banners (IDs 76-91, now using animated GIFs from Tenor)
+            // Custom Banners (IDs 76-91, with new names and GIPHY URLs)
             [
                 'id' => 76,
-                'name' => 'Cosmic Vortex',
+                'name' => 'Misty Peaks', // Renamed from "Mountain Mist" to match misty mountain GIF
                 'price' => 300.00,
-                'iconUrl' => 'https://media.tenor.com/5o2qbr5P5mUAAAAC/space-vortex.gif', // Cosmic spiral
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExemgxbXlwbmZ3NjN5MGRmd3h0c3l6dnRiOHRnaW1lZWdqdDFrajFuYiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/Lh1o7roURqakFBq9sF/giphy.gif', // Nature: Misty mountain peaks
                 'type' => 'custom_banner',
-                'theme_value' => 'cosmic-vortex'
+                'theme_value' => 'mountain-mist'
             ],
             [
                 'id' => 77,
-                'name' => 'Neon Cityscape',
+                'name' => 'Cascading Falls', // Renamed from "Forest Waterfall" to emphasize the waterfall
                 'price' => 350.00,
-                'iconUrl' => 'https://media.tenor.com/8vL1Z5j0Z7IAAAAC/neon-city.gif', // Neon city lights
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNndqanNtaHdudHV2YnRydGVyYXFra3B1aDg3Z3o1YjB6MXFpdnIxNiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/d3fRdpzqSi8ilFPa/giphy.gif', // Nature: Waterfall cascading down
                 'type' => 'custom_banner',
-                'theme_value' => 'neon-cityscape'
+                'theme_value' => 'forest-waterfall'
             ],
             [
                 'id' => 78,
-                'name' => 'Firestorm Horizon',
+                'name' => 'Stormy Waves', // Renamed from "Ocean Storm" to focus on waves
                 'price' => 320.00,
-                'iconUrl' => 'https://media.tenor.com/2vL5z5z5z5IAAAAC/firestorm.gif', // Fire animation
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnVtbHcyNWN6am1pdzdrZ2t5cTlmeXZidnU3OWRnYXJ0c2Ewcjd0byZlcD12MV9naWZzX3NlYXJjaCZjdD1n/xUOxeUqZbV4vSPBXt6/giphy.gif', // Nature: Stormy ocean waves
                 'type' => 'custom_banner',
-                'theme_value' => 'firestorm-horizon'
+                'theme_value' => 'ocean-storm'
             ],
             [
                 'id' => 79,
-                'name' => 'Mystic Nebula',
+                'name' => 'Desert Sunset', // Renamed from "Desert Horizon" to match sunset focus
                 'price' => 340.00,
-                'iconUrl' => 'https://media.tenor.com/1z5z5z5z5zIAAAAC/nebula-space.gif', // Nebula clouds
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcnJ0bzVxcjZma3k0bmF2ejZva3h0ZmlmdHVyN24xNWw1bmFtam5oNyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/s6vX4peRYz9taH3az7/giphy.gif', // Nature: Desert sunset animation
                 'type' => 'custom_banner',
-                'theme_value' => 'mystic-nebula'
+                'theme_value' => 'desert-horizon'
             ],
             [
                 'id' => 80,
-                'name' => 'Cyber Grid',
+                'name' => 'Northern Lights', // Renamed from "Aurora Sky" to be more specific
                 'price' => 400.00,
-                'iconUrl' => 'https://media.tenor.com/3z5z5z5z5zIAAAAC/cyber-grid.gif', // Digital grid
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczg4eDYwNHd0MDFjMGQ0czVicmVuc3NibmthN2d3aWJsbW52eDRsbCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/35NGT2lm6mfHlNAkMu/giphy.gif', // Space: Aurora borealis animation
                 'type' => 'custom_banner',
-                'theme_value' => 'cyber-grid'
+                'theme_value' => 'aurora-sky'
             ],
             [
                 'id' => 81,
-                'name' => 'Ethereal Waves',
+                'name' => 'Gentle Waterfall', // Renamed from "Waterfall Cascade" to differentiate
                 'price' => 330.00,
-                'iconUrl' => 'https://media.tenor.com/4z5z5z5z5zIAAAAC/ethereal-waves.gif', // Flowing waves
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYnoxYjl2cDdnY204emExZ2pmc3QxbXdmcnNuc2dqa2JwZmhqZjd1MSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/hVBuMyiTAn0yZ5nzGp/giphy.gif', // Nature: Gentle waterfall flow
                 'type' => 'custom_banner',
-                'theme_value' => 'ethereal-waves'
+                'theme_value' => 'waterfall-cascade'
             ],
             [
                 'id' => 82,
-                'name' => 'Ocean Surge',
+                'name' => 'Autumn Drift', // Renamed from "Falling Leaves" to evoke autumn
                 'price' => 360.00,
-                'iconUrl' => 'https://media.tenor.com/5z5z5z5z5zIAAAAC/ocean-waves.gif', // Ocean waves
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnB5dHduYjV4NmFubHNxM2UyYjZ2YjlvYXZuaHIxY3AwenR0bnY2MSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/ToMjGpQe9iCuexMtEg8/giphy.gif', // Nature: Falling autumn leaves
                 'type' => 'custom_banner',
-                'theme_value' => 'ocean-surge'
+                'theme_value' => 'falling-leaves'
             ],
             [
                 'id' => 83,
-                'name' => 'Pixel Storm',
+                'name' => 'Tech Grid', // Renamed from "Neon Grid" to emphasize tech aspect
                 'price' => 370.00,
-                'iconUrl' => 'https://media.tenor.com/6z5z5z5z5zIAAAAC/pixel-storm.gif', // Pixel rain
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZTdjYTJ5aHYzd3hqejZqZmJ0cHF1OWh4aGF6NGVodjFqdGFzZXBpMyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3ornkfqNPnwvTcPU4w/giphy.gif', // Technology: Grid-like tech animation
                 'type' => 'custom_banner',
-                'theme_value' => 'pixel-storm'
+                'theme_value' => 'neon-grid'
             ],
             [
                 'id' => 84,
-                'name' => 'Lava Flow',
+                'name' => 'Particle Flow', // Renamed from "Digital Flow" to match particle GIF
                 'price' => 380.00,
-                'iconUrl' => 'https://media.tenor.com/7z5z5z5z5zIAAAAC/lava-flow.gif', // Lava movement
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExeDZveG1qYTQ0bWw2dHp5Mjk3eGU2ZDd0azd2YWl2cmFncHF4M2V2NSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/iMBEwpRodEBlpuTyVD/giphy.gif', // Technology: Particle flow animation
                 'type' => 'custom_banner',
-                'theme_value' => 'lava-flow'
+                'theme_value' => 'digital-flow'
             ],
             [
                 'id' => 85,
-                'name' => 'Frost Vortex',
+                'name' => 'Circuit Pulse', // Renamed from "Tech Circuit" to match pulsing circuit
                 'price' => 310.00,
-                'iconUrl' => 'https://media.tenor.com/8z5z5z5z5zIAAAAC/frost-vortex.gif', // Ice spiral
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExd3NrdTF0Z3hhZGU4YnhpZXJkaWEzMWo2Nmw5dTkwMnp5bjlzZXM4aiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/AdtB8TtizElk0OrRGR/giphy.gif', // Technology: Circuit board pulsing
                 'type' => 'custom_banner',
-                'theme_value' => 'frost-vortex'
+                'theme_value' => 'tech-circuit'
             ],
             [
                 'id' => 86,
-                'name' => 'Steampunk Gears',
+                'name' => 'Matrix Rain', // Renamed from "Matrix Code" to match classic Matrix effect
                 'price' => 390.00,
-                'iconUrl' => 'https://media.tenor.com/9z5z5z5z5zIAAAAC/steampunk-gears.gif', // Rotating gears
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExeWRrem9oejRiYWRzdWU2aG1lbGxpbXRybzN0cGo2YXRudjZ0aTlrNyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/gCZ9N4IMDPaoM/giphy.gif', // Technology: Matrix-style rain code
                 'type' => 'custom_banner',
-                'theme_value' => 'steampunk-gears'
+                'theme_value' => 'matrix-code'
             ],
             [
                 'id' => 87,
-                'name' => 'Lunar Eclipse',
+                'name' => 'Cyber Skyline', // Renamed from "Cyber City" to evoke skyline
                 'price' => 350.00,
-                'iconUrl' => 'https://media.tenor.com/0z5z5z5z5zIAAAAC/lunar-eclipse.gif', // Moon phases
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdnh2c3Z1ZmhhdTEyc3VibjRndTl4MmZ4aThyNDYxMTRiaHE3M256NyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/x45I8CY1Vs45G/giphy.gif', // Technology: Cyberpunk city skyline
                 'type' => 'custom_banner',
-                'theme_value' => 'lunar-eclipse'
+                'theme_value' => 'cyber-city'
             ],
             [
                 'id' => 88,
-                'name' => 'Glitch Matrix',
+                'name' => 'Code Rainfall', // Renamed from "Code Scroll" to match falling code
                 'price' => 300.00,
-                'iconUrl' => 'https://media.tenor.com/1z5z5z5z5zIAAAAC/glitch-matrix.gif', // Glitch effect
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3JjOWZ5cXh4OW4zbzN5dHh3ZnkyOHhjNGdqaTY0cmN0Z2o5dTkwYiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/26BRGoqbUQvk8nwTC/giphy.gif', // Technology: Code falling like rain
                 'type' => 'custom_banner',
-                'theme_value' => 'glitch-matrix'
+                'theme_value' => 'code-scroll'
             ],
             [
                 'id' => 89,
-                'name' => 'Aurora Dance',
+                'name' => 'Holo Waves', // Renamed from "Holo Scan" to match wave-like holo effect
                 'price' => 360.00,
-                'iconUrl' => 'https://media.tenor.com/2z5z5z5z5zIAAAAC/aurora-borealis.gif', // Aurora lights
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNTV0cDY5dzlnc2t2ZHFmd2RpOTByZ28wcGF1bWhxZzBwajdmOWYxZSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/qAys67eteyUPTirtN5/giphy.gif', // Technology: Holographic wave animation
                 'type' => 'custom_banner',
-                'theme_value' => 'aurora-dance'
+                'theme_value' => 'holo-scan'
             ],
             [
                 'id' => 90,
-                'name' => 'Galactic Spin',
+                'name' => 'Neon Pulse', // Renamed from "Neon Streets" to match pulsing neon
                 'price' => 340.00,
-                'iconUrl' => 'https://media.tenor.com/3z5z5z5z5zIAAAAC/galaxy-spin.gif', // Galaxy rotation
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2IybzMzY2YwamIyN2g1MnVpYXR3bWVjaDNyeTRwejA3YTB6cG1naCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/5aUU1Zf7tp8w0fwcM9/giphy.gif', // Technology: Neon pulsing animation
                 'type' => 'custom_banner',
-                'theme_value' => 'galactic-spin'
+                'theme_value' => 'neon-streets'
             ],
             [
                 'id' => 91,
-                'name' => 'Rainbow Flux',
+                'name' => 'Star Warp', // Renamed from "Space Warp" to emphasize stars
                 'price' => 420.00,
-                'iconUrl' => 'https://media.tenor.com/4z5z5z5z5zIAAAAC/rainbow-flux.gif', // Rainbow waves
+                'iconUrl' => 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZHAzZzA3MmJiZHN6NzdwY3E5emNycThoNTZlOWNobm4yNm0wNzNiMSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3og0IFrHkIglEOg8Ba/giphy.gif', // Space: Star warp speed effect
                 'type' => 'custom_banner',
-                'theme_value' => 'rainbow-flux'
+                'theme_value' => 'space-warp'
             ],
 
             // Profile Badges (IDs 92-107)

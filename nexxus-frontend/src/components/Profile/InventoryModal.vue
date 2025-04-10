@@ -19,7 +19,7 @@
           <p class="category-description">{{ category.description }}</p>
           <div class="items-grid">
             <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'background-item': item.type === 'background', 'banner-item': item.type === 'custom_banner' }">
-              <img :src="getItemIconUrl(item)" :alt="item.name" class="cosmetic-icon" @error="handleImageError(item)" />
+              <img :src="getItemIconUrl(item)" :alt="item.name" class="cosmetic-icon" @error="handleImageError($event, item)" />
               <h4 class="item-name">{{ item.name }}</h4>
               <p class="item-price">{{ formatPrice(item.price) }}</p>
               <button
@@ -70,25 +70,24 @@ const equippedItemName = ref('');
 const inventory = ref([]);
 const inventoryCategories = ref([]);
 
-// Fallback image and icons for when GIFs fail to load
 const fallbackImage = 'https://api.iconify.design/lucide/image-off.svg';
 const fallbackIcons = {
-  'Cosmic Vortex': 'https://api.iconify.design/mdi/star-four-points.svg?color=%2300BFFF',
-  'Neon Cityscape': 'https://api.iconify.design/mdi/pulse.svg?color=%23FF4500',
-  'Firestorm Horizon': 'https://api.iconify.design/mdi/fire.svg?color=%23FF4500',
-  'Mystic Nebula': 'https://api.iconify.design/mdi/cloud.svg?color=%2300FFFF',
-  'Cyber Grid': 'https://api.iconify.design/mdi/grid.svg?color=%2300FFFF',
-  'Ethereal Waves': 'https://api.iconify.design/mdi/wave.svg?color=%2300FFFF',
-  'Ocean Surge': 'https://api.iconify.design/mdi/water.svg?color=%2300FFFF',
-  'Pixel Storm': 'https://api.iconify.design/mdi/lightning-bolt.svg?color=%23FF00FF',
-  'Lava Flow': 'https://api.iconify.design/mdi/lava.svg?color=%23FF4500',
-  'Frost Vortex': 'https://api.iconify.design/mdi/snowflake.svg?color=%2300FFFF',
-  'Steampunk Gears': 'https://api.iconify.design/mdi/cog.svg?color=%23FFD700',
-  'Lunar Eclipse': 'https://api.iconify.design/mdi/moon.svg?color=%23FFFFFF',
-  'Glitch Matrix': 'https://api.iconify.design/mdi/matrix.svg?color=%2300FF00',
-  'Aurora Dance': 'https://api.iconify.design/mdi/weather-night.svg?color=%2300FF00',
-  'Galactic Spin': 'https://api.iconify.design/mdi/galaxy.svg?color=%2300FFFF',
-  'Rainbow Flux': 'https://api.iconify.design/mdi/rainbow.svg?color=%23FF00FF',
+  'Misty Peaks': 'https://api.iconify.design/mdi/mountain.svg?color=%23666666', // Gray for mist
+  'Cascading Falls': 'https://api.iconify.design/mdi/waterfall.svg?color=%2300FFFF', // Cyan for water
+  'Stormy Waves': 'https://api.iconify.design/mdi/wave.svg?color=%230066CC', // Blue for stormy sea
+  'Desert Sunset': 'https://api.iconify.design/mdi/weather-sunset.svg?color=%23FF4500', // Orange for sunset
+  'Northern Lights': 'https://api.iconify.design/mdi/weather-night.svg?color=%2300FF00', // Green for aurora
+  'Gentle Waterfall': 'https://api.iconify.design/mdi/water.svg?color=%2300FFFF', // Cyan for gentle flow
+  'Autumn Drift': 'https://api.iconify.design/mdi/leaf.svg?color=%23FFA500', // Orange for autumn
+  'Tech Grid': 'https://api.iconify.design/mdi/grid.svg?color=%2300FFFF', // Cyan for tech
+  'Particle Flow': 'https://api.iconify.design/mdi/dots-horizontal.svg?color=%23FF00FF', // Magenta for particles
+  'Circuit Pulse': 'https://api.iconify.design/mdi/circuit-board.svg?color=%2300FF00', // Green for circuit
+  'Matrix Rain': 'https://api.iconify.design/mdi/matrix.svg?color=%2300FF00', // Green for Matrix
+  'Cyber Skyline': 'https://api.iconify.design/mdi/city.svg?color=%23FF4500', // Orange for cyber city
+  'Code Rainfall': 'https://api.iconify.design/mdi/code-braces.svg?color=%2300FF00', // Green for code
+  'Holo Waves': 'https://api.iconify.design/mdi/waveform.svg?color=%2300FFFF', // Cyan for holo effect
+  'Neon Pulse': 'https://api.iconify.design/mdi/pulse.svg?color=%23FF00FF', // Magenta for neon
+  'Star Warp': 'https://api.iconify.design/mdi/star-four-points.svg?color=%2300FFFF', // Cyan for space
 };
 
 const closeInventoryOnBackdrop = (event) => {
@@ -99,7 +98,6 @@ const closeEquipPopupOnBackdrop = (event) => {
   if (event.target === event.currentTarget) showEquipPopup.value = false;
 };
 
-// Method to get the item icon URL with fallback
 const getItemIconUrl = (item) => {
   if (item.icon_url && !item.iconFailed) {
     return item.icon_url;
@@ -107,11 +105,10 @@ const getItemIconUrl = (item) => {
   return fallbackIcons[item.name] || fallbackImage;
 };
 
-// Handle image load errors
-const handleImageError = (item) => {
-  console.warn(`Image failed to load for ${item.name}: ${item.icon_url}`);
+const handleImageError = (event, item) => {
+  console.warn(`Image failed to load for ${item.name} (ID: ${item.id}): ${item.icon_url}`);
   item.iconFailed = true;
-  item.icon_url = fallbackIcons[item.name] || fallbackImage;
+  event.target.src = fallbackIcons[item.name] || fallbackImage;
 };
 
 const updateEquipped = async (itemId, type, isUnequip = false) => {
@@ -192,7 +189,7 @@ const categorizeInventory = (items) => {
     { title: 'Profile Icons', description: 'Stand out with unique profile icons', items: items.filter(item => item.type === 'profile_icon') },
     { title: 'Backgrounds', description: 'Transform your profile with stunning themes', items: items.filter(item => item.type === 'background') },
     { title: 'Name Effects', description: 'Make your username pop', items: items.filter(item => item.type === 'name_effect') },
-    { title: 'Custom Banners', description: 'Enhance your profile header with animated 4K banners', items: items.filter(item => item.type === 'custom_banner') },
+    { title: 'Custom Banners', description: 'Enhance your profile header with vibrant animated banners', items: items.filter(item => item.type === 'custom_banner') },
     { title: 'Profile Badges', description: 'Show off your status', items: items.filter(item => item.type === 'badge') },
     { title: 'Profile Fonts', description: 'Customize your text style', items: items.filter(item => item.type === 'profile_font') },
     { title: 'Other Items', description: 'Miscellaneous items', items: items.filter(item => !['profile_icon', 'background', 'name_effect', 'custom_banner', 'badge', 'profile_font'].includes(item.type)) },
@@ -233,8 +230,8 @@ const determineItemType = (itemName) => {
     'Mountain Peak', 'Polar Glow', 'Lush Valley', 'Dusk Metropolis', 'Golden Fields', 'Volcanic Ash', 'Nebula Cloud', 'Twilight Horizon'].includes(itemName)) return 'background';
   if (['Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker',
     'Emerald Sheen', 'Phantom Haze', 'Electric Glow', 'Solar Flare', 'Wave Shimmer', 'Crystal Pulse', 'Mystic Aura', 'Shadow Veil', 'Digital Pulse'].includes(itemName)) return 'name_effect';
-  if (['Cosmic Vortex', 'Neon Cityscape', 'Firestorm Horizon', 'Mystic Nebula', 'Cyber Grid', 'Ethereal Waves', 'Ocean Surge', 'Pixel Storm',
-    'Lava Flow', 'Frost Vortex', 'Steampunk Gears', 'Lunar Eclipse', 'Glitch Matrix', 'Aurora Dance', 'Galactic Spin', 'Rainbow Flux'].includes(itemName)) return 'custom_banner';
+  if (['Misty Peaks', 'Cascading Falls', 'Stormy Waves', 'Desert Sunset', 'Northern Lights', 'Gentle Waterfall', 'Autumn Drift',
+    'Tech Grid', 'Particle Flow', 'Circuit Pulse', 'Matrix Rain', 'Cyber Skyline', 'Code Rainfall', 'Holo Waves', 'Neon Pulse', 'Star Warp'].includes(itemName)) return 'custom_banner';
   if (['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge', 'Legend Badge', 'Pioneer Badge', 'Guardian Badge',
     'Warrior Badge', 'Sage Badge', 'Star Gazer Badge', 'Trailblazer Badge', 'Elementalist Badge', 'Innovator Badge', 'Nomad Badge', 'Champion Badge'].includes(itemName)) return 'badge';
   if (['Pixel Art', 'Comic Sans', 'Gothic', 'Cursive', 'Typewriter', 'Bubble', 'Neon', 'Graffiti', 'Retro', 'Cyberpunk',
@@ -287,7 +284,7 @@ onMounted(() => {
 
 .items-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 1rem;
 }
 
@@ -306,10 +303,11 @@ onMounted(() => {
 .cosmetic-item.background-item .cosmetic-icon,
 .cosmetic-item.banner-item .cosmetic-icon {
   width: 100%;
-  height: 80px;
+  height: 120px; /* Increased for better GIPHY animation visibility */
   object-fit: cover;
   border-radius: 4px;
   margin-bottom: 0.5rem;
+  background-color: #e0e0e0; /* Light gray backdrop for contrast */
 }
 
 .cosmetic-item:not(.background-item):not(.banner-item) .cosmetic-icon {
@@ -338,7 +336,7 @@ onMounted(() => {
   background-color: grey;
   color: white;
   border: none;
-  padding: 0.25rem 0.5rem;
+  padding: 0.5rem 1rem; /* Larger for better clickability */
   border-radius: 4px;
   cursor: pointer;
   margin-top: 0.5rem;
@@ -355,5 +353,15 @@ onMounted(() => {
 
 .unequip-button:hover {
   background-color: #c82333;
+}
+
+@media (max-width: 768px) {
+  .items-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+  .cosmetic-item.background-item .cosmetic-icon,
+  .cosmetic-item.banner-item .cosmetic-icon {
+    height: 100px; /* Adjusted for smaller screens */
+  }
 }
 </style>
