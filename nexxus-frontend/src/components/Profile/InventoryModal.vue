@@ -128,14 +128,20 @@ const updateEquipped = async (item, type, isUnequip = false) => {
 
     const endpoint = typeToEndpointMap[type] || `/api/user/update-equipped-${type.replace('_', '-')}`;
 
-    // Compute payload in a single declaration
-    const payload = ['name_effect', 'profile_font'].includes(type)
-      ? (isUnequip
+    let payload;
+    if (type === 'custom_banner') {
+      payload = isUnequip
+        ? { userId: props.user.id, equipped_banner_photo_path: null }
+        : { userId: props.user.id, equipped_banner_photo_path: item.icon_url };
+    } else if (['name_effect', 'profile_font'].includes(type)) {
+      payload = isUnequip
         ? { userId: props.user.id, item_id: null }
-        : { userId: props.user.id, item_id: item.item_id })
-      : (isUnequip
-        ? { userId: props.user.id, [`equipped_${type.replace('_', '_')}_path`]: null }
-        : { userId: props.user.id, [`equipped_${type.replace('_', '_')}_path`]: item.icon_url });
+        : { userId: props.user.id, item_id: item.item_id };
+    } else {
+      payload = isUnequip
+        ? { userId: props.user.id, [`equipped_${type}_path`]: null }
+        : { userId: props.user.id, [`equipped_${type}_path`]: item.icon_url };
+    }
 
     console.log(`Sending payload to ${endpoint}:`, payload);
 
@@ -156,14 +162,26 @@ const equipItem = async (item) => {
     console.log('Attempting to equip:', item);
     const response = await updateEquipped(item, item.type);
 
+    // Update local inventory state
     inventory.value.forEach(i => {
-      if (i.type === item.type) i.isEquipped = i.id === item.id;
+      if (i.type === item.type) i.isEquipped = (i.id === item.id);
     });
     inventory.value = [...inventory.value];
     inventoryCategories.value = categorizeInventory(inventory.value);
 
-    const field = item.type === 'custom_banner' ? 'equipped_banner_photo_path' : `equipped_${item.type}_path`;
-    const value = ['name_effect', 'profile_font'].includes(item.type) ? item.name : item.icon_url; // Use name for name_effect and profile_font
+    // Determine the field to update based on item type
+    const fieldMap = {
+      custom_banner: 'equipped_banner_photo_path',
+      name_effect: 'equipped_name_effect_path',
+      profile_font: 'equipped_profile_font_path',
+      profile_icon: 'equipped_profile_icon_path',
+      background: 'equipped_background_path',
+      badge: 'equipped_badge_path',
+    };
+    const field = fieldMap[item.type] || `equipped_${item.type}_path`;
+    const value = ['name_effect', 'profile_font'].includes(item.type) ? item.name : item.icon_url;
+
+    console.log(`Emitting update for ${field}: ${value}`);
     emit('update-user', { [field]: value });
 
     equippedItemMessage.value = `${item.name} has been equipped`;
@@ -181,11 +199,23 @@ const unequipItem = async (item) => {
     console.log('Attempting to unequip:', item);
     const response = await updateEquipped(item, item.type, true);
 
+    // Update local inventory state
     item.isEquipped = false;
     inventory.value = [...inventory.value];
     inventoryCategories.value = categorizeInventory(inventory.value);
 
-    const field = item.type === 'custom_banner' ? 'equipped_banner_photo_path' : `equipped_${item.type}_path`;
+    // Determine the field to update based on item type
+    const fieldMap = {
+      custom_banner: 'equipped_banner_photo_path',
+      name_effect: 'equipped_name_effect_path',
+      profile_font: 'equipped_profile_font_path',
+      profile_icon: 'equipped_profile_icon_path',
+      background: 'equipped_background_path',
+      badge: 'equipped_badge_path',
+    };
+    const field = fieldMap[item.type] || `equipped_${item.type}_path`;
+
+    console.log(`Emitting update for ${field}: null`);
     emit('update-user', { [field]: null });
 
     equippedItemMessage.value = `${item.name} has been unequipped`;
@@ -265,7 +295,7 @@ const checkIfEquipped = (item) => {
   const iconUrl = item.icon_url || item.iconUrl;
   if (item.type === 'profile_icon') return iconUrl === props.user.equipped_profile_icon_path;
   if (item.type === 'background') return iconUrl === props.user.equipped_background_path;
-  if (item.type === 'name_effect') return item.name === props.user.equipped_name_effect_path; // Compare name instead of icon_url
+  if (item.type === 'name_effect') return item.name === props.user.equipped_name_effect_path;
   if (item.type === 'custom_banner') return iconUrl === props.user.equipped_banner_photo_path;
   if (item.type === 'badge') return iconUrl === props.user.equipped_badge_path;
   if (item.type === 'profile_font') return item.name === props.user.equipped_profile_font_path;

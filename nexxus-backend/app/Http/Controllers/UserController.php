@@ -64,15 +64,23 @@ class UserController extends Controller
             $user = User::findOrFail($userId);
             $item = Item::findOrFail($itemId);
 
+            // Prevent purchasing credit packs with credits
+            if ($item->type === 'credit_pack') {
+                return response()->json(['error' => 'Cannot purchase credit packs with credits'], 400);
+            }
+
+            // Check for sufficient credits
             if ($user->credits < $item->price) {
                 return response()->json(['error' => 'Not enough credits'], 400);
             }
 
+            // Check if item is already owned
             $existingItem = UserInventory::where('user_id', $userId)->where('item_id', $itemId)->first();
             if ($existingItem) {
                 return response()->json(['error' => 'You already own this item'], 400);
             }
 
+            // Process purchase in a transaction
             \DB::transaction(function () use ($user, $item, $userId, $itemId) {
                 $user->credits -= $item->price;
                 $user->save();
@@ -87,6 +95,8 @@ class UserController extends Controller
                 'message' => 'Purchase successful with credits',
                 'credits' => $user->credits,
             ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['error' => 'Invalid input', 'details' => $e->errors()], 422);
         } catch (\Exception $e) {
             \Log::error('Purchase failed: ' . $e->getMessage());
             return response()->json(['error' => 'Purchase failed', 'details' => $e->getMessage()], 500);
@@ -98,17 +108,73 @@ class UserController extends Controller
         try {
             $request->validate([
                 'userId' => 'required|integer|exists:users,id',
-                'credits' => 'required|integer|min:0',
+                'amount' => 'required|integer|min:1',
             ]);
 
             $user = User::findOrFail($request->input('userId'));
-            $user->credits = $request->input('credits');
-            $user->save();
+            $amount = $request->input('amount');
 
-            return response()->json(['message' => 'User credits updated successfully', 'credits' => $user->credits], 200);
+            \DB::transaction(function () use ($user, $amount) {
+                $user->credits += $amount;
+                $user->save();
+            });
+
+            return response()->json([
+                'message' => 'User credits updated successfully',
+                'credits' => $user->credits,
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['error' => 'Invalid input', 'details' => $e->errors()], 422);
         } catch (\Exception $e) {
             \Log::error('Failed to update credits: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to update credits', 'details' => $e->getMessage()], 500);
+        }
+    }
+
+    public function processRealMoneyPurchase(Request $request)
+    {
+        try {
+            $request->validate([
+                'userId' => 'required|integer|exists:users,id',
+                'itemId' => 'required|integer|exists:items,id',
+            ]);
+
+            $userId = $request->input('userId');
+            $itemId = $request->input('itemId');
+
+            $user = User::findOrFail($userId);
+            $item = Item::findOrFail($itemId);
+
+            // Check if item is already owned
+            $existingItem = UserInventory::where('user_id', $userId)->where('item_id', $itemId)->first();
+            if ($existingItem) {
+                return response()->json(['error' => 'You already own this item'], 400);
+            }
+
+            // Process the purchase in a transaction
+            \DB::transaction(function () use ($user, $item, $userId, $itemId) {
+                if ($item->type === 'credit_pack' && $item->amount) {
+                    // Handle credit pack purchase
+                    $user->credits += $item->amount;
+                    $user->save();
+                } else {
+                    // Handle other item types by adding to inventory
+                    $inventory = new UserInventory();
+                    $inventory->user_id = $userId;
+                    $inventory->item_id = $itemId;
+                    $inventory->save();
+                }
+            });
+
+            return response()->json([
+                'message' => $item->type === 'credit_pack' ? 'Credits purchased successfully' : 'Item purchased successfully',
+                'credits' => $user->credits,
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['error' => 'Invalid input', 'details' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            \Log::error('Purchase failed: ' . $e->getMessage());
+            return response()->json(['error' => 'Purchase failed', 'details' => $e->getMessage()], 500);
         }
     }
 
@@ -145,11 +211,12 @@ class UserController extends Controller
     {
         $request->validate([
             'userId' => 'required|integer|exists:users,id',
-            'equipped_custom_banner' => 'nullable|string',
+            'equipped_custom_banner' => 'nullable|string', // Accept this for compatibility
         ]);
 
         $user = User::find($request->input('userId'));
-        $user->equipped_custom_banner = $request->input('equipped_custom_banner');
+        // Use equipped_banner_photo_path instead
+        $user->equipped_banner_photo_path = $request->input('equipped_custom_banner');
         $user->save();
 
         return response()->json(['message' => 'Custom banner updated successfully'], 200);
@@ -199,7 +266,8 @@ class UserController extends Controller
         }
     }
 
-    public function updateEquippedNameEffect(Request $request) {
+    public function updateEquippedNameEffect(Request $request)
+    {
         try {
             $request->validate([
                 'userId' => 'required|integer|exists:users,id',
@@ -216,7 +284,7 @@ class UserController extends Controller
                 if ($item->type !== 'name_effect') {
                     return response()->json(['message' => 'Invalid item type'], 400);
                 }
-                $user->equipped_name_effect_path = $item->name; // Save the name instead of icon_url
+                $user->equipped_name_effect_path = $item->name;
             }
 
             $user->save();
@@ -232,11 +300,11 @@ class UserController extends Controller
     {
         $request->validate([
             'userId' => 'required|exists:users,id',
-            'equipped_custom_banner' => 'nullable|string',
+            'equipped_banner_photo_path' => 'nullable|string',
         ]);
 
         $user = User::find($request->userId);
-        $user->equipped_banner_photo_path = $request->equipped_custom_banner;
+        $user->equipped_banner_photo_path = $request->equipped_banner_photo_path;
         $user->save();
 
         return response()->json(['message' => 'Banner updated successfully']);
@@ -271,8 +339,8 @@ class UserController extends Controller
             'banner_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:20480',
             'name' => 'required|string|max:32',
             'description' => 'nullable|string|max:150',
-            'remove_profile_photo' => 'nullable|string', // Allow removal flag
-            'remove_banner_photo' => 'nullable|string', // Allow removal flag
+            'remove_profile_photo' => 'nullable|string',
+            'remove_banner_photo' => 'nullable|string',
         ]);
 
         if ($request->hasFile('profile_photo')) {
@@ -311,7 +379,7 @@ class UserController extends Controller
     private function appendEquippedItems($user)
     {
         $user->equipped_profile_icon_path = $user->equipped_profile_icon_path;
-        $user->equipped_custom_banner = $user->equipped_custom_banner; // Updated from equipped_profile_effect
+        $user->equipped_custom_banner = $user->equipped_custom_banner;
         $user->equipped_background_path = $user->equipped_background_path;
         $user->equipped_name_effect_path = $user->equipped_name_effect_path;
         $user->equipped_badge_path = $user->equipped_badge_path;

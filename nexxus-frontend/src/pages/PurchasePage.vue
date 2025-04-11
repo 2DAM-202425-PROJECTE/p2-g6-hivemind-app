@@ -74,7 +74,9 @@
                 >
                   Google Pay
                 </v-btn>
+                <!-- Conditionally show "Pay with Credits" only for non-credit-pack items -->
                 <v-btn
+                  v-if="item.type !== 'credit_pack'"
                   @click="selectPaymentMethod('credits')"
                   :class="{ active: selectedPaymentMethod === 'credits' }"
                   class="payment-btn"
@@ -168,8 +170,13 @@
                       <p>Current Credits: <strong>{{ userCredits }}</strong></p>
                       <p>Cost: <strong>{{ item.amount || formatPrice(item.price) }}</strong></p>
                     </div>
-                    <form @submit.prevent="handlePurchase" class="payment-form">
-                      <v-btn type="submit" color="primary" block :disabled="userCredits < (item.amount || item.price)">
+                    <form @submit.prevent="handlePurchase('credits')" class="payment-form">
+                      <v-btn
+                        type="submit"
+                        color="primary"
+                        block
+                        :disabled="userCredits < (item.price || 0) || item.type === 'credit_pack'"
+                      >
                         Pay with Credits
                       </v-btn>
                     </form>
@@ -340,6 +347,9 @@ export default {
     },
     formatPrice(price) {
       if (typeof price === 'string') return price;
+      if (this.item && this.item.type === 'credit_pack') {
+        return `${price}€`;
+      }
       return price === 0 ? 'Free' : `${price} Credits`;
     },
     async fetchItemById(id) {
@@ -378,10 +388,10 @@ export default {
         if (!token) throw new Error('No access token found. Please log in.');
 
         console.log('Sending payload:', { userId: this.user.id, itemId: this.item.id });
-        const response = await apiClient.post(
-          '/api/user/process-credit-purchase',
-          { userId: this.user.id, itemId: this.item.id }
-        );
+        const response = await apiClient.post('/api/user/process-credit-purchase', {
+          userId: this.user.id,
+          itemId: this.item.id,
+        });
 
         if (response.data.error) {
           throw new Error(response.data.error);
@@ -393,37 +403,103 @@ export default {
       } catch (error) {
         console.error('Raw error:', error);
         console.error('Response data:', error.response?.data);
-        if (error.response && error.response.data && error.response.data.error) {
-          this.errorTitle = error.response.data.error === 'You already own this item' ? 'Item Already Owned!' : 'Purchase Failed!';
-          throw new Error(error.response.data.error);
-        }
-        this.errorTitle = 'Purchase Failed!';
-        throw new Error(error.message || 'Failed to process credit purchase');
+        throw new Error(error.response?.data?.error || error.message || 'Failed to process credit purchase');
       }
+    },
+    async processRealMoneyPurchase() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+
+        console.log('Sending payload for real-money purchase:', { userId: this.user.id, itemId: this.item.id });
+        const response = await apiClient.post('/api/user/process-real-money-purchase', {
+          userId: this.user.id,
+          itemId: this.item.id,
+        });
+
+        if (response.data.error) {
+          throw new Error(response.data.error);
+        }
+
+        this.userCredits = response.data.credits;
+        this.$emit('credits-updated', this.userCredits);
+        console.log('Real-money purchase successful');
+      } catch (error) {
+        console.error('Raw error:', error);
+        console.error('Response data:', error.response?.data);
+        throw new Error(error.response?.data?.error || error.message || 'Failed to process real-money purchase');
+      }
+    },
+    async updateUserCredits(amount) {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+
+        const response = await apiClient.post('/api/user/update-credits', {
+          userId: this.user.id,
+          amount: amount,
+        });
+
+        if (response.data.error) {
+          throw new Error(response.data.error);
+        }
+
+        this.userCredits = response.data.credits;
+        this.$emit('credits-updated', this.userCredits);
+        console.log('User credits updated:', this.userCredits);
+      } catch (error) {
+        console.error('Failed to update user credits:', error);
+        throw new Error(error.message || 'Failed to update user credits');
+      }
+    },
+    validatePaymentInputs() {
+      if (this.selectedPaymentMethod === 'card') {
+        return (
+          /^\d{16}$/.test(this.cardNumber) &&
+          /^\d{2}\/\d{2}$/.test(this.expiryDate) &&
+          /^\d{3}$/.test(this.cvv)
+        );
+      }
+      if (this.selectedPaymentMethod === 'paypal') {
+        return /.+@.+\..+/.test(this.paypalEmail) && this.paypalPassword.length > 0;
+      }
+      if (this.selectedPaymentMethod === 'bizum') {
+        const digits = this.bizumDigitLength;
+        return /^\d+$/.test(this.bizumPhone) && this.bizumPhone.length === digits && this.bizumPin.length > 0;
+      }
+      if (this.selectedPaymentMethod === 'googlepay') {
+        const digits = this.googlePayDigitLength;
+        return /.+@.+\..+/.test(this.googlePayEmail) && /^\d+$/.test(this.googlePayPhone) && this.googlePayPhone.length === digits;
+      }
+      return true;
     },
     async handlePurchase(method) {
       try {
         if (this.selectedPaymentMethod === 'credits') {
-          if (this.userCredits < (this.item.amount || this.item.price)) {
+          // Validate credits for non-credit-pack items
+          if (this.item.type !== 'credit_pack' && this.userCredits < this.item.price) {
             this.errorTitle = 'Not Enough Credits!';
-            throw new Error('Insufficient credits to complete this purchase.');
+            this.errorMessage = 'Insufficient credits to complete this purchase.';
+            this.showErrorDialog = true;
+            return;
           }
           await this.processCreditPurchase();
         } else {
-          const itemPrice = parseFloat(this.item.price);
-          if (!isNaN(itemPrice) && itemPrice > 0) {
-            // Simulate external payment processing (not implemented)
-            console.log(`Processing ${method || this.selectedPaymentMethod} payment for ${itemPrice}€`);
-            // Placeholder for actual payment gateway integration
-            throw new Error('Non-credit payment methods are not yet implemented.');
-          } else {
-            throw new Error('Invalid item price');
+          // Validate real-money payment inputs
+          if (!this.validatePaymentInputs()) {
+            this.errorTitle = 'Invalid Input';
+            this.errorMessage = 'Please fill in all required payment fields correctly.';
+            this.showErrorDialog = true;
+            return;
           }
+          console.log(`Simulating ${method || this.selectedPaymentMethod} payment for ${this.item.price}€`);
+          await this.processRealMoneyPurchase();
         }
         this.showSuccessDialog = true;
       } catch (error) {
         console.error('Purchase failed:', error);
-        this.errorMessage = error.message;
+        this.errorTitle = error.response?.data?.error === 'You already own this item' ? 'Item Already Owned!' : 'Purchase Failed!';
+        this.errorMessage = error.message || 'An error occurred during the purchase.';
         this.showErrorDialog = true;
       }
     },

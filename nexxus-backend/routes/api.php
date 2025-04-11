@@ -92,6 +92,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function ()
     // Shop routes
     Route::get('/shop/categorized-items', [ItemController::class, 'categorizedItems']);
     Route::get('/shop/items/{id}', [ItemController::class, 'show']);
+    Route::post('/user/process-real-money-purchase', [UserController::class, 'processRealMoneyPurchase']);
 
     // Purchase and inventory routes
     Route::get('/user/{id}/equipped-items', [UserController::class, 'getEquippedItems']);
