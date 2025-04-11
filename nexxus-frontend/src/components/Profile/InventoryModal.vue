@@ -43,7 +43,7 @@
       @click="closeEquipPopupOnBackdrop"
     >
       <div class="bg-white dark:bg-gray-800 rounded-lg p-4" @click.stop>
-        <p class="text-gray-900 dark:text-white">{{ equippedItemName }}</p>
+        <p class="text-gray-900 dark:text-white">{{ equippedItemMessage }}</p>
         <button
           @click="showEquipPopup = false"
           class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -66,28 +66,28 @@ const props = defineProps({
 const emit = defineEmits(['close', 'update-user']);
 
 const showEquipPopup = ref(false);
-const equippedItemName = ref('');
+const equippedItemMessage = ref('');
 const inventory = ref([]);
 const inventoryCategories = ref([]);
 
 const fallbackImage = 'https://api.iconify.design/lucide/image-off.svg';
 const fallbackIcons = {
-  'Misty Peaks': 'https://api.iconify.design/mdi/mountain.svg?color=%23666666', // Gray for mist
-  'Cascading Falls': 'https://api.iconify.design/mdi/waterfall.svg?color=%2300FFFF', // Cyan for water
-  'Stormy Waves': 'https://api.iconify.design/mdi/wave.svg?color=%230066CC', // Blue for stormy sea
-  'Desert Sunset': 'https://api.iconify.design/mdi/weather-sunset.svg?color=%23FF4500', // Orange for sunset
-  'Northern Lights': 'https://api.iconify.design/mdi/weather-night.svg?color=%2300FF00', // Green for aurora
-  'Gentle Waterfall': 'https://api.iconify.design/mdi/water.svg?color=%2300FFFF', // Cyan for gentle flow
-  'Autumn Drift': 'https://api.iconify.design/mdi/leaf.svg?color=%23FFA500', // Orange for autumn
-  'Tech Grid': 'https://api.iconify.design/mdi/grid.svg?color=%2300FFFF', // Cyan for tech
-  'Particle Flow': 'https://api.iconify.design/mdi/dots-horizontal.svg?color=%23FF00FF', // Magenta for particles
-  'Circuit Pulse': 'https://api.iconify.design/mdi/circuit-board.svg?color=%2300FF00', // Green for circuit
-  'Matrix Rain': 'https://api.iconify.design/mdi/matrix.svg?color=%2300FF00', // Green for Matrix
-  'Cyber Skyline': 'https://api.iconify.design/mdi/city.svg?color=%23FF4500', // Orange for cyber city
-  'Code Rainfall': 'https://api.iconify.design/mdi/code-braces.svg?color=%2300FF00', // Green for code
-  'Holo Waves': 'https://api.iconify.design/mdi/waveform.svg?color=%2300FFFF', // Cyan for holo effect
-  'Neon Pulse': 'https://api.iconify.design/mdi/pulse.svg?color=%23FF00FF', // Magenta for neon
-  'Star Warp': 'https://api.iconify.design/mdi/star-four-points.svg?color=%2300FFFF', // Cyan for space
+  'Misty Peaks': 'https://api.iconify.design/mdi/mountain.svg?color=%23666666',
+  'Cascading Falls': 'https://api.iconify.design/mdi/waterfall.svg?color=%2300FFFF',
+  'Stormy Waves': 'https://api.iconify.design/mdi/wave.svg?color=%230066CC',
+  'Desert Sunset': 'https://api.iconify.design/mdi/weather-sunset.svg?color=%23FF4500',
+  'Northern Lights': 'https://api.iconify.design/mdi/weather-night.svg?color=%2300FF00',
+  'Gentle Waterfall': 'https://api.iconify.design/mdi/water.svg?color=%2300FFFF',
+  'Autumn Drift': 'https://api.iconify.design/mdi/leaf.svg?color=%23FFA500',
+  'Tech Grid': 'https://api.iconify.design/mdi/grid.svg?color=%2300FFFF',
+  'Particle Flow': 'https://api.iconify.design/mdi/dots-horizontal.svg?color=%23FF00FF',
+  'Circuit Pulse': 'https://api.iconify.design/mdi/circuit-board.svg?color=%2300FF00',
+  'Matrix Rain': 'https://api.iconify.design/mdi/matrix.svg?color=%2300FF00',
+  'Cyber Skyline': 'https://api.iconify.design/mdi/city.svg?color=%23FF4500',
+  'Code Rainfall': 'https://api.iconify.design/mdi/code-braces.svg?color=%2300FF00',
+  'Holo Waves': 'https://api.iconify.design/mdi/waveform.svg?color=%2300FFFF',
+  'Neon Pulse': 'https://api.iconify.design/mdi/pulse.svg?color=%23FF00FF',
+  'Star Warp': 'https://api.iconify.design/mdi/star-four-points.svg?color=%2300FFFF',
 };
 
 const closeInventoryOnBackdrop = (event) => {
@@ -105,32 +105,50 @@ const getItemIconUrl = (item) => {
   return fallbackIcons[item.name] || fallbackImage;
 };
 
-const handleImageError = (event, item) => {
+const handleImageError = (持續event, item) => {
   console.warn(`Image failed to load for ${item.name} (ID: ${item.id}): ${item.icon_url}`);
   item.iconFailed = true;
   event.target.src = fallbackIcons[item.name] || fallbackImage;
 };
 
-const updateEquipped = async (itemId, type, isUnequip = false) => {
+const updateEquipped = async (item, type, isUnequip = false) => {
   try {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token found.');
+    if (!props.user?.id) throw new Error('User ID is missing');
 
     let endpoint;
     let payload;
 
-    if (type === 'custom_banner') {
+    if (type === 'background') {
+      endpoint = '/api/user/update-equipped-background';
+      payload = isUnequip
+        ? { userId: props.user.id, equipped_background_path: null }
+        : { userId: props.user.id, equipped_background_path: item.icon_url };
+    } else if (type === 'custom_banner') {
       endpoint = '/api/user/update-equipped-banner';
-      payload = isUnequip ? { banner_id: null } : { banner_id: itemId };
+      payload = isUnequip
+        ? { userId: props.user.id, equipped_custom_banner: null }
+        : { userId: props.user.id, equipped_custom_banner: item.icon_url };
+    } else if (type === 'profile_icon') {
+      endpoint = '/api/user/update-equipped-profile-icon';
+      payload = isUnequip
+        ? { userId: props.user.id, equipped_profile_icon_path: null }
+        : { userId: props.user.id, equipped_profile_icon_path: item.icon_url };
     } else {
       endpoint = `/api/user/update-equipped-${type}`;
-      payload = isUnequip ? { item_id: null } : { item_id: itemId };
+      payload = isUnequip
+        ? { userId: props.user.id, item_id: null }
+        : { userId: props.user.id, item_id: item.id };
     }
+
+    console.log(`Sending payload to ${endpoint}:`, payload);
 
     const response = await apiClient.post(endpoint, payload, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
+    console.log(`${isUnequip ? 'Unequipped' : 'Equipped'} ${type} successfully:`, response.data);
     return response.data;
   } catch (error) {
     console.error(`Failed to ${isUnequip ? 'unequip' : 'equip'} ${type}:`, error.response?.data || error.message);
@@ -140,42 +158,47 @@ const updateEquipped = async (itemId, type, isUnequip = false) => {
 
 const equipItem = async (item) => {
   try {
-    equippedItemName.value = `${item.name} has been equipped`;
-    showEquipPopup.value = true;
-
-    const response = await updateEquipped(item.id, item.type);
-    item.isEquipped = true;
+    console.log('Attempting to equip:', item);
+    const response = await updateEquipped(item, item.type);
 
     inventory.value.forEach(i => {
-      if (i.type === item.type && i.id !== item.id) i.isEquipped = false;
+      if (i.type === item.type) i.isEquipped = i.id === item.id;
     });
     inventory.value = [...inventory.value];
     inventoryCategories.value = categorizeInventory(inventory.value);
 
     const field = item.type === 'custom_banner' ? 'equipped_banner_photo_path' : `equipped_${item.type}_path`;
     emit('update-user', { [field]: item.icon_url });
+
+    equippedItemMessage.value = `${item.name} has been equipped`;
+    showEquipPopup.value = true;
     console.log('Equipped item:', item);
   } catch (error) {
-    console.error('Equip failed:', error);
+    equippedItemMessage.value = `Failed to equip ${item.name}. Please try again.`;
+    showEquipPopup.value = true;
+    console.error('Equip failed:', error.response?.data || error.message);
   }
 };
 
 const unequipItem = async (item) => {
   try {
-    equippedItemName.value = `${item.name} has been unequipped`;
-    showEquipPopup.value = true;
+    console.log('Attempting to unequip:', item);
+    const response = await updateEquipped(item, item.type, true);
 
-    const response = await updateEquipped(item.id, item.type, true);
     item.isEquipped = false;
-
     inventory.value = [...inventory.value];
     inventoryCategories.value = categorizeInventory(inventory.value);
 
     const field = item.type === 'custom_banner' ? 'equipped_banner_photo_path' : `equipped_${item.type}_path`;
     emit('update-user', { [field]: null });
+
+    equippedItemMessage.value = `${item.name} has been unequipped`;
+    showEquipPopup.value = true;
     console.log('Unequipped item:', item);
   } catch (error) {
-    console.error('Unequip failed:', error);
+    equippedItemMessage.value = `Failed to unequip ${item.name}. Please try again.`;
+    showEquipPopup.value = true;
+    console.error('Unequip failed:', error.response?.data || error.message);
   }
 };
 
@@ -203,14 +226,14 @@ const loadInventory = async () => {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token found.');
     const response = await apiClient.get(`/api/user/${props.user.id}/inventory`);
-    console.log('Raw API response:', response.data);
+    console.log('Raw inventory API response:', response.data);
     const mappedInventory = response.data.map(item => {
       const itemData = item.item || item;
       return {
         id: itemData.id || item.id,
         name: itemData.name,
         price: itemData.price || 0,
-        icon_url: itemData.iconUrl || itemData.icon_url,
+        icon_url: itemData.icon_url || itemData.iconUrl,
         type: itemData.type || determineItemType(itemData.name),
         isEquipped: checkIfEquipped(itemData),
       };
@@ -220,6 +243,8 @@ const loadInventory = async () => {
     console.log('Loaded inventory:', mappedInventory);
   } catch (error) {
     console.error('Failed to load inventory:', error.response?.data || error.message);
+    equippedItemMessage.value = 'Failed to load inventory. Please try again.';
+    showEquipPopup.value = true;
   }
 };
 
@@ -240,7 +265,7 @@ const determineItemType = (itemName) => {
 };
 
 const checkIfEquipped = (item) => {
-  const iconUrl = item.iconUrl || item.icon_url;
+  const iconUrl = item.icon_url || item.iconUrl;
   if (item.type === 'profile_icon') return iconUrl === props.user.equipped_profile_icon_path;
   if (item.type === 'background') return iconUrl === props.user.equipped_background_path;
   if (item.type === 'name_effect') return iconUrl === props.user.equipped_name_effect_path;
@@ -303,11 +328,11 @@ onMounted(() => {
 .cosmetic-item.background-item .cosmetic-icon,
 .cosmetic-item.banner-item .cosmetic-icon {
   width: 100%;
-  height: 120px; /* Increased for better GIPHY animation visibility */
+  height: 120px;
   object-fit: cover;
   border-radius: 4px;
   margin-bottom: 0.5rem;
-  background-color: #e0e0e0; /* Light gray backdrop for contrast */
+  background-color: #e0e0e0;
 }
 
 .cosmetic-item:not(.background-item):not(.banner-item) .cosmetic-icon {
@@ -336,7 +361,7 @@ onMounted(() => {
   background-color: grey;
   color: white;
   border: none;
-  padding: 0.5rem 1rem; /* Larger for better clickability */
+  padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
   margin-top: 0.5rem;
@@ -361,7 +386,7 @@ onMounted(() => {
   }
   .cosmetic-item.background-item .cosmetic-icon,
   .cosmetic-item.banner-item .cosmetic-icon {
-    height: 100px; /* Adjusted for smaller screens */
+    height: 100px;
   }
 }
 </style>

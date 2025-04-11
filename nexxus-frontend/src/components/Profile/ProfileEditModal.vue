@@ -216,17 +216,21 @@ const saveProfile = async () => {
   if (profilePhoto.value) {
     formData.append('profile_photo', profilePhoto.value);
   } else if (!editedUser.value.profile_photo_path && props.user.profile_photo_path) {
-    formData.append('profile_photo', '');
+    formData.append('remove_profile_photo', '1'); // Send a flag to remove
   }
 
   if (bannerPhoto.value) {
     formData.append('banner_photo', bannerPhoto.value);
   } else if (!editedUser.value.banner_photo_path && props.user.banner_photo_path) {
-    formData.append('banner_photo', '');
+    formData.append('remove_banner_photo', '1'); // Send a flag to remove
   }
 
   try {
-    const response = await apiClient.post('/api/user/profile/update', formData);
+    const response = await apiClient.post('/api/user/profile/update', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     emit('save', response.data.user);
     successMessage.value = 'Profile updated successfully!';
     errorMessage.value = '';
@@ -234,7 +238,7 @@ const saveProfile = async () => {
   } catch (error) {
     errorMessage.value = error.response?.data?.message || 'Error updating profile';
     successMessage.value = '';
-    console.error('Error updating profile:', error);
+    console.error('Error updating profile:', error.response?.data || error);
   }
 };
 

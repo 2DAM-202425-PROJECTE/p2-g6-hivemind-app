@@ -1,7 +1,7 @@
 <template>
   <div :class="['rounded-lg shadow-lg overflow-hidden max-w-5xl mx-auto mb-5', profileThemeClass, equippedBackgroundClass]">
     <!-- Banner -->
-    <div class="relative w-full h-48 bg-gray-200 dark:bg-gray-700">
+    <div class="relative w-full h-48 bg-gray-200 dark:bg-gray-700 z-0">
       <!-- Display equipped banner (GIF or image) -->
       <img
         v-if="user.equipped_banner_photo_path"
@@ -29,23 +29,32 @@
 
     <!-- Content -->
     <div class="relative px-6 pb-6">
-      <!-- Profile photo with equipped icon -->
+      <!-- Profile photo with equipped icon and badge -->
       <div class="absolute -top-16 left-6 flex flex-col items-center">
         <div class="relative">
           <img
             :src="user.profile_photo_url"
             alt="Profile Pic"
-            class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-md object-cover"
+            class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-md object-cover z-10"
             @error="handleImageError('profile_photo_url')"
           />
+          <!-- Equipped Profile Icon -->
+          <img
+            v-if="user.equipped_profile_icon_path"
+            :src="user.equipped_profile_icon_path"
+            alt="Equipped Profile Icon"
+            class="equipped-profile-icon"
+            @error="handleImageError('equipped_profile_icon_path')"
+          />
+          <!-- Equipped Badge -->
+          <img
+            v-if="user.equipped_badge_path"
+            :src="user.equipped_badge_path"
+            alt="Equipped Badge"
+            class="equipped-badge"
+            @error="handleImageError('equipped_badge_path')"
+          />
         </div>
-        <img
-          v-if="user.equipped_badge_path"
-          :src="user.equipped_badge_path"
-          alt="Equipped Badge"
-          class="equipped-badge"
-          @error="handleImageError('equipped_badge_path')"
-        />
       </div>
 
       <!-- Info and buttons -->
@@ -285,13 +294,23 @@ onMounted(() => {
 @import '../../styles/nameEffects.css';
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
 
+.equipped-profile-icon {
+  width: 2rem; /* Adjust size as needed */
+  height: 2rem;
+  position: absolute;
+  top: -2rem; /* Move further above the profile picture */
+  left: 50%;
+  transform: translateX(-50%); /* Center horizontally */
+  z-index: 20; /* Higher than the profile picture */
+}
+
 .equipped-badge {
   width: 1.5rem;
   height: 1.5rem;
   position: absolute;
   bottom: -0.5rem;
   right: -0.5rem;
-  z-index: 10;
+  z-index: 15; /* Between profile picture (z-10) and profile icon (z-20) */
 }
 
 .font-pixel-art { font-family: 'Press Start 2P', cursive; }

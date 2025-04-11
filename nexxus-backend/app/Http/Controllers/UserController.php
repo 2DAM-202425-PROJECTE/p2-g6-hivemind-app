@@ -135,11 +135,9 @@ class UserController extends Controller
             'userId' => 'required|integer|exists:users,id',
             'equipped_profile_icon_path' => 'nullable|string',
         ]);
-
         $user = User::find($request->input('userId'));
         $user->equipped_profile_icon_path = $request->input('equipped_profile_icon_path');
         $user->save();
-
         return response()->json(['message' => 'Profile icon updated successfully'], 200);
     }
 
@@ -206,22 +204,16 @@ class UserController extends Controller
 
     public function updateEquippedBanner(Request $request)
     {
-        try {
-            $user = auth()->user();
+        $request->validate([
+            'userId' => 'required|exists:users,id',
+            'equipped_custom_banner' => 'nullable|string',
+        ]);
 
-            $request->validate([
-                'banner_id' => 'nullable|exists:items,id',
-            ]);
+        $user = User::find($request->userId);
+        $user->equipped_banner_photo_path = $request->equipped_custom_banner;
+        $user->save();
 
-            $bannerId = $request->input('banner_id');
-            $user->equipped_banner_photo_path = $bannerId ? Item::findOrFail($bannerId)->icon_url : null;
-            $user->save();
-
-            return response()->json(['message' => 'Banner updated successfully']);
-        } catch (\Exception $e) {
-            \Log::error('Failed to update banner: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to update banner', 'details' => $e->getMessage()], 500);
-        }
+        return response()->json(['message' => 'Banner updated successfully']);
     }
 
     public function updateEquippedBadge(Request $request)
@@ -253,6 +245,8 @@ class UserController extends Controller
             'banner_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:20480',
             'name' => 'required|string|max:32',
             'description' => 'nullable|string|max:150',
+            'remove_profile_photo' => 'nullable|string', // Allow removal flag
+            'remove_banner_photo' => 'nullable|string', // Allow removal flag
         ]);
 
         if ($request->hasFile('profile_photo')) {
@@ -261,7 +255,7 @@ class UserController extends Controller
             }
             $profilePhotoPath = $request->file('profile_photo')->store('profile_photos', 'public');
             $user->profile_photo_path = $profilePhotoPath;
-        } elseif ($request->has('profile_photo') && $request->input('profile_photo') === null) {
+        } elseif ($request->input('remove_profile_photo') === '1') {
             if ($user->profile_photo_path) {
                 Storage::disk('public')->delete($user->profile_photo_path);
             }
@@ -274,7 +268,7 @@ class UserController extends Controller
             }
             $bannerPhotoPath = $request->file('banner_photo')->store('banner_photos', 'public');
             $user->banner_photo_path = $bannerPhotoPath;
-        } elseif ($request->has('banner_photo') && $request->input('banner_photo') === null) {
+        } elseif ($request->input('remove_banner_photo') === '1') {
             if ($user->banner_photo_path) {
                 Storage::disk('public')->delete($user->banner_photo_path);
             }
