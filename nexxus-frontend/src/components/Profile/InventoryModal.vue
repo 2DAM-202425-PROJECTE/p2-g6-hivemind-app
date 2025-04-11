@@ -105,7 +105,7 @@ const getItemIconUrl = (item) => {
   return fallbackIcons[item.name] || fallbackImage;
 };
 
-const handleImageError = (持續event, item) => {
+const handleImageError = (event, item) => {
   console.warn(`Image failed to load for ${item.name} (ID: ${item.id}): ${item.icon_url}`);
   item.iconFailed = true;
   event.target.src = fallbackIcons[item.name] || fallbackImage;
@@ -117,30 +117,25 @@ const updateEquipped = async (item, type, isUnequip = false) => {
     if (!token) throw new Error('No authentication token found.');
     if (!props.user?.id) throw new Error('User ID is missing');
 
-    let endpoint;
-    let payload;
+    const typeToEndpointMap = {
+      background: '/api/user/update-equipped-background',
+      custom_banner: '/api/user/update-equipped-banner',
+      profile_icon: '/api/user/update-equipped-profile-icon',
+      name_effect: '/api/user/update-equipped-name-effect',
+      profile_font: '/api/user/update-equipped-profile-font',
+      badge: '/api/user/update-equipped-badge',
+    };
 
-    if (type === 'background') {
-      endpoint = '/api/user/update-equipped-background';
-      payload = isUnequip
-        ? { userId: props.user.id, equipped_background_path: null }
-        : { userId: props.user.id, equipped_background_path: item.icon_url };
-    } else if (type === 'custom_banner') {
-      endpoint = '/api/user/update-equipped-banner';
-      payload = isUnequip
-        ? { userId: props.user.id, equipped_custom_banner: null }
-        : { userId: props.user.id, equipped_custom_banner: item.icon_url };
-    } else if (type === 'profile_icon') {
-      endpoint = '/api/user/update-equipped-profile-icon';
-      payload = isUnequip
-        ? { userId: props.user.id, equipped_profile_icon_path: null }
-        : { userId: props.user.id, equipped_profile_icon_path: item.icon_url };
-    } else {
-      endpoint = `/api/user/update-equipped-${type}`;
-      payload = isUnequip
+    const endpoint = typeToEndpointMap[type] || `/api/user/update-equipped-${type.replace('_', '-')}`;
+
+    // Compute payload in a single declaration
+    const payload = ['name_effect', 'profile_font'].includes(type)
+      ? (isUnequip
         ? { userId: props.user.id, item_id: null }
-        : { userId: props.user.id, item_id: item.id };
-    }
+        : { userId: props.user.id, item_id: item.item_id })
+      : (isUnequip
+        ? { userId: props.user.id, [`equipped_${type.replace('_', '_')}_path`]: null }
+        : { userId: props.user.id, [`equipped_${type.replace('_', '_')}_path`]: item.icon_url });
 
     console.log(`Sending payload to ${endpoint}:`, payload);
 
@@ -168,7 +163,8 @@ const equipItem = async (item) => {
     inventoryCategories.value = categorizeInventory(inventory.value);
 
     const field = item.type === 'custom_banner' ? 'equipped_banner_photo_path' : `equipped_${item.type}_path`;
-    emit('update-user', { [field]: item.icon_url });
+    const value = ['name_effect', 'profile_font'].includes(item.type) ? item.name : item.icon_url; // Use name for name_effect and profile_font
+    emit('update-user', { [field]: value });
 
     equippedItemMessage.value = `${item.name} has been equipped`;
     showEquipPopup.value = true;
@@ -230,7 +226,8 @@ const loadInventory = async () => {
     const mappedInventory = response.data.map(item => {
       const itemData = item.item || item;
       return {
-        id: itemData.id || item.id,
+        id: item.id, // user_inventory.id
+        item_id: item.item_id, // user_inventory.item_id
         name: itemData.name,
         price: itemData.price || 0,
         icon_url: itemData.icon_url || itemData.iconUrl,
@@ -268,7 +265,7 @@ const checkIfEquipped = (item) => {
   const iconUrl = item.icon_url || item.iconUrl;
   if (item.type === 'profile_icon') return iconUrl === props.user.equipped_profile_icon_path;
   if (item.type === 'background') return iconUrl === props.user.equipped_background_path;
-  if (item.type === 'name_effect') return iconUrl === props.user.equipped_name_effect_path;
+  if (item.type === 'name_effect') return item.name === props.user.equipped_name_effect_path; // Compare name instead of icon_url
   if (item.type === 'custom_banner') return iconUrl === props.user.equipped_banner_photo_path;
   if (item.type === 'badge') return iconUrl === props.user.equipped_badge_path;
   if (item.type === 'profile_font') return item.name === props.user.equipped_profile_font_path;

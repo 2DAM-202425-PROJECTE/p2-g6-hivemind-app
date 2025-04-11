@@ -174,11 +174,22 @@ class UserController extends Controller
         try {
             $request->validate([
                 'userId' => 'required|integer|exists:users,id',
-                'equipped_profile_font_path' => 'nullable|string',
+                'item_id' => 'nullable|integer|exists:items,id',
             ]);
 
             $user = User::findOrFail($request->input('userId'));
-            $user->equipped_profile_font_path = $request->input('equipped_profile_font_path');
+            $itemId = $request->input('item_id');
+
+            if (!$itemId) {
+                $user->equipped_profile_font_path = null;
+            } else {
+                $item = Item::findOrFail($itemId);
+                if ($item->type !== 'profile_font') {
+                    return response()->json(['message' => 'Invalid item type'], 400);
+                }
+                $user->equipped_profile_font_path = $item->name;
+            }
+
             $user->save();
 
             return response()->json(['message' => 'Profile font updated successfully', 'user' => $user], 200);
@@ -188,18 +199,33 @@ class UserController extends Controller
         }
     }
 
-    public function updateEquippedNameEffect(Request $request)
-    {
-        $request->validate([
-            'userId' => 'required|exists:users,id',
-            'equipped_name_effect_path' => 'nullable|string',
-        ]);
+    public function updateEquippedNameEffect(Request $request) {
+        try {
+            $request->validate([
+                'userId' => 'required|integer|exists:users,id',
+                'item_id' => 'nullable|integer|exists:items,id',
+            ]);
 
-        $user = User::findOrFail($request->userId);
-        $user->equipped_name_effect_path = $request->equipped_name_effect_path;
-        $user->save();
+            $user = User::findOrFail($request->input('userId'));
+            $itemId = $request->input('item_id');
 
-        return response()->json(['message' => 'Name effect updated successfully', 'user' => $user]);
+            if (!$itemId) {
+                $user->equipped_name_effect_path = null;
+            } else {
+                $item = Item::findOrFail($itemId);
+                if ($item->type !== 'name_effect') {
+                    return response()->json(['message' => 'Invalid item type'], 400);
+                }
+                $user->equipped_name_effect_path = $item->name; // Save the name instead of icon_url
+            }
+
+            $user->save();
+
+            return response()->json(['message' => 'Name effect updated successfully', 'user' => $user], 200);
+        } catch (\Exception $e) {
+            \Log::error('Failed to update name effect: ' . $e->getMessage());
+            return response()->json(['message' => 'Server Error', 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function updateEquippedBanner(Request $request)

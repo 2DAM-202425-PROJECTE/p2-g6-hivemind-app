@@ -202,22 +202,22 @@ const profileFontClass = computed(() => {
 const getNameEffectClass = (nameEffectPath) => {
   if (!nameEffectPath) return '';
   const effectMap = {
-    'https://api.iconify.design/lucide/blend.svg': 'gradient-fade',
-    'https://api.iconify.design/lucide/badge.svg': 'golden-outline',
-    'https://api.iconify.design/lucide/vibrate.svg': 'dark-pulse',
-    'https://api.iconify.design/lucide/stars.svg': 'cosmic-shine',
-    'https://api.iconify.design/lucide/lightbulb.svg': 'neon-edge',
-    'https://api.iconify.design/lucide/snowflake.svg': 'frost-glow',
-    'https://api.iconify.design/lucide/flame.svg': 'fire-flicker',
-    'https://api.iconify.design/lucide/gem.svg': 'emerald-sheen',
-    'https://api.iconify.design/lucide/cloud-fog.svg': 'phantom-haze',
-    'https://api.iconify.design/lucide/zap.svg': 'electric-glow',
-    'https://api.iconify.design/lucide/sun.svg': 'solar-flare',
-    'https://api.iconify.design/lucide/waves.svg': 'wave-shimmer',
-    'https://api.iconify.design/lucide/diamond.svg': 'crystal-pulse',
-    'https://api.iconify.design/lucide/sparkles.svg': 'mystic-aura',
-    'https://api.iconify.design/lucide/shield.svg': 'shadow-veil',
-    'https://api.iconify.design/mdi/pulse.svg?color=%2300FFFF': 'digital-pulse',
+    'Gradient Fade': 'gradient-fade',
+    'Golden Outline': 'golden-outline',
+    'Dark Pulse': 'dark-pulse',
+    'Cosmic Shine': 'cosmic-shine',
+    'Neon Edge': 'neon-edge',
+    'Frost Glow': 'frost-glow',
+    'Fire Flicker': 'fire-flicker',
+    'Emerald Sheen': 'emerald-sheen',
+    'Phantom Haze': 'phantom-haze',
+    'Electric Glow': 'electric-glow',
+    'Solar Flare': 'solar-flare',
+    'Wave Shimmer': 'wave-shimmer',
+    'Crystal Pulse': 'crystal-pulse',
+    'Mystic Aura': 'mystic-aura',
+    'Shadow Veil': 'shadow-veil',
+    'Digital Pulse': 'digital-pulse',
   };
   return effectMap[nameEffectPath] || '';
 };
