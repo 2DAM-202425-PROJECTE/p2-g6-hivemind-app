@@ -13,14 +13,48 @@
           <i class="fas fa-times"></i>
         </button>
       </div>
+
+      <!-- Inventory Description -->
+      <div class="mb-6 text-gray-600 dark:text-gray-300">
+        <p>
+          Welcome to your Inventory! Here you can view and manage all the cosmetic items you've purchased, such as profile
+          icons, backgrounds, name effects, custom banners, badges, and fonts. Use the <strong>Equip</strong> button to apply
+          an item to your profile, or <strong>Unequip</strong> to remove it. To expand your collection, visit the Shop to browse
+          and purchase new items with Credits. Click the arrow next to each category to show or hide its items.
+        </p>
+      </div>
+
       <div v-if="inventoryCategories.length > 0" class="cosmetics-grid">
         <div v-for="category in inventoryCategories" :key="category.title" class="category-card">
-          <h3 class="category-title">{{ category.title }}</h3>
+          <div class="flex justify-between items-center cursor-pointer" @click="toggleCategory(category)">
+            <h3 class="category-title">
+              {{ category.title }} (You have {{ category.items.length }}/{{ getTotalItemsForCategory(category.title) }})
+            </h3>
+            <i :class="['fas', category.isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up']"></i>
+          </div>
           <p class="category-description">{{ category.description }}</p>
-          <div class="items-grid">
-            <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'background-item': item.type === 'background', 'banner-item': item.type === 'custom_banner' }">
-              <img :src="getItemIconUrl(item)" :alt="item.name" class="cosmetic-icon" @error="handleImageError($event, item)" />
-              <h4 class="item-name">{{ item.name }}</h4>
+          <div v-if="!category.isCollapsed" class="items-grid">
+            <div
+              v-for="item in category.items"
+              :key="item.id"
+              class="cosmetic-item"
+              :class="{ 'background-item': item.type === 'background', 'banner-item': item.type === 'custom_banner' }"
+            >
+              <img
+                :src="getItemIconUrl(item)"
+                :alt="item.name"
+                class="cosmetic-icon"
+                @error="handleImageError($event, item)"
+              />
+              <h4
+                class="item-name"
+                :class="[
+                  item.type === 'name_effect' ? getNameEffectClass(item.name) : '',
+                  item.type === 'profile_font' ? getFontClass(item.name) : ''
+                ]"
+              >
+                {{ item.name }}
+              </h4>
               <p class="item-price">{{ formatPrice(item.price) }}</p>
               <button
                 :class="['buy-button', item.isEquipped ? 'unequip-button' : '']"
@@ -88,6 +122,68 @@ const fallbackIcons = {
   'Holo Waves': 'https://api.iconify.design/mdi/waveform.svg?color=%2300FFFF',
   'Neon Pulse': 'https://api.iconify.design/mdi/pulse.svg?color=%23FF00FF',
   'Star Warp': 'https://api.iconify.design/mdi/star-four-points.svg?color=%2300FFFF',
+};
+
+// Function to get name effect class
+const getNameEffectClass = (nameEffectPath) => {
+  if (!nameEffectPath) return '';
+  const effectMap = {
+    'Gradient Fade': 'gradient-fade',
+    'Golden Outline': 'golden-outline',
+    'Dark Pulse': 'dark-pulse',
+    'Cosmic Shine': 'cosmic-shine',
+    'Neon Edge': 'neon-edge',
+    'Frost Glow': 'frost-glow',
+    'Fire Flicker': 'fire-flicker',
+    'Emerald Sheen': 'emerald-sheen',
+    'Phantom Haze': 'phantom-haze',
+    'Electric Glow': 'electric-glow',
+    'Solar Flare': 'solar-flare',
+    'Wave Shimmer': 'wave-shimmer',
+    'Crystal Pulse': 'crystal-pulse',
+    'Mystic Aura': 'mystic-aura',
+    'Shadow Veil': 'shadow-veil',
+    'Digital Pulse': 'digital-pulse',
+  };
+  return effectMap[nameEffectPath] || '';
+};
+
+// Function to get font class
+const getFontClass = (fontPath) => {
+  if (!fontPath) return '';
+  switch (fontPath) {
+    case 'Pixel Art': return 'font-pixel-art';
+    case 'Comic Sans': return 'font-comic-sans';
+    case 'Gothic': return 'font-gothic';
+    case 'Cursive': return 'font-cursive';
+    case 'Typewriter': return 'font-typewriter';
+    case 'Bubble': return 'font-bubble';
+    case 'Neon': return 'font-neon';
+    case 'Graffiti': return 'font-graffiti';
+    case 'Retro': return 'font-retro';
+    case 'Cyberpunk': return 'font-cyberpunk';
+    case 'Western': return 'font-western';
+    case 'Chalkboard': return 'font-chalkboard';
+    case 'Horror': return 'font-horror';
+    case 'Futuristic': return 'font-futuristic';
+    case 'Handwritten': return 'font-handwritten';
+    case 'Bold Script': return 'font-bold-script';
+    default: return '';
+  }
+};
+
+// Function to get total items for a category
+const getTotalItemsForCategory = (categoryTitle) => {
+  const totalItemsMap = {
+    'Profile Icons': 16,
+    'Backgrounds': 16,
+    'Name Effects': 16,
+    'Custom Banners': 16,
+    'Profile Badges': 16,
+    'Profile Fonts': 16,
+    'Other Items': 0,
+  };
+  return totalItemsMap[categoryTitle] || 0;
 };
 
 const closeInventoryOnBackdrop = (event) => {
@@ -235,15 +331,55 @@ const formatPrice = (price) => {
 
 const categorizeInventory = (items) => {
   const categorized = [
-    { title: 'Profile Icons', description: 'Stand out with unique profile icons', items: items.filter(item => item.type === 'profile_icon') },
-    { title: 'Backgrounds', description: 'Transform your profile with stunning themes', items: items.filter(item => item.type === 'background') },
-    { title: 'Name Effects', description: 'Make your username pop', items: items.filter(item => item.type === 'name_effect') },
-    { title: 'Custom Banners', description: 'Enhance your profile header with vibrant animated banners', items: items.filter(item => item.type === 'custom_banner') },
-    { title: 'Profile Badges', description: 'Show off your status', items: items.filter(item => item.type === 'badge') },
-    { title: 'Profile Fonts', description: 'Customize your text style', items: items.filter(item => item.type === 'profile_font') },
-    { title: 'Other Items', description: 'Miscellaneous items', items: items.filter(item => !['profile_icon', 'background', 'name_effect', 'custom_banner', 'badge', 'profile_font'].includes(item.type)) },
+    {
+      title: 'Profile Icons',
+      description: 'Stand out with unique profile icons',
+      items: items.filter(item => item.type === 'profile_icon'),
+      isCollapsed: true,
+    },
+    {
+      title: 'Backgrounds',
+      description: 'Transform your profile with stunning themes',
+      items: items.filter(item => item.type === 'background'),
+      isCollapsed: true,
+    },
+    {
+      title: 'Name Effects',
+      description: 'Make your username pop',
+      items: items.filter(item => item.type === 'name_effect'),
+      isCollapsed: true,
+    },
+    {
+      title: 'Custom Banners',
+      description: 'Enhance your profile header with vibrant animated banners',
+      items: items.filter(item => item.type === 'custom_banner'),
+      isCollapsed: true,
+    },
+    {
+      title: 'Profile Badges',
+      description: 'Show off your status',
+      items: items.filter(item => item.type === 'badge'),
+      isCollapsed: true,
+    },
+    {
+      title: 'Profile Fonts',
+      description: 'Customize your text style',
+      items: items.filter(item => item.type === 'profile_font'),
+      isCollapsed: true,
+    },
+    {
+      title: 'Other Items',
+      description: 'Miscellaneous items',
+      items: items.filter(item => !['profile_icon', 'background', 'name_effect', 'custom_banner', 'badge', 'profile_font'].includes(item.type)),
+      isCollapsed: true,
+    },
   ].filter(category => category.items.length > 0);
   return categorized;
+};
+
+// Toggle category collapse state
+const toggleCategory = (category) => {
+  category.isCollapsed = !category.isCollapsed;
 };
 
 const loadInventory = async () => {
@@ -308,6 +444,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@import '../../styles/nameEffects.css';
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
+
 .cosmetics-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -405,6 +544,37 @@ onMounted(() => {
 
 .unequip-button:hover {
   background-color: #c82333;
+}
+
+/* Font classes */
+.font-pixel-art { font-family: 'Press Start 2P', cursive; }
+.font-comic-sans { font-family: 'Comic Neue', cursive; }
+.font-gothic { font-family: 'Black Ops One', cursive; }
+.font-cursive { font-family: 'Dancing Script', cursive; }
+.font-typewriter { font-family: 'Courier Prime', monospace; }
+.font-bubble { font-family: 'Bungee', cursive; }
+.font-neon { font-family: 'Orbitron', sans-serif; }
+.font-graffiti { font-family: 'Wallpoet', cursive; }
+.font-retro { font-family: 'VT323', monospace; }
+.font-cyberpunk { font-family: 'Monoton', cursive; }
+.font-western { font-family: 'Special Elite', cursive; }
+.font-chalkboard { font-family: 'Creepster', cursive; }
+.font-horror { font-family: 'Creepster', cursive; }
+.font-futuristic { font-family: 'Audiowide', cursive; }
+.font-handwritten { font-family: 'Caveat', cursive; }
+.font-bold-script { font-family: 'Permanent Marker', cursive; }
+
+/* Styles for collapsible arrow */
+.fa-chevron-down,
+.fa-chevron-up {
+  color: #666;
+  transition: transform 0.3s;
+}
+
+.category-card .cursor-pointer:hover .category-title,
+.category-card .cursor-pointer:hover .fa-chevron-down,
+.category-card .cursor-pointer:hover .fa-chevron-up {
+  color: #000;
 }
 
 @media (max-width: 768px) {

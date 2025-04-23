@@ -57,7 +57,8 @@
             :class="[
               'text-2xl font-bold text-gray-900 dark:text-white',
               getNameEffectClass(user.equipped_name_effect_path),
-              profileFontClass
+              profileFontClass,
+              { 'text-black': isFontAndEffectEquipped }
             ]"
           >
             {{ user.name }}
@@ -135,6 +136,11 @@ const props = defineProps({
 });
 
 const showInventory = ref(false);
+
+// New computed property to check if both font and name effect are equipped
+const isFontAndEffectEquipped = computed(() => {
+  return props.user.equipped_profile_font_path && props.user.equipped_name_effect_path;
+});
 
 const fallbackUrls = {
   'Cosmic Vortex': 'https://media.tenor.com/5o2qbr5P5mUAAAAC/space-vortex.gif',
@@ -329,5 +335,10 @@ onMounted(() => {
   0% { transform: scale(1); }
   50% { transform: scale(1.02); }
   100% { transform: scale(1); }
+}
+
+/* New class to enforce black text */
+.text-black {
+  color: black !important;
 }
 </style>
