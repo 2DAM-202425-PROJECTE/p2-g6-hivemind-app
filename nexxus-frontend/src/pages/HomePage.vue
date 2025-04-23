@@ -436,7 +436,11 @@ const submitPost = async () => {
     if (newPostFile.value) formData.append('file', newPostFile.value);
     if (selectedLocation.value) formData.append('location', selectedLocation.value.name);
 
-    await apiClient.post('/api/posts', formData);
+    await apiClient.post('/api/posts', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
 
     await fetchPosts(1, true);
     newPostContent.value = '';
