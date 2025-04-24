@@ -97,6 +97,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function ()
     // Purchase and inventory routes
     Route::get('/user/{id}/equipped-items', [UserController::class, 'getEquippedItems']);
     Route::post('/user/update-equipped-profile-icon', [UserController::class, 'updateEquippedProfileIcon']);
+    Route::post('/user/update-profile-icon-color', [UserController::class, 'updateProfileIconColor']);
     Route::post('/user/update-equipped-profile-effect', [UserController::class, 'updateEquippedProfileEffect']);
     Route::post('/user/update-equipped-banner', [UserController::class, 'updateEquippedBanner']);
     Route::post('/user/update-equipped-background', [UserController::class, 'updateEquippedBackground']);

@@ -38,32 +38,34 @@
             v-if="user.equipped_profile_icon_path"
             :src="user.equipped_profile_icon_path"
             alt="Equipped Profile Icon"
-            :class="['equipped-profile-icon', getNameEffectClass(user.equipped_name_effect_path)]"
+            class="equipped-profile-icon"
             @error="handleImageError('equipped_profile_icon_path')"
-          />
-          <img
-            v-if="user.equipped_badge_path"
-            :src="user.equipped_badge_path"
-            alt="Equipped Badge"
-            class="equipped-badge"
-            @error="handleImageError('equipped_badge_path')"
           />
         </div>
       </div>
 
       <div class="pt-20 flex flex-col md:flex-row md:items-start">
         <div class="flex-1">
-          <h3
-            :class="[
-              'text-2xl font-bold text-gray-900 dark:text-white',
-              getNameEffectClass(user.equipped_name_effect_path),
-              profileFontClass,
-              { 'text-black': isFontAndEffectEquipped }
-            ]"
-          >
-            {{ user.name }}
-          </h3>
-          <div class="text-sm text-gray-500 dark:text-gray-400">@{{ user.username }}</div>
+          <div class="flex items-center gap-2">
+            <h3
+              :class="[
+                'text-2xl font-bold text-gray-900 dark:text-white',
+                getNameEffectClass(user.equipped_name_effect_path),
+                profileFontClass
+              ]"
+            >
+              {{ user.name }}
+            </h3>
+            <div v-if="user.equipped_badge_path" class="equipped-badge">
+              <img
+                :src="user.equipped_badge_path"
+                alt="Equipped Badge"
+                :class="['equipped-badge-img', getNameEffectClass(user.equipped_name_effect_path)]"
+                @error="handleImageError('equipped_badge_path')"
+              />
+            </div>
+          </div>
+          <div class="text-sm text-black dark:text-black">@{{ user.username }}</div>
           <div v-if="user.description" class="mt-2 text-sm text-gray-600 dark:text-gray-300">
             {{ user.description }}
           </div>
@@ -137,11 +139,6 @@ const props = defineProps({
 
 const showInventory = ref(false);
 
-// New computed property to check if both font and name effect are equipped
-const isFontAndEffectEquipped = computed(() => {
-  return props.user.equipped_profile_font_path && props.user.equipped_name_effect_path;
-});
-
 const fallbackUrls = {
   'Cosmic Vortex': 'https://media.tenor.com/5o2qbr5P5mUAAAAC/space-vortex.gif',
   'Neon Cityscape': 'https://media.tenor.com/8vL1Z5j0Z7IAAAAC/neon-city.gif',
@@ -200,7 +197,7 @@ const getNameEffectClass = (nameEffectPath) => {
   if (!nameEffectPath) return '';
   const effectMap = {
     'Gradient Fade': 'gradient-fade',
-    'Golden Outline': 'golden-outline',
+    'Golden Outline': 'gradient-fade',
     'Dark Pulse': 'dark-pulse',
     'Cosmic Shine': 'cosmic-shine',
     'Neon Edge': 'neon-edge',
@@ -225,9 +222,11 @@ const loadEquippedState = async () => {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token found.');
     const response = await apiClient.get(`/api/user/${props.user.id}/equipped-items`);
+    console.log('Equipped items response:', response.data);
+    console.log('Received equipped_badge_path:', response.data.equipped_badge_path);
     Object.assign(props.user, {
       equipped_profile_icon_path: response.data.equipped_profile_icon_path,
-      equipped_profile_theme: response.data.equipped_profile_theme,
+      equipped_profile_theme: response.data.equipped_profile_theme || 'bg-white dark:bg-gray-800',
       equipped_background_path: response.data.equipped_background_path,
       equipped_name_effect_path: response.data.equipped_name_effect_path,
       equipped_profile_font_path: response.data.equipped_profile_font_path,
@@ -235,6 +234,7 @@ const loadEquippedState = async () => {
       equipped_banner_photo_path: response.data.equipped_banner_photo_path,
     });
     console.log('Loaded equipped state:', props.user);
+    console.log('Applied equipped_name_effect_path:', props.user.equipped_name_effect_path);
   } catch (error) {
     console.error('Failed to load equipped state:', error.response?.data || error.message);
   }
@@ -299,15 +299,23 @@ onMounted(() => {
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.6));
+  animation: whiteGlowPulse 2s ease-in-out infinite;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
-.equipped-badge {
-  width: 1.5rem;
-  height: 1.5rem;
-  position: absolute;
-  bottom: -0.5rem;
-  right: -0.5rem;
-  z-index: 15;
+.equipped-profile-icon:hover,
+.equipped-badge-img:hover,
+h3:hover {
+  transform: scale(1.1);
+  opacity: 0.9;
+}
+
+.equipped-badge-img {
+  width: 2rem;
+  height: 2rem;
+  margin-left: 0.5rem;
+  transition: filter 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
 }
 
 .font-pixel-art { font-family: 'Press Start 2P', cursive; }
@@ -331,14 +339,15 @@ onMounted(() => {
   animation: banner-animation 10s infinite linear;
 }
 
+@keyframes whiteGlowPulse {
+  0% { filter: drop-shadow(0 0 12px rgba(255, 255, 255, 1)) drop-shadow(0 0 24px rgba(255, 255, 255, 0.9)); }
+  50% { filter: drop-shadow(0 0 16px rgba(255, 255, 255, 1)) drop-shadow(0 0 32px rgba(255, 255, 255, 1)); }
+  100% { filter: drop-shadow(0 0 12px rgba(255, 255, 255, 1)) drop-shadow(0 0 24px rgba(255, 255, 255, 0.9)); }
+}
+
 @keyframes banner-animation {
   0% { transform: scale(1); }
   50% { transform: scale(1.02); }
   100% { transform: scale(1); }
-}
-
-/* New class to enforce black text */
-.text-black {
-  color: black !important;
 }
 </style>

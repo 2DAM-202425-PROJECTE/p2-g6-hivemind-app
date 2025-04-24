@@ -207,6 +207,20 @@ class UserController extends Controller
         return response()->json(['message' => 'Profile icon updated successfully'], 200);
     }
 
+    public function updateProfileIconColor(Request $request)
+    {
+        $request->validate([
+            'userId' => 'required|integer|exists:users,id',
+            'color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
+        ]);
+
+        $user = User::findOrFail($request->input('userId'));
+        $user->equipped_profile_icon_color = $request->input('color');
+        $user->save();
+
+        return response()->json(['message' => 'Profile icon color updated successfully', 'color' => $user->equipped_profile_icon_color], 200);
+    }
+
     public function updateEquippedCustomBanner(Request $request)
     {
         $request->validate([
@@ -312,21 +326,48 @@ class UserController extends Controller
 
     public function updateEquippedBadge(Request $request)
     {
-        $request->validate([
-            'userId' => 'required|integer|exists:users,id',
-            'equippedBadgePath' => 'nullable|string',
-        ]);
+        try {
+            $request->validate([
+                'userId' => 'required|integer|exists:users,id',
+                'equipped_badge_path' => 'nullable|string',
+            ]);
 
-        $user = User::find($request->input('userId'));
-        $user->equipped_badge_path = $request->input('equippedBadgePath');
-        $user->save();
+            $user = User::findOrFail($request->input('userId'));
+            $badgePath = $request->input('equipped_badge_path');
+            \Log::info('Updating equipped badge for user ' . $user->id . ' with path: ' . ($badgePath ?? 'null'));
 
-        return response()->json(['message' => 'Equipped badge updated successfully'], 200);
+            \DB::beginTransaction();
+            $user->equipped_badge_path = $badgePath;
+            $saved = $user->save();
+            \DB::commit();
+
+            if (!$saved) {
+                \Log::error('Failed to save equipped badge for user ' . $user->id . ': Save operation returned false');
+                return response()->json(['error' => 'Failed to save badge'], 500);
+            }
+
+            // Refresh the model to confirm the update
+            $user->refresh();
+            \Log::info('Equipped badge updated successfully for user ' . $user->id . '. New equipped_badge_path: ' . ($user->equipped_badge_path ?? 'null'));
+
+            return response()->json([
+                'message' => 'Equipped badge updated successfully',
+                'equipped_badge_path' => $user->equipped_badge_path,
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation failed for update equipped badge: ' . json_encode($e->errors()));
+            return response()->json(['error' => 'Invalid input', 'details' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Failed to update equipped badge for user ' . $request->input('userId') . ': ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to update badge', 'details' => $e->getMessage()], 500);
+        }
     }
 
     public function getEquippedItems($id)
     {
         $user = User::findOrFail($id);
+        \Log::info('Fetching equipped items for user ' . $id . '. Equipped badge path: ' . ($user->equipped_badge_path ?? 'null'));
         return response()->json($this->appendEquippedItems($user), 200);
     }
 
@@ -379,7 +420,7 @@ class UserController extends Controller
     private function appendEquippedItems($user)
     {
         $user->equipped_profile_icon_path = $user->equipped_profile_icon_path;
-        $user->equipped_custom_banner = $user->equipped_custom_banner;
+        $user->equipped_banner_photo_path = $user->equipped_banner_photo_path;
         $user->equipped_background_path = $user->equipped_background_path;
         $user->equipped_name_effect_path = $user->equipped_name_effect_path;
         $user->equipped_badge_path = $user->equipped_badge_path;
