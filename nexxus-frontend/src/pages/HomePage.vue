@@ -997,7 +997,7 @@ h1 {
 .end-message {
   text-align: center;
   padding: 20px;
-  color: #999;
+  color: #9c9999;
   font-style: italic;
 }
 </style>
