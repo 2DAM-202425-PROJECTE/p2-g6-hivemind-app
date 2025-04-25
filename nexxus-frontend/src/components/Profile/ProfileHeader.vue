@@ -120,12 +120,12 @@
     v-if="showInventory"
     :user="user"
     @close="showInventory = false"
-    @update-user="updateUser"
+    @update-user="updateUserAndRefresh"
   />
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import apiClient from '@/axios.js';
 import InventoryModal from './InventoryModal.vue';
 
@@ -223,7 +223,7 @@ const loadEquippedState = async () => {
     if (!token) throw new Error('No authentication token found.');
     const response = await apiClient.get(`/api/user/${props.user.id}/equipped-items`);
     console.log('Equipped items response:', response.data);
-    console.log('Received equipped_badge_path:', response.data.equipped_badge_path);
+    // Only update non-banner fields to avoid overwriting banner state
     Object.assign(props.user, {
       equipped_profile_icon_path: response.data.equipped_profile_icon_path,
       equipped_profile_theme: response.data.equipped_profile_theme || 'bg-white dark:bg-gray-800',
@@ -231,56 +231,31 @@ const loadEquippedState = async () => {
       equipped_name_effect_path: response.data.equipped_name_effect_path,
       equipped_profile_font_path: response.data.equipped_profile_font_path,
       equipped_badge_path: response.data.equipped_badge_path,
-      equipped_banner_photo_path: response.data.equipped_banner_photo_path,
+      // Do not update equipped_banner_photo_path here
     });
-    console.log('Loaded equipped state:', props.user);
-    console.log('Applied equipped_name_effect_path:', props.user.equipped_name_effect_path);
+    console.log('Loaded equipped state (excluding banner):', props.user);
   } catch (error) {
     console.error('Failed to load equipped state:', error.response?.data || error.message);
   }
 };
 
 const updateUser = (updatedFields) => {
+  console.log('Updating user with fields:', updatedFields);
   Object.assign(props.user, updatedFields);
   console.log('Updated user:', props.user);
 };
 
-const handleImageError = (field) => {
-  console.warn(`Image failed to load for ${field}: ${props.user[field]}`);
-  const bannerNames = {
-    'cosmic_vortex': 'Cosmic Vortex',
-    'neon_cityscape': 'Neon Cityscape',
-    'firestorm_horizon': 'Firestorm Horizon',
-    'mystic_nebula': 'Mystic Nebula',
-    'cyber_grid': 'Cyber Grid',
-    'ethereal_waves': 'Ethereal Waves',
-    'ocean_surge': 'Ocean Surge',
-    'pixel_storm': 'Pixel Storm',
-    'lava_flow': 'Lava Flow',
-    'frost_vortex': 'Frost Vortex',
-    'steampunk_gears': 'Steampunk Gears',
-    'lunar_eclipse': 'Lunar Eclipse',
-    'glitch_matrix': 'Glitch Matrix',
-    'aurora_dance': 'Aurora Dance',
-    'galactic_spin': 'Galactic Spin',
-    'rainbow_flux': 'Rainbow Flux',
-  };
-
-  if (field === 'equipped_banner_photo_path') {
-    const themeValue = Object.keys(bannerNames).find(key =>
-      props.user[field]?.toLowerCase().includes(key)
-    );
-    const itemName = themeValue ? bannerNames[themeValue] : '';
-    props.user[field] = itemName && fallbackUrls[itemName] ?
-      fallbackUrls[itemName] : defaultFallback;
-  } else if (field === 'equipped_name_effect_path') {
-    const itemName = props.user[field] === 'https://api.iconify.design/mdi/pulse.svg?color=%2300FFFF' ? 'Digital Pulse' : '';
-    props.user[field] = itemName && fallbackUrls[itemName] ?
-      fallbackUrls[itemName] : defaultFallback;
-  } else {
-    props.user[field] = defaultFallback;
-  }
+const updateUserAndRefresh = async (updatedFields) => {
+  updateUser(updatedFields);
+  await loadEquippedState(); // Refresh other equipped items, excluding banner
 };
+
+// Watch for changes to user prop to confirm updates
+watch(() => props.user, (newUser) => {
+  console.log('User prop updated in ProfileHeader:', newUser);
+  console.log('Banner state - equipped_banner_photo_path:', newUser.equipped_banner_photo_path);
+  console.log('Banner state - banner_photo_path:', newUser.banner_photo_path);
+}, { deep: true });
 
 onMounted(() => {
   loadEquippedState();

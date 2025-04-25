@@ -6,10 +6,11 @@
       <!-- Banner -->
       <div class="relative w-full h-40 bg-gray-200 rounded-lg mb-6 overflow-hidden banner-container">
         <img
-          v-if="bannerPreview || editedUser.banner_photo_path"
-          :src="bannerPreview || editedUser.banner_photo_path"
+          v-if="bannerImageSrc"
+          :src="bannerImageSrc"
           alt="Profile Banner"
           class="w-full h-full object-cover transition duration-300 banner-image"
+          @error="handleImageError('banner')"
         />
         <div v-else class="absolute inset-0 flex items-center justify-center text-gray-500 pointer-events-none">
           Upload a profile banner
@@ -18,6 +19,7 @@
           <label
             for="banner-upload"
             class="bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600"
+            aria-label="Upload profile banner"
           >
             <i class="fas fa-camera"></i>
           </label>
@@ -29,9 +31,10 @@
             class="hidden"
           />
           <button
-            v-if="bannerPreview || editedUser.banner_photo_path"
+            v-if="bannerPreview || editedUser.banner_photo_path || localEquippedBanner"
             @click="removeBanner"
-            class="bg-red-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600"
+            class="bg-red-500 text-white p-2 rounded-full cursor-pointer hover:bg-red-600"
+            aria-label="Remove profile banner"
           >
             <i class="fas fa-trash"></i>
           </button>
@@ -45,11 +48,13 @@
             :src="profileImageSrc"
             alt="Profile Pic"
             class="w-full h-full rounded-full border-4 border-white dark:border-gray-800 shadow-md object-cover transition duration-300 profile-image"
+            @error="handleImageError('profile')"
           />
           <div class="profile-buttons absolute inset-0 flex items-center justify-center gap-4 transition-opacity duration-300">
             <label
               for="profile-upload"
               class="bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600"
+              aria-label="Upload profile picture"
             >
               <i class="fas fa-camera"></i>
             </label>
@@ -63,7 +68,8 @@
             <button
               v-if="hasRemovableProfilePic"
               @click="removeProfilePic"
-              class="bg-red-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600"
+              class="bg-red-500 text-white p-2 rounded-full cursor-pointer hover:bg-red-600"
+              aria-label="Remove profile picture"
             >
               <i class="fas fa-trash"></i>
             </button>
@@ -120,7 +126,7 @@ import { ref, defineProps, defineEmits, watch, computed } from 'vue';
 import apiClient from '@/axios';
 
 const props = defineProps(['user', 'isOpen']);
-const emit = defineEmits(['close', 'save']);
+const emit = defineEmits(['close', 'save', 'update-user']);
 
 const editedUser = ref({ ...props.user });
 const profilePhoto = ref(null);
@@ -129,6 +135,57 @@ const profilePreview = ref(null);
 const bannerPreview = ref(null);
 const errorMessage = ref('');
 const successMessage = ref('');
+const localEquippedBanner = ref(props.user.equipped_banner_photo_path);
+
+// Fallback URLs for banners
+const fallbackUrls = {
+  'Cosmic Vortex': 'https://media.tenor.com/5o2qbr5P5mUAAAAC/space-vortex.gif',
+  'Neon Cityscape': 'https://media.tenor.com/8vL1Z5j0Z7IAAAAC/neon-city.gif',
+  'Firestorm Horizon': 'https://media.tenor.com/2vL5z5z5z5IAAAAC/firestorm.gif',
+  'Mystic Nebula': 'https://media.tenor.com/1z5z5z5z5zIAAAAC/nebula-space.gif',
+  'Cyber Grid': 'https://media.tenor.com/3z5z5z5z5zIAAAAC/cyber-grid.gif',
+  'Ethereal Waves': 'https://media.tenor.com/4z5z5z5z5zIAAAAC/ethereal-waves.gif',
+  'Ocean Surge': 'https://media.tenor.com/5z5z5z5z5zIAAAAC/ocean-waves.gif',
+  'Pixel Storm': 'https://media.tenor.com/6z5z5z5z5zIAAAAC/pixel-storm.gif',
+  'Lava Flow': 'https://media.tenor.com/7z5z5z5z5zIAAAAC/lava-flow.gif',
+  'Frost Vortex': 'https://media.tenor.com/8z5z5z5z5zIAAAAC/frost-vortex.gif',
+  'Steampunk Gears': 'https://media.tenor.com/9z5z5z5z5zIAAAAC/steampunk-gears.gif',
+  'Lunar Eclipse': 'https://media.tenor.com/0z5z5z5z5zIAAAAC/lunar-eclipse.gif',
+  'Glitch Matrix': 'https://media.tenor.com/1z5z5z5z5zIAAAAC/glitch-matrix.gif',
+  'Aurora Dance': 'https://media.tenor.com/2z5z5z5z5zIAAAAC/aurora-borealis.gif',
+  'Galactic Spin': 'https://media.tenor.com/3z5z5z5z5zIAAAAC/galaxy-spin.gif',
+  'Rainbow Flux': 'https://media.tenor.com/4z5z5z5z5zIAAAAC/rainbow-flux.gif',
+  'Digital Pulse': 'https://api.iconify.design/mdi/pulse.svg?color=%2300FFFF',
+  'Misty Peaks': 'https://api.iconify.design/mdi/mountain.svg?color=%23666666',
+  'Cascading Falls': 'https://api.iconify.design/mdi/waterfall.svg?color=%2300FFFF',
+  'Stormy Waves': 'https://api.iconify.design/mdi/wave.svg?color=%230066CC',
+  'Desert Sunset': 'https://api.iconify.design/mdi/weather-sunset.svg?color=%23FF4500',
+  'Northern Lights': 'https://api.iconify.design/mdi/weather-night.svg?color=%2300FF00',
+  'Gentle Waterfall': 'https://api.iconify.design/mdi/water.svg?color=%2300FFFF',
+  'Autumn Drift': 'https://api.iconify.design/mdi/leaf.svg?color=%23FFA500',
+  'Tech Grid': 'https://api.iconify.design/mdi/grid.svg?color=%2300FFFF',
+  'Particle Flow': 'https://api.iconify.design/mdi/dots-horizontal.svg?color=%23FF00FF',
+  'Circuit Pulse': 'https://api.iconify.design/mdi/circuit-board.svg?color=%2300FF00',
+  'Matrix Rain': 'https://api.iconify.design/mdi/matrix.svg?color=%2300FF00',
+  'Cyber Skyline': 'https://api.iconify.design/mdi/city.svg?color=%23FF4500',
+  'Code Rainfall': 'https://api.iconify.design/mdi/code-braces.svg?color=%2300FF00',
+  'Holo Waves': 'https://api.iconify.design/mdi/waveform.svg?color=%2300FFFF',
+  'Neon Pulse': 'https://api.iconify.design/mdi/pulse.svg?color=%23FF00FF',
+  'Star Warp': 'https://api.iconify.design/mdi/star-four-points.svg?color=%2300FFFF',
+};
+
+const defaultBanner = 'https://api.iconify.design/lucide/image-off.svg';
+
+// Computed property for banner image source
+const bannerImageSrc = computed(() => {
+  console.log('bannerPreview:', bannerPreview.value);
+  console.log('editedUser.banner_photo_path:', editedUser.value.banner_photo_path);
+  console.log('localEquippedBanner:', localEquippedBanner.value);
+  if (bannerPreview.value) return bannerPreview.value;
+  if (editedUser.value.banner_photo_path) return getImageUrl(editedUser.value.banner_photo_path);
+  if (localEquippedBanner.value) return getImageUrl(localEquippedBanner.value);
+  return defaultBanner;
+});
 
 // Generar avatar con iniciales
 const generateAvatar = (name) => {
@@ -172,12 +229,75 @@ const hasRemovableProfilePic = computed(() => {
 
 watch(() => props.user, (newUser) => {
   editedUser.value = { ...newUser };
+  localEquippedBanner.value = newUser.equipped_banner_photo_path;
 }, { deep: true });
 
 const getImageUrl = (filePath) => {
+  if (!filePath) return defaultBanner;
+  if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+    return filePath;
+  }
   const baseUrl = 'http://localhost:8000';
-  if (filePath && filePath.startsWith('/')) return `${baseUrl}${filePath}`;
-  return filePath ? `${baseUrl}/storage/${filePath}` : '/default-profile.jpg';
+  if (filePath.startsWith('/')) return `${baseUrl}${filePath}`;
+  return `${baseUrl}/storage/${filePath}`;
+};
+
+const handleImageError = (type) => {
+  console.warn(`Image failed to load for ${type}`);
+  const bannerNames = {
+    'cosmic_vortex': 'Cosmic Vortex',
+    'neon_cityscape': 'Neon Cityscape',
+    'firestorm_horizon': 'Firestorm Horizon',
+    'mystic_nebula': 'Mystic Nebula',
+    'cyber_grid': 'Cyber Grid',
+    'ethereal_waves': 'Ethereal Waves',
+    'ocean_surge': 'Ocean Surge',
+    'pixel_storm': 'Pixel Storm',
+    'lava_flow': 'Lava Flow',
+    'frost_vortex': 'Frost Vortex',
+    'steampunk_gears': 'Steampunk Gears',
+    'lunar_eclipse': 'Lunar Eclipse',
+    'glitch_matrix': 'Glitch Matrix',
+    'aurora_dance': 'Aurora Dance',
+    'galactic_spin': 'Galactic Spin',
+    'rainbow_flux': 'Rainbow Flux',
+    'digital_pulse': 'Digital Pulse',
+    'misty_peaks': 'Misty Peaks',
+    'cascading_falls': 'Cascading Falls',
+    'stormy_waves': 'Stormy Waves',
+    'desert_sunset': 'Desert Sunset',
+    'northern_lights': 'Northern Lights',
+    'gentle_waterfall': 'Gentle Waterfall',
+    'autumn_drift': 'Autumn Drift',
+    'tech_grid': 'Tech Grid',
+    'particle_flow': 'Particle Flow',
+    'circuit_pulse': 'Circuit Pulse',
+    'matrix_rain': 'Matrix Rain',
+    'cyber_skyline': 'Cyber Skyline',
+    'code_rainfall': 'Code Rainfall',
+    'holo_waves': 'Holo Waves',
+    'neon_pulse': 'Neon Pulse',
+    'star_warp': 'Star Warp',
+  };
+
+  if (type === 'banner') {
+    let bannerPath = bannerPreview.value || editedUser.value.banner_photo_path || localEquippedBanner.value;
+    const themeValue = Object.keys(bannerNames).find(key =>
+      bannerPath?.toLowerCase().includes(key)
+    );
+    const itemName = themeValue ? bannerNames[themeValue] : '';
+    const fallbackUrl = itemName && fallbackUrls[itemName] ? fallbackUrls[itemName] : defaultBanner;
+
+    if (bannerPreview.value) bannerPreview.value = fallbackUrl;
+    else if (editedUser.value.banner_photo_path) editedUser.value.banner_photo_path = fallbackUrl;
+    else if (localEquippedBanner.value) {
+      localEquippedBanner.value = fallbackUrl;
+      emit('update-user', { equipped_banner_photo_path: fallbackUrl });
+    }
+  } else if (type === 'profile') {
+    if (profilePreview.value) profilePreview.value = defaultBanner;
+    else editedUser.value.profile_photo_path = defaultBanner;
+  }
 };
 
 const uploadBanner = (event) => {
@@ -185,6 +305,8 @@ const uploadBanner = (event) => {
   if (file) {
     bannerPhoto.value = file;
     bannerPreview.value = URL.createObjectURL(file);
+    localEquippedBanner.value = null;
+    emit('update-user', { equipped_banner_photo_path: null });
   }
 };
 
@@ -200,6 +322,8 @@ const removeBanner = () => {
   bannerPhoto.value = null;
   bannerPreview.value = null;
   editedUser.value.banner_photo_path = null;
+  localEquippedBanner.value = null;
+  emit('update-user', { equipped_banner_photo_path: null });
 };
 
 const removeProfilePic = () => {
@@ -216,22 +340,43 @@ const saveProfile = async () => {
   if (profilePhoto.value) {
     formData.append('profile_photo', profilePhoto.value);
   } else if (!editedUser.value.profile_photo_path && props.user.profile_photo_path) {
-    formData.append('remove_profile_photo', '1'); // Send a flag to remove
+    formData.append('remove_profile_photo', '1');
   }
 
   if (bannerPhoto.value) {
     formData.append('banner_photo', bannerPhoto.value);
   } else if (!editedUser.value.banner_photo_path && props.user.banner_photo_path) {
-    formData.append('remove_banner_photo', '1'); // Send a flag to remove
+    formData.append('remove_banner_photo', '1');
   }
 
   try {
+    // Update profile (name, description, photos)
     const response = await apiClient.post('/api/user/profile/update', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    emit('save', response.data.user);
+
+    // Clear equipped banner if a new banner was uploaded or the banner was removed
+    if (bannerPhoto.value || (!editedUser.value.banner_photo_path && (props.user.banner_photo_path || props.user.equipped_banner_photo_path))) {
+      console.log('Sending request to clear equipped banner for user ID:', props.user.id);
+      const equippedResponse = await apiClient.post('/api/user/update-equipped-banner', {
+        userId: props.user.id,
+        equipped_banner_photo_path: null,
+      });
+      console.log('Equipped banner response:', equippedResponse.data);
+      localEquippedBanner.value = null;
+    }
+
+    // Update the user object to emit
+    const updatedUser = {
+      ...response.data.user,
+      banner_photo_path: bannerPhoto.value ? response.data.user.banner_photo_path : null,
+      equipped_banner_photo_path: null, // Explicitly set to null
+    };
+
+    emit('save', updatedUser);
+    emit('update-user', { equipped_banner_photo_path: null });
     successMessage.value = 'Profile updated successfully!';
     errorMessage.value = '';
     setTimeout(closeModal, 1500);
@@ -250,6 +395,7 @@ const closeModal = () => {
   bannerPreview.value = null;
   errorMessage.value = '';
   successMessage.value = '';
+  localEquippedBanner.value = props.user.equipped_banner_photo_path;
 };
 </script>
 
@@ -257,6 +403,10 @@ const closeModal = () => {
 /* Estilos para el banner */
 .banner-container {
   position: relative;
+}
+
+.banner-image {
+  animation: banner-animation 10s infinite linear;
 }
 
 .banner-container:hover .banner-image {
@@ -286,5 +436,11 @@ const closeModal = () => {
 
 .profile-buttons {
   opacity: 0;
+}
+
+@keyframes banner-animation {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
 }
 </style>

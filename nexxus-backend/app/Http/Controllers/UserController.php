@@ -318,9 +318,19 @@ class UserController extends Controller
         ]);
 
         $user = User::find($request->userId);
-        $user->equipped_banner_photo_path = $request->equipped_banner_photo_path;
-        $user->save();
+        $newBannerPath = $request->equipped_banner_photo_path;
 
+        \Log::info('Updating equipped banner for user ' . $user->id . '. Old value: ' . ($user->equipped_banner_photo_path ?? 'null') . ', New value: ' . ($newBannerPath ?? 'null'));
+
+        $user->equipped_banner_photo_path = $newBannerPath;
+        $saved = $user->save();
+
+        if (!$saved) {
+            \Log::error('Failed to update equipped banner for user ' . $user->id);
+            return response()->json(['error' => 'Failed to update banner'], 500);
+        }
+
+        \Log::info('Equipped banner updated successfully for user ' . $user->id . '. New value: ' . ($user->equipped_banner_photo_path ?? 'null'));
         return response()->json(['message' => 'Banner updated successfully']);
     }
 
