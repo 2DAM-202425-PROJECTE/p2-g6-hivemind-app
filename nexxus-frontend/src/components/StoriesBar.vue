@@ -19,7 +19,12 @@
       <v-card>
         <v-card-title>{{ getUserNameById(selectedStory?.id_user) }}</v-card-title>
         <v-card-text>
-          <img :src="getStoryImagePath(selectedStory.file_path)" alt="Story Image" class="story-modal-image" />
+          <template v-if="isImage(selectedStory?.file_path)">
+            <img :src="getStoryImagePath(selectedStory.file_path)" alt="Story Image" class="story-modal-image" />
+          </template>
+          <template v-else>
+            <video :src="getStoryImagePath(selectedStory.file_path)" controls class="story-modal-video"></video>
+          </template>
           <p>{{ selectedStory?.description }}</p>
         </v-card-text>
         <v-card-actions>
@@ -35,10 +40,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import apiClient from "@/axios.js";
-
 import CreateStoryImage from './CreateStoryImage.vue';
-
-
 
 const users = ref([]);
 const showCreateStoryModal = ref(false);
@@ -49,6 +51,7 @@ const showFailurePopup = ref(false); // For failure message popup
 const selectedStory = ref(null);
 const story = ref([]);
 const storyIdToDelete = ref(null); // Store the ID of the story to delete
+const isImage = (filePath) => /\.(jpeg|jpg|png)$/i.test(filePath);
 
 const currentUser = ref({
   id: null,
@@ -217,10 +220,12 @@ const submitNewStory = async () => {
 }
 
 .headline.success {
-  color: #4caf50; /* Green for success */
+  color: #4caf50;
+  /* Green for success */
 }
 
 .headline.error {
-  color: #f44336; /* Red for error */
+  color: #f44336;
+  /* Red for error */
 }
 </style>

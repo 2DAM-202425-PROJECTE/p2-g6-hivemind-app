@@ -559,20 +559,21 @@ const saveEditPost = async () => {
       formData.append('file', editPostFile.value);
     }
 
-    const response = await apiClient.put(`/api/posts/${selectedPost.value.id}`, formData);
-
-    const updatedPost = response.data.post;
-    const postIndex = posts.value.findIndex(p => p.id === selectedPost.value.id);
-    if (postIndex !== -1) {
-      posts.value[postIndex] = {
-        ...posts.value[postIndex],
-        description: updatedPost.description,
-        file_path: updatedPost.file_path || posts.value[postIndex].file_path,
-        updated_at: updatedPost.updated_at,
-      };
+    for (let pair of formData.entries()) {
+      console.log(pair[0] + ': ' + pair[1]);
     }
 
+    await apiClient.post(`/api/posts/${selectedPost.value.id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    await fetchPosts(1, true);
+
     editPostPopup.value = false;
+    editPostDescription.value = '';
+    editPostFile.value = null;
   } catch (error) {
     console.error('Error updating post:', error);
     alert('Error: ' + (error.response?.data?.message || error.message));

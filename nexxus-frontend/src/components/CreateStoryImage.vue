@@ -31,7 +31,7 @@ const currentUser = ref({});
 const isLoadingUser = ref(true);
 
 
-computed(() => {
+onMounted(() => {
   fetchUser();
 });
 
@@ -76,7 +76,11 @@ const submitNewStory = async () => {
   formData.append('id_user', userId);
 
   try {
-    await apiClient.post('/api/stories', formData);
+    await apiClient.post('/api/stories', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
 
     showCreateStoryModal.value = false;
     newStoryFile.value = null;
