@@ -1,5 +1,5 @@
 <template>
-  <div class="home-container">
+  <div class="home-container" :style="equippedBackgroundStyle">
     <Navbar />
     <h1>Home</h1>
     <StoriesBar :stories="stories.data" />
@@ -168,7 +168,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
@@ -221,6 +221,7 @@ const currentUser = ref({
   id: null,
   name: 'Current User',
   profile_photo_path: null,
+  equipped_background_path: null,
 });
 
 const fetchPosts = async (page = 1, initialLoad = false) => {
@@ -262,8 +263,14 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
       return acc;
     }, {});
 
+    // Fetch current user data
     const userResult = await apiClient.get('/api/user');
     currentUser.value = userResult.data;
+
+    // Fetch equipped items to get equipped_background_path if not included in /api/user
+    const equippedItemsResult = await apiClient.get(`/api/user/${currentUser.value.id}/equipped-items`);
+    currentUser.value.equipped_background_path = equippedItemsResult.data.equipped_background_path;
+    console.log('Equipped background path:', currentUser.value.equipped_background_path);
 
     const storiesResult = await apiClient.get('/api/stories');
     stories.value = storiesResult.data;
@@ -273,6 +280,13 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
     loading.value = false;
   }
 };
+
+// Computed property for background style
+const equippedBackgroundStyle = computed(() => {
+  return currentUser.value.equipped_background_path
+    ? { backgroundImage: `url(${currentUser.value.equipped_background_path})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
+    : {};
+});
 
 const handleScroll = () => {
   if (scrollDebounce.value) {
@@ -609,9 +623,11 @@ const formatDate = (dateString) => {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
-  background-color: #f0f2f5;
+  background-color: #f0f2f5; /* Fallback background color */
   min-height: 100vh;
   color: black;
+  width: 100%;
+  position: relative;
 }
 
 h1 {
