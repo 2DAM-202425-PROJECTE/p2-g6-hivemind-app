@@ -15,11 +15,32 @@
       </div>
       <div v-if="inventoryCategories.length > 0" class="cosmetics-grid">
         <div v-for="category in inventoryCategories" :key="category.title" class="category-card">
-          <h3 class="category-title">{{ category.title }}</h3>
+          <div
+            class="category-header"
+            @click="toggleCategory(category.title)"
+          >
+            <h3 class="category-title">{{ category.title }}</h3>
+            <p class="category-count">
+              (You own {{ category.items.length }}/{{ getTotalItems(category.title) }})
+            </p>
+            <i
+              :class="['fas', category.isOpen ? 'fa-chevron-up' : 'fa-chevron-down', 'toggle-icon']"
+            ></i>
+          </div>
           <p class="category-description">{{ category.description }}</p>
-          <div class="items-grid">
-            <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'background-item': item.type === 'background', 'banner-item': item.type === 'custom_banner' }">
-              <img :src="getItemIconUrl(item)" :alt="item.name" class="cosmetic-icon" @error="handleImageError($event, item)" />
+          <div v-if="category.isOpen" class="items-grid">
+            <div
+              v-for="item in category.items"
+              :key="item.id"
+              class="cosmetic-item"
+              :class="{ 'background-item': item.type === 'background', 'banner-item': item.type === 'custom_banner' }"
+            >
+              <img
+                :src="getItemIconUrl(item)"
+                :alt="item.name"
+                class="cosmetic-icon"
+                @error="handleImageError($event, item)"
+              />
               <h4 class="item-name">{{ item.name }}</h4>
               <p class="item-price">{{ formatPrice(item.price) }}</p>
               <button
@@ -69,6 +90,9 @@ const showEquipPopup = ref(false);
 const equippedItemMessage = ref('');
 const inventory = ref([]);
 const inventoryCategories = ref([]);
+
+// Track open/closed state of categories
+const categoryStates = ref({});
 
 const fallbackImage = 'https://api.iconify.design/lucide/image-off.svg';
 const fallbackIcons = {
@@ -244,8 +268,32 @@ const categorizeInventory = (items) => {
     { title: 'Profile Badges', description: 'Show off your status', items: items.filter(item => item.type === 'badge') },
     { title: 'Profile Fonts', description: 'Customize your text style', items: items.filter(item => item.type === 'profile_font') },
     { title: 'Other Items', description: 'Miscellaneous items', items: items.filter(item => !['profile_icon', 'background', 'name_effect', 'custom_banner', 'badge', 'profile_font'].includes(item.type)) },
-  ].filter(category => category.items.length > 0);
+  ].filter(category => category.items.length > 0).map(category => ({
+    ...category,
+    isOpen: categoryStates.value[category.title] ?? false, // Default to collapsed
+  }));
   return categorized;
+};
+
+// Toggle category open/close state
+const toggleCategory = (title) => {
+  categoryStates.value[title] = !categoryStates.value[title];
+  inventoryCategories.value = categorizeInventory(inventory.value);
+};
+
+// Placeholder for total items per category
+const getTotalItems = (categoryTitle) => {
+  // Replace with actual logic to fetch total items (e.g., from API or static data)
+  const totalItemsMap = {
+    'Profile Icons': 16, // Based on determineItemType
+    'Backgrounds': 16,
+    'Name Effects': 16,
+    'Custom Banners': 16,
+    'Profile Badges': 16,
+    'Profile Fonts': 16,
+    'Other Items': 0,
+  };
+  return totalItemsMap[categoryTitle] || 0;
 };
 
 const loadInventory = async () => {
@@ -258,8 +306,8 @@ const loadInventory = async () => {
     const mappedInventory = response.data.map(item => {
       const itemData = item.item || item;
       return {
-        id: item.id, // user_inventory.id
-        item_id: item.item_id, // user_inventory.item_id
+        id: item.id,
+        item_id: item.item_id,
         name: itemData.name,
         price: itemData.price || 0,
         icon_url: itemData.icon_url || itemData.iconUrl,
@@ -323,11 +371,30 @@ onMounted(() => {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
 .category-title {
   font-size: 1.5rem;
   font-weight: bold;
   color: #000;
-  margin-bottom: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+.category-count {
+  font-size: 1.2rem;
+  color: #666;
+  margin-right: auto;
+}
+
+.toggle-icon {
+  color: #666;
+  transition: transform 0.3s;
 }
 
 .category-description {
@@ -416,6 +483,12 @@ onMounted(() => {
   .cosmetic-item.background-item .cosmetic-icon,
   .cosmetic-item.banner-item .cosmetic-icon {
     height: 100px;
+  }
+  .category-title {
+    font-size: 1.3rem;
+  }
+  .category-count {
+    font-size: 1rem;
   }
 }
 </style>
