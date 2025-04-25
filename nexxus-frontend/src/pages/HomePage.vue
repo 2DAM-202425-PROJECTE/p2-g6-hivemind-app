@@ -179,20 +179,7 @@ import VEmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 import apiClient from "@/axios.js";
 
-onMounted(() => {
-  fetchPosts(1, true);
-  window.addEventListener('scroll', handleScroll);
-  window.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
-  window.removeEventListener('click', handleClickOutside);
-  if (scrollDebounce.value) {
-    clearTimeout(scrollDebounce.value);
-  }
-});
-
+// Initialize refs
 const router = useRouter();
 const posts = ref([]);
 const loading = ref(false);
@@ -224,6 +211,39 @@ const currentUser = ref({
   equipped_background_path: null,
 });
 
+// Load cached background path from localStorage (if available)
+const cachedBackgroundPath = ref(localStorage.getItem('equipped_background_path') || null);
+
+// Fetch user data immediately on mount
+const fetchUserData = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token available');
+      return;
+    }
+
+    // Fetch current user data
+    const userResult = await apiClient.get('/api/user');
+    currentUser.value = userResult.data;
+
+    // Fetch equipped items to get equipped_background_path
+    const equippedItemsResult = await apiClient.get(`/api/user/${currentUser.value.id}/equipped-items`);
+    currentUser.value.equipped_background_path = equippedItemsResult.data.equipped_background_path;
+    console.log('Equipped background path:', currentUser.value.equipped_background_path);
+
+    // Cache the background path in localStorage
+    if (currentUser.value.equipped_background_path) {
+      localStorage.setItem('equipped_background_path', currentUser.value.equipped_background_path);
+    } else {
+      localStorage.removeItem('equipped_background_path');
+    }
+  } catch (error) {
+    console.error('Error fetching user data:', error.response?.data || error.message);
+  }
+};
+
+// Fetch posts and other data
 const fetchPosts = async (page = 1, initialLoad = false) => {
   if (loading.value || (noMorePosts.value && !initialLoad)) return;
 
@@ -263,15 +283,6 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
       return acc;
     }, {});
 
-    // Fetch current user data
-    const userResult = await apiClient.get('/api/user');
-    currentUser.value = userResult.data;
-
-    // Fetch equipped items to get equipped_background_path if not included in /api/user
-    const equippedItemsResult = await apiClient.get(`/api/user/${currentUser.value.id}/equipped-items`);
-    currentUser.value.equipped_background_path = equippedItemsResult.data.equipped_background_path;
-    console.log('Equipped background path:', currentUser.value.equipped_background_path);
-
     const storiesResult = await apiClient.get('/api/stories');
     stories.value = storiesResult.data;
   } catch (error) {
@@ -283,9 +294,29 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
 
 // Computed property for background style
 const equippedBackgroundStyle = computed(() => {
-  return currentUser.value.equipped_background_path
-    ? { backgroundImage: `url(${currentUser.value.equipped_background_path})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
+  // Use the currentUser's equipped_background_path if available, otherwise fall back to cached value
+  const bgPath = currentUser.value.equipped_background_path || cachedBackgroundPath.value;
+  return bgPath
+    ? { backgroundImage: `url(${bgPath})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
     : {};
+});
+
+// Mount and unmount lifecycle hooks
+onMounted(async () => {
+  // Fetch user data first to set the background immediately
+  await fetchUserData();
+  // Then fetch posts and other data
+  fetchPosts(1, true);
+  window.addEventListener('scroll', handleScroll);
+  window.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
+  window.removeEventListener('click', handleClickOutside);
+  if (scrollDebounce.value) {
+    clearTimeout(scrollDebounce.value);
+  }
 });
 
 const handleScroll = () => {
@@ -683,7 +714,7 @@ h1 {
   display: inline-block;
 }
 
-.preview-media {
+.previewぞmedia {
   max-width: 100%;
   max-height: 200px;
   border-radius: 10px;
@@ -997,7 +1028,7 @@ h1 {
 .end-message {
   text-align: center;
   padding: 20px;
-  color: #9c9999;
+  color: #999;
   font-style: italic;
 }
 </style>
