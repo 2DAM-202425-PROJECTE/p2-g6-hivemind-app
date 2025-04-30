@@ -9,11 +9,11 @@
           <span class="animate-letter gradient-text" style="--order: 2">h</span>
           <span class="animate-letter gradient-text" style="--order: 3">o</span>
           <span class="animate-letter gradient-text" style="--order: 4">p</span>
-          <span class="animate-letter gradient-text" style="--order: 5"> </span>
+          <span class="animate-letter gradient-text" style="--order: 5"> </span>
           <span class="animate-letter gradient-text" style="--order: 6">t</span>
           <span class="animate-letter gradient-text" style="--order: 7">h</span>
           <span class="animate-letter gradient-text" style="--order: 8">e</span>
-          <span class="animate-letter gradient-text" style="--order: 9"> </span>
+          <span class="animate-letter gradient-text" style="--order: 9"> </span>
           <span class="animate-letter gradient-text" style="--order: 10">H</span>
           <span class="animate-letter gradient-text" style="--order: 11">i</span>
           <span class="animate-letter gradient-text" style="--order: 12">v</span>
@@ -40,7 +40,8 @@
                 <img
                   :src="item.iconUrl || fallbackImage"
                   :alt="item.name"
-                  class="w-full h-full object-contain"
+                  class="w-full h-full"
+                  :class="{ 'object-cover': item.type === 'custom_banner' || item.type === 'background', 'object-contain': item.type !== 'custom_banner' && item.type !== 'background' }"
                   @error="handleImageError($event, item)"
                 />
               </div>
@@ -306,7 +307,7 @@ export default {
           items: cosmetics.filter(item => item.type === 'name_effect'),
         },
         {
-          title: 'Custom Banners',
+          title: "Custom Banners",
           description: 'Enhance your profile header with vibrant animated banners',
           items: cosmetics.filter(item => item.type === 'custom_banner'),
         },
@@ -402,11 +403,18 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .trending-items .item-preview img {
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
   padding: 8px;
+}
+
+.trending-items .item-preview.banner-preview img,
+.trending-items .item-preview.background-preview img {
+  padding: 0; /* Remove padding to ensure full coverage */
 }
 
 /* Item preview styles for Cosmetics section */

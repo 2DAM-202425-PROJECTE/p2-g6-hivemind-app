@@ -4,8 +4,15 @@
     <div class="max-w-7xl mx-auto px-6 py-12 animate-fade-in">
       <!-- Checkout Header -->
       <div class="bg-white rounded-xl shadow-lg p-8 mb-12 text-center">
-        <h1 class="text-4xl font-extrabold mb-4 gradient-text">
-          Checkout
+        <h1 class="text-5xl font-extrabold mb-4">
+          <span class="animate-letter gradient-text" style="--order: 1">C</span>
+          <span class="animate-letter gradient-text" style="--order: 2">h</span>
+          <span class="animate-letter gradient-text" style="--order: 3">e</span>
+          <span class="animate-letter gradient-text" style="--order: 4">c</span>
+          <span class="animate-letter gradient-text" style="--order: 5">k</span>
+          <span class="animate-letter gradient-text" style="--order: 6">o</span>
+          <span class="animate-letter gradient-text" style="--order: 7">u</span>
+          <span class="animate-letter gradient-text" style="--order: 8">t</span>
         </h1>
         <p class="text-lg text-amber-800">
           All purchases are final. No refunds will be issued once payment is processed. Please review your order carefully before completing the transaction. For support, contact us at <a href="mailto:hivemindnexxuscontact@gmail.com" class="text-amber-600 hover:text-amber-700">hivemindnexxuscontact@gmail.com</a> or at the contact page in the footer.
@@ -16,7 +23,7 @@
       <div class="bg-white rounded-xl shadow-lg p-8">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <!-- Item Details -->
-          <div v-if="item" class="bg-amber-50 rounded-lg p-6">
+          <div v-if="item" class="bg-amber-50 rounded-lg p-6 animate-fade-in">
             <div class="text-center">
               <div
                 class="item-preview rounded-md overflow-hidden mb-4 mx-auto"
@@ -62,12 +69,12 @@
               <p v-if="item.amount" class="text-amber-800">{{ item.amount }} Credits</p>
             </div>
           </div>
-          <div v-else class="bg-amber-50 rounded-lg p-6 text-center">
+          <div v-else class="bg-amber-50 rounded-lg p-6 text-center animate-fade-in">
             <p class="text-amber-800">No item selected or item could not be loaded.</p>
           </div>
 
           <!-- Payment Section -->
-          <div v-if="item" class="bg-amber-50 rounded-lg p-6">
+          <div v-if="item" class="bg-amber-50 rounded-lg p-6 animate-fade-in">
             <h3 class="text-xl font-bold text-amber-900 mb-4 text-center">Choose Payment Method</h3>
             <div class="space-y-6">
               <!-- Payment Buttons -->
@@ -75,28 +82,28 @@
                 <button
                   @click="selectPaymentMethod('card')"
                   :class="{ 'btn-primary': selectedPaymentMethod !== 'card', 'btn-primary active': selectedPaymentMethod === 'card' }"
-                  class="w-full"
+                  class="w-full transition-transform hover:scale-105"
                 >
                   Credit/Debit Card
                 </button>
                 <button
                   @click="selectPaymentMethod('paypal')"
                   :class="{ 'btn-primary': selectedPaymentMethod !== 'paypal', 'btn-primary active': selectedPaymentMethod === 'paypal' }"
-                  class="w-full"
+                  class="w-full transition-transform hover:scale-105"
                 >
                   PayPal
                 </button>
                 <button
                   @click="selectPaymentMethod('bizum')"
                   :class="{ 'btn-primary': selectedPaymentMethod !== 'bizum', 'btn-primary active': selectedPaymentMethod === 'bizum' }"
-                  class="w-full"
+                  class="w-full transition-transform hover:scale-105"
                 >
                   Bizum
                 </button>
                 <button
                   @click="selectPaymentMethod('googlepay')"
                   :class="{ 'btn-primary': selectedPaymentMethod !== 'googlepay', 'btn-primary active': selectedPaymentMethod === 'googlepay' }"
-                  class="w-full"
+                  class="w-full transition-transform hover:scale-105"
                 >
                   Google Pay
                 </button>
@@ -104,7 +111,7 @@
                   v-if="item.type !== 'credit_pack'"
                   @click="selectPaymentMethod('credits')"
                   :class="{ 'btn-primary': selectedPaymentMethod !== 'credits', 'btn-primary active': selectedPaymentMethod === 'credits' }"
-                  class="w-full col-span-2"
+                  class="w-full col-span-2 transition-transform hover:scale-105"
                 >
                   Pay with Credits
                 </button>
@@ -112,14 +119,14 @@
 
               <!-- Payment Forms -->
               <transition name="fade">
-                <div v-if="selectedPaymentMethod" class="mt-4">
+                <div v-if="selectedPaymentMethod" class="mt-4 animate-fade-in">
                   <div v-if="selectedPaymentMethod === 'card'" class="payment-method">
                     <h4 class="text-lg font-medium text-amber-900 mb-3">Credit/Debit Card</h4>
                     <form @submit.prevent="handlePurchase('card')" class="space-y-3">
                       <v-text-field v-model="cardNumber" label="Card Number (16 digits)" required outlined :rules="[v => /^\d{16}$/.test(v) || 'Must be 16 digits']" class="rounded-md"></v-text-field>
                       <v-text-field v-model="expiryDate" label="Expiry Date (MM/YY)" required outlined :rules="[v => /^\d{2}\/\d{2}$/.test(v) || 'Format: MM/YY']" class="rounded-md"></v-text-field>
                       <v-text-field v-model="cvv" label="CVV (3 digits)" required outlined :rules="[v => /^\d{3}$/.test(v) || 'Must be 3 digits']" class="rounded-md"></v-text-field>
-                      <button type="submit" class="btn-primary w-full">Pay with Card</button>
+                      <button type="submit" class="btn-primary w-full transition-transform hover:scale-105">Pay with Card</button>
                     </form>
                   </div>
 
@@ -128,7 +135,7 @@
                     <form @submit.prevent="handlePurchase('paypal')" class="space-y-3">
                       <v-text-field v-model="paypalEmail" label="PayPal Email" type="email" required outlined :rules="[v => /.+@.+\..+/.test(v) || 'Email must contain @']" class="rounded-md"></v-text-field>
                       <v-text-field v-model="paypalPassword" label="PayPal Password" type="password" required outlined class="rounded-md"></v-text-field>
-                      <button type="submit" class="btn-primary w-full">Pay with PayPal</button>
+                      <button type="submit" class="btn-primary w-full transition-transform hover:scale-105">Pay with PayPal</button>
                     </form>
                   </div>
 
@@ -157,7 +164,7 @@
                         ></v-text-field>
                       </div>
                       <v-text-field v-model="bizumPin" label="Bizum PIN" type="password" required outlined class="rounded-md"></v-text-field>
-                      <button type="submit" class="btn-primary w-full">Pay with Bizum</button>
+                      <button type="submit" class="btn-primary w-full transition-transform hover:scale-105">Pay with Bizum</button>
                     </form>
                   </div>
 
@@ -186,7 +193,7 @@
                           class="rounded-md"
                         ></v-text-field>
                       </div>
-                      <button type="submit" class="btn-primary w-full">Pay with Google Pay</button>
+                      <button type="submit" class="btn-primary w-full transition-transform hover:scale-105">Pay with Google Pay</button>
                     </form>
                   </div>
 
@@ -199,7 +206,7 @@
                     <form @submit.prevent="handlePurchase('credits')">
                       <button
                         type="submit"
-                        class="btn-primary w-full"
+                        class="btn-primary w-full transition-transform hover:scale-105"
                         :disabled="userCredits < (item.price || 0) || item.type === 'credit_pack'"
                       >
                         Pay with Credits
@@ -217,7 +224,7 @@
 
     <!-- Success Dialog -->
     <v-dialog v-model="showSuccessDialog" max-width="500">
-      <v-card class="bg-white rounded-xl p-6">
+      <v-card class="bg-white rounded-xl p-6 animate-fade-in">
         <v-card-title class="text-2xl font-bold text-amber-900 flex items-center">
           <svg class="h-8 w-8 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -236,14 +243,14 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <button class="btn-primary" @click="closeSuccessDialog">Continue Shopping</button>
+          <button class="btn-primary transition-transform hover:scale-105" @click="closeSuccessDialog">Continue Shopping</button>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <!-- Error Dialog -->
     <v-dialog v-model="showErrorDialog" max-width="500">
-      <v-card class="bg-white rounded-xl p-6">
+      <v-card class="bg-white rounded-xl p-6 animate-fade-in">
         <v-card-title class="text-2xl font-bold text-amber-900 flex items-center">
           <svg class="h-8 w-8 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -259,12 +266,12 @@
             This item is already in your inventory. No need to purchase it again!
           </p>
           <p v-else class="mb-3">
-            Please try again or contact support at <a href="mailto:hivemindnexxuscontact@gmail.com" class="text-amber-600 hover:text-amber-700">hivemindnexxuscontact@gmail.com</a>.
+            Please try again or contact support at <a href="mailto:hivemindnexxuscontact@gmail.com" class="text-amber-600 hover:text-amber-700">hivemindnexxuscontact@gmail.com</a> or via the contact page in the footer.
           </p>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <button class="btn-primary" @click="closeErrorDialog">
+          <button class="btn-primary transition-transform hover:scale-105" @click="closeErrorDialog">
             {{ errorMessage === 'Insufficient credits to complete this purchase.' ? 'Go to Shop' : 'OK' }}
           </button>
         </v-card-actions>
@@ -394,6 +401,7 @@ export default {
         if (!token) throw new Error('No access token found. Please log in.');
         const response = await apiClient.get(`/api/shop/items/${id}`);
         this.item = response.data;
+        await this.fetchCategorizedItems();
       } catch (error) {
         console.error(`Failed to fetch item with ID ${id}:`, error);
         this.errorMessage = `Failed to fetch item: ${error.message}`;
@@ -543,7 +551,8 @@ export default {
         return /.+@.+\..+/.test(this.paypalEmail) && this.paypalPassword.length > 0;
       }
       if (this.selectedPaymentMethod === 'bizum') {
-        const digits = this.bizumDigitLength;
+        const digits = this.bizu
+        mDigitLength;
         return /^\d+$/.test(this.bizumPhone) && this.bizumPhone.length === digits && this.bizumPin.length > 0;
       }
       if (this.selectedPaymentMethod === 'googlepay') {
@@ -610,8 +619,20 @@ export default {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes letter {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 .animate-fade-in {
   animation: fade-in 1s ease-out;
+}
+
+.animate-letter {
+  display: inline-block;
+  opacity: 0;
+  animation: letter 0.5s ease-out forwards;
+  animation-delay: calc(var(--order) * 0.1s);
 }
 
 .gradient-text {
