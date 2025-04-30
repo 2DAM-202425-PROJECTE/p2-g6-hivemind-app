@@ -1,7 +1,6 @@
 <template>
   <div class="home-container" :style="equippedBackgroundStyle">
     <Navbar />
-    <h1>Home</h1>
     <StoriesBar :stories="stories.data" />
 
     <!-- Post Input Section -->
