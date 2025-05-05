@@ -1,32 +1,27 @@
 <template>
   <div v-if="visible" class="modal-overlay" @click.self="close">
-    <div class="modal-content">
-      <div class="modal-header">
-        <span>Notifications</span>
-        <button @click="close">X</button>
+      <div class="modal-content">
+          <div class="modal-header">
+              <span>Notifications</span>
+              <button @click="close">X</button>
+          </div>
+          <div class="modal-body">
+              <div v-for="notification in notifications" :key="notification.id" class="notification">
+                  <p>{{ notification.message }}</p>
+                  <button @click="removeNotification(notification.id)">X</button>
+              </div>
+              <button class="clear-all" @click="clearAll">Clear All</button>
+          </div>
       </div>
-      <div class="modal-body">
-        <div v-for="notification in notifications" :key="notification.id" class="notification">
-          <p>{{ notification.message }}</p>
-          <button @click="removeNotification(notification.id)">X</button>
-        </div>
-        <button class="clear-all" @click="clearAll">Clear All</button>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
+import apiClient from '@/axios'; // Adjust the path based on your project structure
+
 const props = defineProps({
   visible: Boolean,
-  notifications: {
-    type: Array,
-    default: () => [
-      { id: 1, message: 'Notification 1' },
-      { id: 2, message: 'Notification 2' },
-      { id: 3, message: 'Notification 3' }
-    ]
-  }
+  notifications: Array,
 });
 
 const emit = defineEmits(['close', 'update:notifications']);
@@ -35,13 +30,23 @@ const close = () => {
   emit('close');
 };
 
-const removeNotification = (id) => {
-  const updatedNotifications = props.notifications.filter(notification => notification.id !== id);
-  emit('update:notifications', updatedNotifications);
+const removeNotification = async (id) => {
+    try {
+        await apiClient.patch(`/api/notifications/${id}/read`);
+        const updatedNotifications = props.notifications.filter(notification => notification.id !== id);
+        emit('update:notifications', updatedNotifications);
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+    }
 };
 
-const clearAll = () => {
-  emit('update:notifications', []);
+const clearAll = async () => {
+    try {
+        await apiClient.patch('/api/notifications/read-all');
+        emit('update:notifications', []); // Clear all notifications from the frontend
+    } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+    }
 };
 </script>
 

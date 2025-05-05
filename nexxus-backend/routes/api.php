@@ -11,6 +11,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\StoryController;
 use App\Models\Story;
 use Illuminate\Support\Facades\Log;
@@ -48,6 +49,15 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function ()
     // Return all users
     Route::get('/users', [UserController::class, 'index']);
 
+    // Return all notifications
+    Route::get('/notifications', [NotificationController::class, 'index']);
+
+    // Delete a notification
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+
+    // Delete all notifications
+    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    
     // Search users by username
     Route::get('/search/users', [UserController::class, 'searchUsers']);
 

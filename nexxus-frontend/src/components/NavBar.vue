@@ -4,7 +4,7 @@
     <!-- Left Section -->
     <div class="flex items-center space-x-2">
       <v-btn icon :to="'/home'" class="text-white">
-        <img src="/logo.png" alt="Logo" class="h-10 w-10 md:h-12 md:w-12"/>
+        <img src="/logo.png" alt="Logo" class="h-10 w-10 md:h-12 md:w-12" />
       </v-btn>
       <v-btn text :to="'/home'" class="text-white text-lg hidden sm:flex items-center">
         Hivemind
@@ -13,18 +13,9 @@
 
     <!-- Search Field Container -->
     <div class="flex-1 mx-4 relative" ref="searchContainer">
-      <v-text-field
-        v-model="searchQuery"
-        placeholder="Search users..."
-        hide-details
-        solo
-        flat
-        prepend-inner-icon="mdi-magnify"
-        class="bg-gray-800 text-white rounded-lg"
-        @focus="handleFocus"
-        @input="debouncedSearchUsers"
-        @blur="handleBlur"
-      ></v-text-field>
+      <v-text-field v-model="searchQuery" placeholder="Search users..." hide-details solo flat
+        prepend-inner-icon="mdi-magnify" class="bg-gray-800 text-white rounded-lg" @focus="handleFocus"
+        @input="debouncedSearchUsers" @blur="handleBlur"></v-text-field>
     </div>
 
     <!-- Right Section -->
@@ -32,12 +23,8 @@
       <template v-if="user">
         <v-btn icon :to="`/profile/${user.username}`" class="text-white">
           <v-avatar size="48">
-            <img
-              :src="getProfilePhotoUrl"
-              alt="Profile Picture"
-              class="object-cover w-full h-full"
-              @error="e => e.target.src = generateAvatar(user.value?.name || 'User')"
-            />
+            <img :src="getProfilePhotoUrl" alt="Profile Picture" class="object-cover w-full h-full"
+              @error="e => e.target.src = generateAvatar(user.value?.name || 'User')" />
           </v-avatar>
         </v-btn>
         <span class="text-white hidden md:block">{{ user.name }}</span>
@@ -48,9 +35,11 @@
           <v-icon>mdi-plus</v-icon>
         </v-btn>
         <v-btn icon @click="showNotifications = true" class="text-white relative">
-          <v-icon class="relative" :class="{ 'after:content-[\'\'] after:absolute after:top-0 after:right-0 after:w-2 after:h-2 after:bg-red-500 after:rounded-full': hasNotifications }">
-            mdi-bell
-          </v-icon>
+          <v-icon>mdi-bell</v-icon>
+          <span v-if="notifications.length"
+            class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1">
+            {{ notifications.length }}
+          </span>
         </v-btn>
       </template>
       <v-app-bar-nav-icon @click="menu = !menu" class="text-white"></v-app-bar-nav-icon>
@@ -58,33 +47,19 @@
   </v-app-bar>
 
   <!-- Search Results Overlay -->
-  <div
-    v-if="showSearchResults && searchQuery"
-    class="fixed inset-0 z-[10000] pointer-events-none"
-  >
-    <div
-      class="absolute bg-gray-800 text-white rounded-b-lg shadow-lg max-h-60 overflow-y-auto pointer-events-auto"
-      :style="searchResultsStyle"
-      @mousedown.prevent
-    >
+  <div v-if="showSearchResults && searchQuery" class="fixed inset-0 z-[10000] pointer-events-none">
+    <div class="absolute bg-gray-800 text-white rounded-b-lg shadow-lg max-h-60 overflow-y-auto pointer-events-auto"
+      :style="searchResultsStyle" @mousedown.prevent>
       <ul v-if="isSearching" class="py-1">
         <li class="px-4 py-2 text-gray-400 text-sm">Searching...</li>
       </ul>
       <ul v-else-if="searchResults.length > 0" class="py-1">
-        <v-list-item
-          v-for="(result, index) in searchResults"
-          :key="result.id"
-          @click="goToUserProfile(result.username)"
+        <v-list-item v-for="(result, index) in searchResults" :key="result.id" @click="goToUserProfile(result.username)"
           class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center"
-          :class="{ 'border-b border-gray-700': index < searchResults.length - 1 }"
-        >
+          :class="{ 'border-b border-gray-700': index < searchResults.length - 1 }">
           <v-avatar size="32" class="mr-3 flex-shrink-0">
-            <img
-              :src="getSearchResultPhotoUrl(result)"
-              alt="User Avatar"
-              class="object-cover w-full h-full"
-              @error="e => e.target.src = generateAvatar(result.name || 'User')"
-            />
+            <img :src="getSearchResultPhotoUrl(result)" alt="User Avatar" class="object-cover w-full h-full"
+              @error="e => e.target.src = generateAvatar(result.name || 'User')" />
           </v-avatar>
           <div class="flex flex-col justify-center flex-grow">
             <span class="text-white font-medium text-base leading-tight">{{ result.name }}</span>
@@ -102,17 +77,12 @@
   <v-navigation-drawer v-model="menu" temporary location="right" class="bg-black flex flex-col h-full">
     <div class="flex flex-col h-full">
       <div class="py-4 flex justify-center">
-        <img src="/logo.png" alt="Logo" class="h-12 w-12"/>
+        <img src="/logo.png" alt="Logo" class="h-12 w-12" />
       </div>
       <v-divider class="bg-gray-700"></v-divider>
       <v-list class="flex-1 py-4">
-        <v-list-item
-          v-for="item in menuItems"
-          :key="item.text"
-          :to="item.to"
-          class="text-white py-4 px-6 flex items-center"
-          @click="item.action && item.action()"
-        >
+        <v-list-item v-for="item in menuItems" :key="item.text" :to="item.to"
+          class="text-white py-4 px-6 flex items-center" @click="item.action && item.action()">
           <v-icon class="mr-4 text-xl flex-shrink-0">{{ item.icon }}</v-icon>
           <v-list-item-title class="text-lg font-medium flex-grow">{{ item.text }}</v-list-item-title>
         </v-list-item>
@@ -144,12 +114,8 @@
     <v-card>
       <v-card-title>Create a Post</v-card-title>
       <v-card-text>
-        <v-file-input
-          label="Upload Image/Video (.png, .mp4)"
-          accept=".png, .mp4"
-          v-model="postFile"
-          outlined
-        ></v-file-input>
+        <v-file-input label="Upload Image/Video (.png, .mp4)" accept=".png, .mp4" v-model="postFile"
+          outlined></v-file-input>
         <v-text-field v-model="postDescription" label="Description" outlined></v-text-field>
       </v-card-text>
       <v-card-actions>
@@ -164,12 +130,8 @@
     <v-card>
       <v-card-title>Create a Story</v-card-title>
       <v-card-text>
-        <v-file-input
-          v-model="storyFile"
-          label="Upload Image/Video (.png, .mp4)"
-          accept=".png, .mp4"
-          outlined
-        ></v-file-input>
+        <v-file-input v-model="storyFile" label="Upload Image/Video (.png, .mp4)" accept=".png, .mp4"
+          outlined></v-file-input>
         <v-text-field v-model="storyDescription" label="Description" outlined></v-text-field>
       </v-card-text>
       <v-card-actions>
@@ -193,60 +155,28 @@
   </v-dialog>
 
   <!-- Snackbars -->
-  <v-snackbar
-    v-model="showPostSuccessSnackbar"
-    :timeout="3000"
-    color="black"
-    class="white--text"
-    bottom
-    right
-  >
+  <v-snackbar v-model="showPostSuccessSnackbar" :timeout="3000" color="black" class="white--text" bottom right>
     <v-icon color="green" class="mr-2">mdi-check-circle</v-icon>
     Post Created Successfully!
   </v-snackbar>
 
-  <v-snackbar
-    v-model="showPostFailedSnackbar"
-    :timeout="3000"
-    color="black"
-    class="white--text"
-    bottom
-    right
-  >
+  <v-snackbar v-model="showPostFailedSnackbar" :timeout="3000" color="black" class="white--text" bottom right>
     <v-icon color="red" class="mr-2">mdi-alert-circle</v-icon>
     Post Creation Failed - Retrying in a moment...
   </v-snackbar>
 
-  <v-snackbar
-    v-model="showStorySuccessSnackbar"
-    :timeout="3000"
-    color="black"
-    class="white--text"
-    bottom
-    right
-  >
+  <v-snackbar v-model="showStorySuccessSnackbar" :timeout="3000" color="black" class="white--text" bottom right>
     <v-icon color="green" class="mr-2">mdi-check-circle</v-icon>
     Story Created Successfully!
   </v-snackbar>
 
-  <v-snackbar
-    v-model="showStoryFailedSnackbar"
-    :timeout="3000"
-    color="black"
-    class="white--text"
-    bottom
-    right
-  >
+  <v-snackbar v-model="showStoryFailedSnackbar" :timeout="3000" color="black" class="white--text" bottom right>
     <v-icon color="red" class="mr-2">mdi-alert-circle</v-icon>
     Story Creation Failed - Retrying in a moment...
   </v-snackbar>
 
-  <NotificationsModal
-    :visible="showNotifications"
-    :notifications="notifications"
-    @update:notifications="updateNotifications"
-    @close="showNotifications = false"
-  />
+  <NotificationsModal :visible="showNotifications" :notifications="notifications" @close="showNotifications = false"
+    @update:notifications="notifications = $event" />
 </template>
 
 <script setup>
@@ -279,10 +209,7 @@ const searchContainer = ref(null);
 const searchResultsStyle = ref({});
 const isSearching = ref(false);
 
-const notifications = ref([
-  { id: 1, message: 'New notification' },
-  { id: 2, message: 'Another notification' },
-]);
+const notifications = ref([]);
 
 const menuItems = ref([
   { text: 'Messages', to: '/chat', icon: 'mdi-message-text' },
@@ -434,6 +361,15 @@ const handleLogoutConfirm = (confirm) => {
   showLogoutConfirm.value = false;
 };
 
+const fetchNotifications = async () => {
+  try {
+    const response = await apiClient.get('/api/notifications');
+    notifications.value = response.data;
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+  }
+};
+
 const updateNotifications = (updatedNotifications) => {
   notifications.value = updatedNotifications;
 };
@@ -502,6 +438,7 @@ watch(searchQuery, (newValue) => {
 
 onMounted(() => {
   fetchUser();
+  fetchNotifications();
 });
 
 onUnmounted(() => {
