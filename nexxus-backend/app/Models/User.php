@@ -23,7 +23,7 @@ class User extends Authenticatable
     use TwoFactorAuthenticatable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'username', 'profile_photo_path', 'banner_photo_path', 'description',
+        'name', 'email', 'password', 'username', 'profile_photo_path', 'banner_photo_path', 'description', 'email_verified_at',
         'credits', 'equipped_profile_icon_path', 'equipped_custom_banner', 'equipped_background_path',
         'equipped_name_effect_path', 'equipped_badge_path', 'equipped_profile_font_path','equipped_profile_icon_color',
     ];
