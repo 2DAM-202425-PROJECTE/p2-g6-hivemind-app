@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notification;
 use App\Models\Post;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -52,6 +54,17 @@ class PostController extends Controller
         $post = Post::create(array_merge($validatedData, [
             'file_path' => $validatedData['file_path'] ?? null // Agregarlo si no existe
         ]));
+
+        $users = User::all();
+        foreach ($users as $user) {
+            if ($user->id !== auth()->id()) {
+                Notification::create([
+                    'user_id' => $user->id,
+                    'post_id' => $post->id,
+                    'message' => auth()->user()->name . ' ha publicado un nuevo post',
+                ]);
+            }
+        }
 
         return response()->json([
             'message' => 'Post created successfully',
