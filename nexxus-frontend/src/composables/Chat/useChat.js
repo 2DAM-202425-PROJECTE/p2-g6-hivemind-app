@@ -161,12 +161,22 @@ export function useChat() {
 
   const selectChat = async (chat) => {
     try {
+      if (!userId.value) {
+        console.log('selectChat - userId no definido, llamando a fetchUserId');
+        await fetchUserId();
+      }
+
+      console.log('selectChat - userId:', userId.value);
+
       await fetchCsrfToken();
       const findChat = await apiClient.get('/api/chats/private', {
         params: { recipient_id: chat.id },
         withCredentials: true,
       });
 
+      console.log('Selected chat data:', findChat.data);
+
+      // Asignar todos los datos del chat
       selectedChat.value = findChat.data;
 
       const chatName = selectedChat.value.chat?.name;

@@ -1,10 +1,12 @@
 <template>
   <div class="flex-1 bg-white rounded-lg shadow-md p-5 flex flex-col overflow-hidden">
     <div class="flex items-center gap-3 border-b pb-3 border-gray-300 flex-shrink-0">
-      <img :src="chat.avatar" alt="Avatar" class="w-12 h-12 rounded-full">
-      <h3 class="text-lg font-semibold text-black">{{ chat.name }}</h3>
+      <img :src="chat.profile_photo_url || 'https://placehold.co/48x48'" alt="Avatar" class="w-12 h-12 rounded-full">
+      <div>
+        <h3 class="text-lg font-semibold text-black">{{ chat.name || 'Unknown User' }}</h3>
+        <p class="text-sm text-gray-500">{{ chat.username ? '@' + chat.username : 'No username' }}</p>
+      </div>
     </div>
-
     <div ref="chatMessages" class="flex-1 overflow-y-auto my-3 space-y-2 break-words" @scroll="handleScroll">
       <ChatMessage v-for="(message, index) in chat.messages"
                    :key="index"
@@ -14,9 +16,7 @@
                    @delete="(msg) => displayDeleteModal(msg)"
                    @report="(msg) => $emit('report-message', msg)" />
     </div>
-
     <ChatInput @send="sendMessage" />
-
     <DeleteMessageModal v-if="showDeleteModal" :message="messageToDelete" @confirm="confirmDeleteMessage" @cancel="cancelDeleteMessage" />
   </div>
 </template>
