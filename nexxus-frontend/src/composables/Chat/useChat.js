@@ -1,8 +1,12 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
 import apiClient from '@/axios.js';
-import '@/echo.js';
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
+import axios from 'axios';
 
 export function useChat() {
+  const router = useRouter();
   const chats = ref([]);
   const chatMessages = ref(null);
   const selectedChat = ref(null);
@@ -16,24 +20,36 @@ export function useChat() {
   const messageToDelete = ref(null);
   const showEditModal = ref(false);
   const showDeleteModal = ref(false);
+  let echo = null;
+
+  const fetchCsrfToken = async () => {
+    try {
+      await axios.get('http://localhost:8000/sanctum/csrf-cookie', {
+        withCredentials: true,
+      });
+    } catch (error) {
+      console.error('Error fetching CSRF token:', error);
+    }
+  };
 
   const fetchUserId = async () => {
     try {
-      const response = await apiClient.get("/api/user", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      await fetchCsrfToken();
+      const response = await apiClient.get('/api/user', {
+        withCredentials: true,
       });
       userId.value = response.data.id;
     } catch (error) {
-      console.error("Error al obtener el ID del usuario:", error.response?.data || error.message);
+      console.error('Error al obtener el ID del usuario:', error.response?.data || error.message);
+      router.push('/login');
     }
   };
 
   const fetchChats = async () => {
     try {
+      await fetchCsrfToken();
       const response = await apiClient.get('/api/users', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
+        withCredentials: true,
       });
       chats.value = response.data.data.map(user => ({
         id: user.id,
@@ -42,8 +58,66 @@ export function useChat() {
         profile_photo_url: user.profile_photo_url,
       }));
     } catch (error) {
-      console.error("Error al obtener la lista de usuarios:", error.response?.data || error.message);
+      console.error('Error al obtener la lista de usuarios:', error.response?.data || error.message);
     }
+  };
+
+  const initializeWebSocket = async (chatName) => {
+    if (!userId.value) {
+      router.push('/login');
+      return;
+    }
+
+    await fetchCsrfToken();
+    console.log('Subscribing to channel:', `private-${chatName}`);
+
+    window.Pusher = Pusher;
+    echo = new Echo({
+      authEndpoint: 'http://localhost:8000/broadcasting/auth',
+      broadcaster: 'reverb',
+      key: 'rhymuvs4zyt8qnajgilh',
+      wsHost: 'localhost',
+      wsPort: 8080,
+      forceTLS: false,
+      enabledTransports: ['ws'],
+      withCredentials: true,
+      auth: {
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || localStorage.getItem('XSRF-TOKEN') || '',
+        },
+      },
+    });
+
+    echo.channel(`${chatName}`)
+      .listen('MessageSentEvent', (message) => {
+        if (message.user_id !== userId.value) {
+          selectedChat.value.messages.push({
+            id: message.id,
+            text: message.content,
+            isMine: message.user_id === userId.value,
+            user: {
+              id: message.user_id,
+              name: message.user?.name || 'Unknown',
+              profile_photo_url: message.user?.profile_photo_url || '',
+            },
+            timestamp: new Date(message.created_at).toLocaleString(),
+            is_edited: false,
+          });
+        }
+      })
+      .listen('MessageEditedEvent', (event) => {
+        const message = selectedChat.value.messages.find(msg => msg.id === event.id);
+        if (message) {
+          message.text = event.content;
+          message.is_edited = true;
+        }
+      })
+      .listen('MessageDeletedEvent', (event) => {
+        const index = selectedChat.value.messages.findIndex(msg => msg.id === event.message_id);
+        if (index !== -1) {
+          selectedChat.value.messages.splice(index, 1);
+        }
+      });
   };
 
   const sendMessage = async (messageContent) => {
@@ -51,14 +125,15 @@ export function useChat() {
     try {
       const chatName = selectedChat.value.chat?.name;
       if (!chatName) {
-        console.error("El nombre del chat es undefined");
+        console.error('El nombre del chat es undefined');
         return;
       }
 
+      await fetchCsrfToken();
       const response = await apiClient.post(`/api/chats/${chatName}/messages`, {
         content: messageContent.trim(),
       }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        withCredentials: true,
       });
 
       if (!selectedChat.value.messages) {
@@ -80,26 +155,31 @@ export function useChat() {
 
       newMessage.value = '';
     } catch (error) {
-      console.error("Error al enviar mensaje:", error.response?.data || error.message);
+      console.error('Error al enviar mensaje:', error.response?.data || error.message);
     }
   };
 
   const selectChat = async (chat) => {
     try {
-      const findChat = await apiClient.get("/api/chats/private", {
+      await fetchCsrfToken();
+      const findChat = await apiClient.get('/api/chats/private', {
         params: { recipient_id: chat.id },
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        withCredentials: true,
       });
 
       selectedChat.value = findChat.data;
 
       const chatName = selectedChat.value.chat?.name;
       if (!chatName) {
-        console.error("El nombre del chat es undefined");
+        console.error('El nombre del chat es undefined');
         return;
       }
 
-      const messagesResponse = await apiClient.get(`/api/chats/${chatName}/messages`);
+      initializeWebSocket(chatName);
+
+      const messagesResponse = await apiClient.get(`/api/chats/${chatName}/messages`, {
+        withCredentials: true,
+      });
       selectedChat.value.messages = messagesResponse.data.messages.map(msg => ({
         id: msg.id,
         text: msg.content,
@@ -112,39 +192,8 @@ export function useChat() {
         timestamp: new Date(msg.created_at).toLocaleString(),
         is_edited: msg.is_edited,
       }));
-
-      window.Echo.channel(`${chatName}`)
-        .listen('MessageSentEvent', async (message) => {
-          if (message.user_id !== userId.value) {
-            selectedChat.value.messages.push({
-              id: message.id,
-              text: message.content,
-              isMine: message.user_id === userId.value,
-              user: {
-                id: message.user_id,
-                name: message.user?.name || 'Unknown',
-                profile_photo_url: message.user?.profile_photo_url || '',
-              },
-              timestamp: new Date(message.created_at).toLocaleString(),
-              is_edited: false,
-            });
-          }
-        })
-        .listen('MessageEditedEvent', (event) => {
-          const message = selectedChat.value.messages.find(msg => msg.id === event.id);
-          if (message) {
-            message.text = event.content;
-            message.is_edited = true;
-          }
-        })
-        .listen('MessageDeletedEvent', (event) => {
-          const index = selectedChat.value.messages.findIndex(msg => msg.id === event.message_id);
-          if (index !== -1) {
-            selectedChat.value.messages.splice(index, 1);
-          }
-        });
     } catch (error) {
-      console.error("Error al obtener o crear el chat:", error.response?.data || error.message);
+      console.error('Error al obtener o crear el chat:', error.response?.data || error.message);
     }
   };
 
@@ -161,10 +210,11 @@ export function useChat() {
 
   const confirmEditMessage = async (message) => {
     try {
+      await fetchCsrfToken();
       const response = await apiClient.patch(`/api/messages/${message.id}`, {
         content: message.text,
       }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        withCredentials: true,
       });
       const index = selectedChat.value.messages.findIndex(m => m.id === message.id);
       if (index !== -1) {
@@ -172,22 +222,23 @@ export function useChat() {
         selectedChat.value.messages[index].is_edited = true;
       }
     } catch (error) {
-      console.error("Error editing message:", error.response?.data || error.message);
+      console.error('Error editing message:', error.response?.data || error.message);
     }
     showEditModal.value = false;
   };
 
   const confirmDeleteMessage = async (message) => {
     try {
+      await fetchCsrfToken();
       await apiClient.delete(`/api/messages/${message.id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        withCredentials: true,
       });
       const index = selectedChat.value.messages.findIndex(m => m.id === message.id);
       if (index !== -1) {
         selectedChat.value.messages.splice(index, 1);
       }
     } catch (error) {
-      console.error("Error al eliminar el mensaje:", error.response?.data || error.message);
+      console.error('Error al eliminar el mensaje:', error.response?.data || error.message);
     }
     showDeleteModal.value = false;
     messageMenuVisible.value = false;
@@ -213,6 +264,9 @@ export function useChat() {
 
   onBeforeUnmount(() => {
     window.removeEventListener('click', handleClickOutside);
+    if (echo && selectedChat.value?.chat?.name) {
+      echo.leaveChannel(`private-${selectedChat.value.chat.name}`);
+    }
   });
 
   return {

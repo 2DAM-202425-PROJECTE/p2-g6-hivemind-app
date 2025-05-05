@@ -2,8 +2,8 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -22,7 +22,7 @@ class MessageEditedEvent implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return new Channel("{$this->message->chat->name}");
+        return new PrivateChannel("{$this->message->chat->name}");
     }
 
     public function broadcastWith()

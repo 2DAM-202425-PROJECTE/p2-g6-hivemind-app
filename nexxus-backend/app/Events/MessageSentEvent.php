@@ -2,12 +2,13 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Message;
+use Illuminate\Support\Facades\Log;
 
 class MessageSentEvent implements ShouldBroadcast
 {
@@ -22,7 +23,8 @@ class MessageSentEvent implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return new Channel("{$this->message->chat->name}");
+        Log::info('Broadcasting on channel: private-'. $this->message->chat->name);
+        return new PrivateChannel("{$this->message->chat->name}");
     }
 
     public function broadcastWith()
