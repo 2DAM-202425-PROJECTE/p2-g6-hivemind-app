@@ -1,7 +1,6 @@
 <template>
-  <div class="videos-page-container">
+  <div class="videos-page-container" :style="equippedBackgroundStyle">
     <Navbar />
-    <h1>Video Content</h1>
     <div class="videos-list">
       <div v-if="videos.length === 0" class="no-videos">
         <p>No videos available</p>
@@ -102,11 +101,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
-import axios from 'axios';
 import { generateAvatar } from '@/utils/avatar';
 import apiClient from "@/axios.js";
 
@@ -126,32 +124,63 @@ const itemToDelete = ref(null);
 const API_BASE_URL = 'http://localhost:8000';
 const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
 
+// Load cached background path from localStorage (if available)
+const cachedBackgroundPath = ref(localStorage.getItem('equipped_background_path') || null);
+
+// Computed property for background style
+const equippedBackgroundStyle = computed(() => {
+  const bgPath = currentUser.value.equipped_background_path || cachedBackgroundPath.value;
+  return bgPath
+    ? { backgroundImage: `url(${bgPath})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
+    : { backgroundColor: '#f0f2f5' };
+});
+
+// Fetch user data including equipped background
+const fetchUserData = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token available');
+      return;
+    }
+
+    const userResult = await apiClient.get('/api/user');
+    currentUser.value = userResult.data;
+
+    const equippedItemsResult = await apiClient.get(`/api/user/${currentUser.value.id}/equipped-items`);
+    currentUser.value.equipped_background_path = equippedItemsResult.data.equipped_background_path;
+    console.log('Equipped background path:', currentUser.value.equipped_background_path);
+
+    if (currentUser.value.equipped_background_path) {
+      localStorage.setItem('equipped_background_path', currentUser.value.equipped_background_path);
+    } else {
+      localStorage.removeItem('equipped_background_path');
+    }
+  } catch (error) {
+    console.error('Error fetching user data:', error.response?.data || error.message);
+  }
+};
+
 onMounted(async () => {
+  await fetchUserData();
   await fetchVideos();
 });
 
 const fetchVideos = async () => {
   try {
-    // Fetch users
     const usersResult = await apiClient.get(`/api/users`);
     users.value = usersResult.data.data.reduce((acc, user) => {
       acc[user.id] = { name: user.name, username: user.username, profile_photo_path: user.profile_photo_path };
       return acc;
     }, {});
 
-    // Fetch current user
-    const currentUserResult = await apiClient.get(`/api/user`);
-    currentUser.value = currentUserResult.data;
-
-    // Fetch posts and filter videos
     const postsResult = await apiClient.get(`/api/posts`);
-    console.log('Raw API posts response:', postsResult.data.data); // Debug API response
+    console.log('Raw API posts response:', postsResult.data.data);
     const allPosts = postsResult.data.data || [];
     const videoPosts = allPosts.filter(post =>
       post.file_path && VIDEO_EXTENSIONS.some(ext => post.file_path.toLowerCase().endsWith(ext))
     );
 
-    // Fallback: Fetch comments if comments_count isn’t in the response
     const videosWithComments = await Promise.all(videoPosts.map(async (post) => {
       let commentsCount = post.comments_count ?? null;
       if (commentsCount === null) {
@@ -178,7 +207,7 @@ const fetchCommentCountFallback = async (videoId) => {
     return Array.isArray(comments) ? comments.length : 0;
   } catch (error) {
     console.error(`Error fetching comments for video ${videoId}:`, error.response?.data || error.message);
-    return 0; // Fallback to 0 if the request fails
+    return 0;
   }
 };
 
@@ -199,8 +228,8 @@ const goToUserProfile = (username) => {
 const goToUserVideoPage = (video) => {
   const username = getUsernameById(video.id_user);
   if (username) {
-    console.log('Navigating to user video page with username:', username, 'postId:', video.id);
-    router.push(`/users/username/${username}/videos?postId=${video.id}`);
+    console.log('Navigating to user media page with username:', username, 'postId:', video.id);
+    router.push(`/users/${username}/media?postId=${video.id}`);
   } else {
     console.warn('No username found for userId:', video.id_user);
   }
@@ -209,7 +238,7 @@ const goToUserVideoPage = (video) => {
 const goToVideoComments = async (videoId) => {
   const username = getUsernameById(videos.value.find(v => v.id === videoId)?.id_user);
   if (username) {
-    await router.push(`/users/username/${username}/videos?postId=${videoId}`);
+    await router.push(`/users/${username}/media?postId=${videoId}`);
     const video = videos.value.find(v => v.id === videoId);
     if (video) {
       video.comments_count = await fetchCommentCountFallback(videoId);
@@ -324,7 +353,7 @@ const reportVideo = async (video) => {
 
 const shareVideo = (video) => {
   const username = getUsernameById(video.id_user);
-  const shareUrl = `${window.location.origin}/users/username/${username}/videos?postId=${video.id}`;
+  const shareUrl = `${window.location.origin}/users/${username}/media?postId=${video.id}`;
   navigator.clipboard.writeText(shareUrl)
     .then(() => {
       video.shares = (video.shares || 0) + 1;
@@ -340,7 +369,6 @@ const shareVideo = (video) => {
   padding: 20px;
   padding-top: 90px;
   padding-bottom: 80px;
-  background-color: #f0f2f5;
   min-height: 100vh;
   color: black;
 }

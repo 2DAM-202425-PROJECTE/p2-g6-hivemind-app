@@ -9,7 +9,7 @@ class UserInventory extends Model
 {
     use HasFactory;
 
-    protected $table = 'user_inventory'; // Specify the correct table name
+    protected $table = 'user_inventory';
 
     protected $fillable = ['user_id', 'item_id'];
 

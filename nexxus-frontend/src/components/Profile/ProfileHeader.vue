@@ -1,8 +1,7 @@
 <template>
   <div :class="['rounded-lg shadow-lg overflow-hidden max-w-5xl mx-auto mb-5', profileThemeClass, equippedBackgroundClass]">
     <!-- Banner -->
-    <div class="relative w-full h-48 bg-gray-200 dark:bg-gray-700">
-      <!-- Display equipped banner (GIF or image) -->
+    <div class="relative w-full h-48 bg-gray-200 dark:bg-gray-700 z-0">
       <img
         v-if="user.equipped_banner_photo_path"
         :src="user.equipped_banner_photo_path"
@@ -10,7 +9,6 @@
         class="w-full h-full object-cover"
         @error="handleImageError('equipped_banner_photo_path')"
       />
-      <!-- Fallback to user-uploaded banner -->
       <img
         v-else-if="user.banner_photo_path"
         :src="user.banner_photo_path"
@@ -18,7 +16,6 @@
         class="w-full h-full object-cover"
         @error="handleImageError('banner_photo_path')"
       />
-      <!-- Show placeholder if no banner is set -->
       <div
         v-else
         class="absolute inset-0 flex items-center justify-center text-gray-500 dark:text-gray-400"
@@ -29,39 +26,46 @@
 
     <!-- Content -->
     <div class="relative px-6 pb-6">
-      <!-- Profile photo with equipped icon -->
       <div class="absolute -top-16 left-6 flex flex-col items-center">
         <div class="relative">
           <img
             :src="user.profile_photo_url"
             alt="Profile Pic"
-            class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-md object-cover"
+            class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-md object-cover z-10"
             @error="handleImageError('profile_photo_url')"
           />
+          <img
+            v-if="user.equipped_profile_icon_path"
+            :src="user.equipped_profile_icon_path"
+            alt="Equipped Profile Icon"
+            class="equipped-profile-icon"
+            @error="handleImageError('equipped_profile_icon_path')"
+          />
         </div>
-        <img
-          v-if="user.equipped_badge_path"
-          :src="user.equipped_badge_path"
-          alt="Equipped Badge"
-          class="equipped-badge"
-          @error="handleImageError('equipped_badge_path')"
-        />
       </div>
 
-      <!-- Info and buttons -->
       <div class="pt-20 flex flex-col md:flex-row md:items-start">
-        <!-- User info -->
         <div class="flex-1">
-          <h3
-            :class="[
-              'text-2xl font-bold text-gray-900 dark:text-white',
-              getNameEffectClass(user.equipped_name_effect_path),
-              profileFontClass
-            ]"
-          >
-            {{ user.name }}
-          </h3>
-          <div class="text-sm text-gray-500 dark:text-gray-400">@{{ user.username }}</div>
+          <div class="flex items-center gap-2">
+            <h3
+              :class="[
+                'text-2xl font-bold text-gray-900 dark:text-white',
+                getNameEffectClass(user.equipped_name_effect_path),
+                profileFontClass
+              ]"
+            >
+              {{ user.name }}
+            </h3>
+            <div v-if="user.equipped_badge_path" class="equipped-badge">
+              <img
+                :src="user.equipped_badge_path"
+                alt="Equipped Badge"
+                :class="['equipped-badge-img', getNameEffectClass(user.equipped_name_effect_path)]"
+                @error="handleImageError('equipped_badge_path')"
+              />
+            </div>
+          </div>
+          <div class="text-sm text-black dark:text-black">@{{ user.username }}</div>
           <div v-if="user.description" class="mt-2 text-sm text-gray-600 dark:text-gray-300">
             {{ user.description }}
           </div>
@@ -75,7 +79,6 @@
           </div>
         </div>
 
-        <!-- Buttons -->
         <div class="absolute right-6 top-4 flex flex-col space-y-2">
           <button
             v-if="isCurrentUser"
@@ -117,12 +120,12 @@
     v-if="showInventory"
     :user="user"
     @close="showInventory = false"
-    @update-user="updateUser"
+    @update-user="updateUserAndRefresh"
   />
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import apiClient from '@/axios.js';
 import InventoryModal from './InventoryModal.vue';
 
@@ -193,22 +196,22 @@ const profileFontClass = computed(() => {
 const getNameEffectClass = (nameEffectPath) => {
   if (!nameEffectPath) return '';
   const effectMap = {
-    'https://api.iconify.design/lucide/blend.svg': 'gradient-fade',
-    'https://api.iconify.design/lucide/badge.svg': 'golden-outline',
-    'https://api.iconify.design/lucide/vibrate.svg': 'dark-pulse',
-    'https://api.iconify.design/lucide/stars.svg': 'cosmic-shine',
-    'https://api.iconify.design/lucide/lightbulb.svg': 'neon-edge',
-    'https://api.iconify.design/lucide/snowflake.svg': 'frost-glow',
-    'https://api.iconify.design/lucide/flame.svg': 'fire-flicker',
-    'https://api.iconify.design/lucide/gem.svg': 'emerald-sheen',
-    'https://api.iconify.design/lucide/cloud-fog.svg': 'phantom-haze',
-    'https://api.iconify.design/lucide/zap.svg': 'electric-glow',
-    'https://api.iconify.design/lucide/sun.svg': 'solar-flare',
-    'https://api.iconify.design/lucide/waves.svg': 'wave-shimmer',
-    'https://api.iconify.design/lucide/diamond.svg': 'crystal-pulse',
-    'https://api.iconify.design/lucide/sparkles.svg': 'mystic-aura',
-    'https://api.iconify.design/lucide/shield.svg': 'shadow-veil',
-    'https://api.iconify.design/mdi/pulse.svg?color=%2300FFFF': 'digital-pulse',
+    'Gradient Fade': 'gradient-fade',
+    'Golden Outline': 'gradient-fade',
+    'Dark Pulse': 'dark-pulse',
+    'Cosmic Shine': 'cosmic-shine',
+    'Neon Edge': 'neon-edge',
+    'Frost Glow': 'frost-glow',
+    'Fire Flicker': 'fire-flicker',
+    'Emerald Sheen': 'emerald-sheen',
+    'Phantom Haze': 'phantom-haze',
+    'Electric Glow': 'electric-glow',
+    'Solar Flare': 'solar-flare',
+    'Wave Shimmer': 'wave-shimmer',
+    'Crystal Pulse': 'crystal-pulse',
+    'Mystic Aura': 'mystic-aura',
+    'Shadow Veil': 'shadow-veil',
+    'Digital Pulse': 'digital-pulse',
   };
   return effectMap[nameEffectPath] || '';
 };
@@ -219,62 +222,40 @@ const loadEquippedState = async () => {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token found.');
     const response = await apiClient.get(`/api/user/${props.user.id}/equipped-items`);
+    console.log('Equipped items response:', response.data);
+    // Only update non-banner fields to avoid overwriting banner state
     Object.assign(props.user, {
       equipped_profile_icon_path: response.data.equipped_profile_icon_path,
-      equipped_profile_theme: response.data.equipped_profile_theme,
+      equipped_profile_theme: response.data.equipped_profile_theme || 'bg-white dark:bg-gray-800',
       equipped_background_path: response.data.equipped_background_path,
       equipped_name_effect_path: response.data.equipped_name_effect_path,
       equipped_profile_font_path: response.data.equipped_profile_font_path,
       equipped_badge_path: response.data.equipped_badge_path,
-      equipped_banner_photo_path: response.data.equipped_banner_photo_path,
+      // Do not update equipped_banner_photo_path here
     });
-    console.log('Loaded equipped state:', props.user);
+    console.log('Loaded equipped state (excluding banner):', props.user);
   } catch (error) {
     console.error('Failed to load equipped state:', error.response?.data || error.message);
   }
 };
 
 const updateUser = (updatedFields) => {
+  console.log('Updating user with fields:', updatedFields);
   Object.assign(props.user, updatedFields);
   console.log('Updated user:', props.user);
 };
 
-const handleImageError = (field) => {
-  console.warn(`Image failed to load for ${field}: ${props.user[field]}`);
-  const bannerNames = {
-    'cosmic_vortex': 'Cosmic Vortex',
-    'neon_cityscape': 'Neon Cityscape',
-    'firestorm_horizon': 'Firestorm Horizon',
-    'mystic_nebula': 'Mystic Nebula',
-    'cyber_grid': 'Cyber Grid',
-    'ethereal_waves': 'Ethereal Waves',
-    'ocean_surge': 'Ocean Surge',
-    'pixel_storm': 'Pixel Storm',
-    'lava_flow': 'Lava Flow',
-    'frost_vortex': 'Frost Vortex',
-    'steampunk_gears': 'Steampunk Gears',
-    'lunar_eclipse': 'Lunar Eclipse',
-    'glitch_matrix': 'Glitch Matrix',
-    'aurora_dance': 'Aurora Dance',
-    'galactic_spin': 'Galactic Spin',
-    'rainbow_flux': 'Rainbow Flux',
-  };
-
-  if (field === 'equipped_banner_photo_path') {
-    const themeValue = Object.keys(bannerNames).find(key =>
-      props.user[field]?.toLowerCase().includes(key)
-    );
-    const itemName = themeValue ? bannerNames[themeValue] : '';
-    props.user[field] = itemName && fallbackUrls[itemName] ?
-      fallbackUrls[itemName] : defaultFallback;
-  } else if (field === 'equipped_name_effect_path') {
-    const itemName = props.user[field] === 'https://api.iconify.design/mdi/pulse.svg?color=%2300FFFF' ? 'Digital Pulse' : '';
-    props.user[field] = itemName && fallbackUrls[itemName] ?
-      fallbackUrls[itemName] : defaultFallback;
-  } else {
-    props.user[field] = defaultFallback;
-  }
+const updateUserAndRefresh = async (updatedFields) => {
+  updateUser(updatedFields);
+  await loadEquippedState(); // Refresh other equipped items, excluding banner
 };
+
+// Watch for changes to user prop to confirm updates
+watch(() => props.user, (newUser) => {
+  console.log('User prop updated in ProfileHeader:', newUser);
+  console.log('Banner state - equipped_banner_photo_path:', newUser.equipped_banner_photo_path);
+  console.log('Banner state - banner_photo_path:', newUser.banner_photo_path);
+}, { deep: true });
 
 onMounted(() => {
   loadEquippedState();
@@ -285,13 +266,31 @@ onMounted(() => {
 @import '../../styles/nameEffects.css';
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
 
-.equipped-badge {
-  width: 1.5rem;
-  height: 1.5rem;
+.equipped-profile-icon {
+  width: 2rem;
+  height: 2rem;
   position: absolute;
-  bottom: -0.5rem;
-  right: -0.5rem;
-  z-index: 10;
+  top: -2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.6));
+  animation: whiteGlowPulse 2s ease-in-out infinite;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.equipped-profile-icon:hover,
+.equipped-badge-img:hover,
+h3:hover {
+  transform: scale(1.1);
+  opacity: 0.9;
+}
+
+.equipped-badge-img {
+  width: 2rem;
+  height: 2rem;
+  margin-left: 0.5rem;
+  transition: filter 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
 }
 
 .font-pixel-art { font-family: 'Press Start 2P', cursive; }
@@ -313,6 +312,12 @@ onMounted(() => {
 
 .w-full.h-full.object-cover {
   animation: banner-animation 10s infinite linear;
+}
+
+@keyframes whiteGlowPulse {
+  0% { filter: drop-shadow(0 0 12px rgba(255, 255, 255, 1)) drop-shadow(0 0 24px rgba(255, 255, 255, 0.9)); }
+  50% { filter: drop-shadow(0 0 16px rgba(255, 255, 255, 1)) drop-shadow(0 0 32px rgba(255, 255, 255, 1)); }
+  100% { filter: drop-shadow(0 0 12px rgba(255, 255, 255, 1)) drop-shadow(0 0 24px rgba(255, 255, 255, 0.9)); }
 }
 
 @keyframes banner-animation {

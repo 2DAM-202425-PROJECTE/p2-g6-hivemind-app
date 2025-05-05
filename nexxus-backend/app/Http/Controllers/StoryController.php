@@ -26,7 +26,7 @@ class StoryController extends Controller
             'description' => 'nullable|string',
             'publish_date' => 'required|date',
             'id_user' => 'required|integer|exists:users,id',
-            'file' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:20480',
+            'file' => 'required|file|mimes:jpeg,png,jpg,gif,svg,mp4|max:20480',
         ]);
 
         if ($request->hasFile('file')) {

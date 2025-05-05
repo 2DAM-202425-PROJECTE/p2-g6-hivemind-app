@@ -1,7 +1,6 @@
 <template>
-  <div class="user-media-container">
+  <div class="user-media-container" :style="equippedBackgroundStyle">
     <Navbar />
-    <h1>{{ user.name || 'User' }}'s {{ isVideo ? 'Video' : 'Post' }}</h1>
     <div class="media-and-comments">
       <div class="media-column">
         <div v-if="!selectedMedia" class="no-media">
@@ -44,7 +43,7 @@
             <div v-if="selectedMedia.location" class="post-location">
               <i class="mdi mdi-earth location-icon"></i>
               <a :href="`https://www.google.com/maps?q=${encodeURIComponent(selectedMedia.location)}`" target="_blank"
-                class="location-link">
+                 class="location-link">
                 {{ simplifyLocation(selectedMedia.location) }}
               </a>
             </div>
@@ -125,18 +124,18 @@
           <div v-if="selectedMedia && selectedMedia.file_path" class="current-media">
             <p>Current {{ isVideo ? 'Video' : 'Image' }}:</p>
             <img v-if="!isVideo" :src="getImageUrl(selectedMedia.file_path)" alt="Current media image"
-              style="max-width: 100%; max-height: 200px; margin-bottom: 10px;" />
+                 style="max-width: 100%; max-height: 200px; margin-bottom: 10px;" />
             <video v-else :src="getImageUrl(selectedMedia.file_path)" controls
-              style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
+                   style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
           </div>
           <v-file-input :label="`Replace ${isVideo ? 'Video (.mp4, .mov)' : 'Image/Video (.png, .jpg, .jpeg, .mp4)'}`"
-            :accept="isVideo ? '.mp4, .mov' : '.png, .jpg, .jpeg, .mp4'" @update:modelValue="handleEditFileUpload"
-            outlined></v-file-input>
+                        :accept="isVideo ? '.mp4, .mov' : '.png, .jpg, .jpeg, .mp4'" @update:modelValue="handleEditFileUpload"
+                        outlined></v-file-input>
           <v-text-field v-model="editMediaDescription" label="Description" outlined></v-text-field>
           <div v-if="editMediaLocation" class="location-preview">
             <i class="mdi mdi-map-marker"></i>
             <a :href="`https://www.google.com/maps?q=${editMediaLocation.lat},${editMediaLocation.lon}`" target="_blank"
-              class="location-btn">
+               class="location-btn">
               {{ editMediaLocation.name }}
             </a>
             <button class="remove-btn" @click="removeEditLocation">Remove</button>
@@ -159,8 +158,7 @@
         <v-card-title class="headline">Confirm Deletion</v-card-title>
         <v-card-text>
           Are you sure you want to delete this {{ deleteType === 'media' ? (isVideo ? 'video' : 'post') : 'comment' }}?
-          This
-          action cannot be undone.
+          This action cannot be undone.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -233,6 +231,43 @@ const visibleReplies = ref({});
 const API_BASE_URL = 'http://localhost:8000';
 const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
 
+// Load cached background path from localStorage (if available)
+const cachedBackgroundPath = ref(localStorage.getItem('equipped_background_path') || null);
+
+// Computed property for background style
+const equippedBackgroundStyle = computed(() => {
+  const bgPath = currentUser.value.equipped_background_path || cachedBackgroundPath.value;
+  return bgPath
+    ? { backgroundImage: `url(${bgPath})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
+    : { backgroundColor: '#f0f2f5' };
+});
+
+// Fetch user data including equipped background
+const fetchUserData = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token available');
+      return;
+    }
+
+    const userResult = await apiClient.get('/api/user');
+    currentUser.value = userResult.data;
+
+    const equippedItemsResult = await apiClient.get(`/api/user/${currentUser.value.id}/equipped-items`);
+    currentUser.value.equipped_background_path = equippedItemsResult.data.equipped_background_path;
+    console.log('Equipped background path:', currentUser.value.equipped_background_path);
+
+    if (currentUser.value.equipped_background_path) {
+      localStorage.setItem('equipped_background_path', currentUser.value.equipped_background_path);
+    } else {
+      localStorage.removeItem('equipped_background_path');
+    }
+  } catch (error) {
+    console.error('Error fetching user data:', error.response?.data || error.message);
+  }
+};
+
 const isVideo = computed(() => {
   return selectedMedia.value?.file_path && VIDEO_EXTENSIONS.some(ext => selectedMedia.value.file_path.toLowerCase().endsWith(ext));
 });
@@ -247,17 +282,17 @@ const addReply = async (parentId) => {
   try {
     const response = await apiClient.post(`/api/posts/${selectedMedia.value.id}/comments`, {
       content: replies.value[parentId],
-      parent_id: parentId, // Include parent_id in the request
+      parent_id: parentId,
     });
 
     const parentComment = comments.value.find(comment => comment.id === parentId);
     if (parentComment) {
       parentComment.replies = parentComment.replies || [];
-      parentComment.replies.push(response.data); // Add the reply to the parent comment
+      parentComment.replies.push(response.data);
     }
 
-    replies.value[parentId] = ''; // Clear the reply input
-    replyInputVisible.value = null; // Hide the reply input
+    replies.value[parentId] = '';
+    replyInputVisible.value = null;
   } catch (error) {
     console.error('Error adding reply:', error.response?.data || error.message);
   }
@@ -290,16 +325,13 @@ onMounted(async () => {
       return;
     }
 
+    await fetchUserData();
+
     previousRoute.value = document.referrer.includes(window.location.origin)
       ? new URL(document.referrer).pathname
       : '/';
 
     const usersResult = await apiClient.get(`/api/users`);
-
-    // Assign the nested comments structure
-    // comments.value = commentsResult.data || [];
-    // console.log('Fetched comments:', comments.value); // Verify nested structure
-
     users.value = usersResult.data.data.reduce((acc, user) => {
       acc[user.id] = { name: user.name, username: user.username, profile_photo_path: user.profile_photo_path };
       return acc;
@@ -324,11 +356,6 @@ onMounted(async () => {
     const commentsResult = await apiClient.get(`/api/posts/${postId}/comments`);
     console.log('Comments data:', commentsResult.data);
     comments.value = commentsResult.data || [];
-
-    console.log('Fetching current user');
-    const currentUserResult = await apiClient.get(`/api/user`);
-    console.log('Current user data:', currentUserResult.data);
-    currentUser.value = currentUserResult.data;
 
     await nextTick();
     const mediaElement = document.getElementById(`media-${postId}`);
@@ -366,23 +393,21 @@ const simplifyLocation = (location) => {
 
 const getImageUrl = (path) => {
   if (!path) return generateAvatar('User');
-  // Si ya es una URL completa, devolverla tal cual
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  // Si es una ruta local, añadir el prefijo de storage
   return `http://localhost:8000/storage/${path}`;
 };
+
 const getProfilePhotoById = (id) => {
   const user = users.value[id];
   if (user?.profile_photo_path) {
-    // Si es una URL completa, devolverla sin cambios
     if (user.profile_photo_path.startsWith('http://') || user.profile_photo_path.startsWith('https://')) {
       return user.profile_photo_path;
     }
-    // Si es una ruta local, añadir el prefijo
     return `http://localhost:8000/storage/${user.profile_photo_path}`;
   }
   return generateAvatar(user?.name || 'User');
 };
+
 const getCommentUserPhoto = (user) => user?.profile_photo_path ? `${API_BASE_URL}/storage/${user.profile_photo_path}` : 'https://via.placeholder.com/40';
 const getUserNameById = (id) => users.value[id]?.name || 'Unknown User';
 const getUsernameById = (id) => users.value[id]?.username || null;
@@ -582,7 +607,6 @@ const formatDate = (dateString) => {
   padding: 20px;
   padding-top: 90px;
   padding-bottom: 60px;
-  background-color: #f0f2f5;
   min-height: 100vh;
   color: black;
 }
@@ -835,7 +859,6 @@ h1 {
 }
 
 .comments-list {
-  /* No max-height or overflow-y, flows naturally */
 }
 
 .comment {

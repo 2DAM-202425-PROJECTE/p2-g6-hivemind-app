@@ -3,6 +3,7 @@
     "@giphy/js-fetch-api": "^5.6.0",
     "@mdi/js": "^7.4.47",
     "@vue-hero-icons/outline": "^1.7.2",
+    "colorthief": "^2.6.0",
     "emoji-picker-element": "^1.26.1",
     "vue-draggable-next": "^2.2.1",
     "vue-flag-icon": "^2.1.0",

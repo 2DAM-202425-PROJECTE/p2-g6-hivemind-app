@@ -1,144 +1,171 @@
 <template>
-  <div class="purchase-container">
+  <div class="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 text-gray-800 p-32">
     <NavBar />
-    <div class="purchase-content container">
+    <div class="max-w-7xl mx-auto px-6 py-12 animate-fade-in">
       <!-- Checkout Header -->
-      <div class="checkout-header">
-        <h1 class="title">Checkout</h1>
-        <p class="description">
-          All purchases are final. No refunds will be issued once payment is processed. Please review your order carefully before completing the transaction. For support, contact us at <a href="mailto:hivemindnexxuscontact@gmail.com">hivemindnexxuscontact@gmail.com</a>.
+      <div class="bg-white rounded-xl shadow-lg p-8 mb-12 text-center">
+        <h1 class="text-4xl font-extrabold mb-4 gradient-text">
+          Checkout
+        </h1>
+        <p class="text-lg text-amber-800">
+          All purchases are final. No refunds will be issued once payment is processed. Please review your order carefully before completing the transaction. For support, contact us at <a href="mailto:hivemindnexxuscontact@gmail.com" class="text-amber-600 hover:text-amber-700">hivemindnexxuscontact@gmail.com</a> or at the contact page in the footer.
         </p>
       </div>
 
       <!-- Checkout Body -->
-      <div class="checkout-container">
-        <div class="checkout-inner">
+      <div class="bg-white rounded-xl shadow-lg p-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <!-- Item Details -->
-          <div v-if="item" class="item-details-container">
-            <div class="item-details">
-              <img
-                :src="item.iconUrl || 'https://via.placeholder.com/100'"
-                :alt="item.name || 'Product Image'"
-                class="item-icon"
+          <div v-if="item" class="bg-amber-50 rounded-lg p-6">
+            <div class="text-center">
+              <div
+                class="item-preview rounded-md overflow-hidden mb-4 mx-auto"
+                :class="{
+                  'background-preview': item.type === 'background',
+                  'banner-preview': item.type === 'custom_banner',
+                  'name-effect-preview': item.type === 'name_effect',
+                  'profile-icon-preview': item.type === 'profile_icon',
+                  'profile-font-preview': item.type === 'profile_font',
+                  'badge-preview': item.type === 'badge'
+                }"
               >
-              <h2 :class="[item.type === 'name_effect' ? getNameEffectClass(item.iconUrl) : '', item.type === 'profile_font' ? getProfileFontClass(item.name) : '']">
+                <img
+                  :src="item.iconUrl || fallbackImage"
+                  :alt="item.name || 'Product Image'"
+                  class="w-full h-full object-cover"
+                  @error="handleImageError($event, item)"
+                />
+              </div>
+              <h2
+                class="text-2xl font-bold text-amber-900 mb-2"
+                :class="[
+                  item.type === 'name_effect' ? getNameEffectClass(item.name) : '',
+                  item.type === 'profile_font' ? getProfileFontClass(item.name) : '',
+                  item.type === 'name_effect' ? 'effect-active' : ''
+                ]"
+              >
                 {{ item.name || item.title || 'Unnamed Product' }}
               </h2>
-              <p class="price">{{ item.price || 'Price not available' }}</p>
-              <p v-if="item.description" class="description">{{ item.description }}</p>
-              <ul v-if="item.features" class="features">
-                <li v-for="(feature, index) in item.features" :key="index">{{ feature }}</li>
+              <p v-if="categoryInfo" class="text-sm font-medium text-amber-700 mb-3">
+                {{ categoryInfo.title }} ({{ getOwnedCount(categoryInfo.items) }}/{{ categoryInfo.items.length }} owned)
+              </p>
+              <p class="text-lg font-medium text-amber-700 mb-3">{{ formatPrice(item.price) }}</p>
+              <p v-if="item.description" class="text-amber-800 mb-3">{{ item.description }}</p>
+              <ul v-if="item.features" class="text-amber-800 mb-3 text-left">
+                <li v-for="(feature, index) in item.features" :key="index" class="flex items-center">
+                  <svg class="h-5 w-5 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  {{ feature }}
+                </li>
               </ul>
-              <p v-if="item.amount" class="amount">{{ item.amount }} Credits</p>
+              <p v-if="item.amount" class="text-amber-800">{{ item.amount }} Credits</p>
             </div>
           </div>
-          <div v-else class="no-item">
-            <p>No item selected or item could not be loaded.</p>
+          <div v-else class="bg-amber-50 rounded-lg p-6 text-center">
+            <p class="text-amber-800">No item selected or item could not be loaded.</p>
           </div>
 
           <!-- Payment Section -->
-          <div v-if="item" class="payment-container">
-            <h3 class="payment-title">Choose Payment Method</h3>
-            <div class="payment-methods">
+          <div v-if="item" class="bg-amber-50 rounded-lg p-6">
+            <h3 class="text-xl font-bold text-amber-900 mb-4 text-center">Choose Payment Method</h3>
+            <div class="space-y-6">
               <!-- Payment Buttons -->
-              <div class="payment-buttons">
-                <v-btn
+              <div class="grid grid-cols-2 gap-4">
+                <button
                   @click="selectPaymentMethod('card')"
-                  :class="{ active: selectedPaymentMethod === 'card' }"
-                  class="payment-btn"
-                  outlined
+                  :class="{ 'btn-primary': selectedPaymentMethod !== 'card', 'btn-primary active': selectedPaymentMethod === 'card' }"
+                  class="w-full"
                 >
                   Credit/Debit Card
-                </v-btn>
-                <v-btn
+                </button>
+                <button
                   @click="selectPaymentMethod('paypal')"
-                  :class="{ active: selectedPaymentMethod === 'paypal' }"
-                  class="payment-btn"
-                  outlined
+                  :class="{ 'btn-primary': selectedPaymentMethod !== 'paypal', 'btn-primary active': selectedPaymentMethod === 'paypal' }"
+                  class="w-full"
                 >
                   PayPal
-                </v-btn>
-                <v-btn
+                </button>
+                <button
                   @click="selectPaymentMethod('bizum')"
-                  :class="{ active: selectedPaymentMethod === 'bizum' }"
-                  class="payment-btn"
-                  outlined
+                  :class="{ 'btn-primary': selectedPaymentMethod !== 'bizum', 'btn-primary active': selectedPaymentMethod === 'bizum' }"
+                  class="w-full"
                 >
                   Bizum
-                </v-btn>
-                <v-btn
+                </button>
+                <button
                   @click="selectPaymentMethod('googlepay')"
-                  :class="{ active: selectedPaymentMethod === 'googlepay' }"
-                  class="payment-btn"
-                  outlined
+                  :class="{ 'btn-primary': selectedPaymentMethod !== 'googlepay', 'btn-primary active': selectedPaymentMethod === 'googlepay' }"
+                  class="w-full"
                 >
                   Google Pay
-                </v-btn>
-                <v-btn
+                </button>
+                <button
+                  v-if="item.type !== 'credit_pack'"
                   @click="selectPaymentMethod('credits')"
-                  :class="{ active: selectedPaymentMethod === 'credits' }"
-                  class="payment-btn"
-                  outlined
+                  :class="{ 'btn-primary': selectedPaymentMethod !== 'credits', 'btn-primary active': selectedPaymentMethod === 'credits' }"
+                  class="w-full col-span-2"
                 >
                   Pay with Credits
-                </v-btn>
+                </button>
               </div>
 
-              <!-- Payment Forms (Collapsible) -->
+              <!-- Payment Forms -->
               <transition name="fade">
-                <div v-if="selectedPaymentMethod" class="payment-form-container">
+                <div v-if="selectedPaymentMethod" class="mt-4">
                   <div v-if="selectedPaymentMethod === 'card'" class="payment-method">
-                    <h4>Credit/Debit Card</h4>
-                    <form @submit.prevent="handlePurchase('card')" class="payment-form">
-                      <v-text-field v-model="cardNumber" label="Card Number (16 digits)" required outlined :rules="[v => /^\d{16}$/.test(v) || 'Must be 16 digits']"></v-text-field>
-                      <v-text-field v-model="expiryDate" label="Expiry Date (MM/YY)" required outlined :rules="[v => /^\d{2}\/\d{2}$/.test(v) || 'Format: MM/YY']"></v-text-field>
-                      <v-text-field v-model="cvv" label="CVV (3 digits)" required outlined :rules="[v => /^\d{3}$/.test(v) || 'Must be 3 digits']"></v-text-field>
-                      <v-btn type="submit" color="primary" block>Pay with Card</v-btn>
+                    <h4 class="text-lg font-medium text-amber-900 mb-3">Credit/Debit Card</h4>
+                    <form @submit.prevent="handlePurchase('card')" class="space-y-3">
+                      <v-text-field v-model="cardNumber" label="Card Number (16 digits)" required outlined :rules="[v => /^\d{16}$/.test(v) || 'Must be 16 digits']" class="rounded-md"></v-text-field>
+                      <v-text-field v-model="expiryDate" label="Expiry Date (MM/YY)" required outlined :rules="[v => /^\d{2}\/\d{2}$/.test(v) || 'Format: MM/YY']" class="rounded-md"></v-text-field>
+                      <v-text-field v-model="cvv" label="CVV (3 digits)" required outlined :rules="[v => /^\d{3}$/.test(v) || 'Must be 3 digits']" class="rounded-md"></v-text-field>
+                      <button type="submit" class="btn-primary w-full">Pay with Card</button>
                     </form>
                   </div>
 
                   <div v-if="selectedPaymentMethod === 'paypal'" class="payment-method">
-                    <h4>PayPal</h4>
-                    <form @submit.prevent="handlePurchase('paypal')" class="payment-form">
-                      <v-text-field v-model="paypalEmail" label="PayPal Email" type="email" required outlined :rules="[v => /.+@.+\..+/.test(v) || 'Email must contain @']"></v-text-field>
-                      <v-text-field v-model="paypalPassword" label="PayPal Password" type="password" required outlined></v-text-field>
-                      <v-btn type="submit" color="primary" block>Pay with PayPal</v-btn>
+                    <h4 class="text-lg font-medium text-amber-900 mb-3">PayPal</h4>
+                    <form @submit.prevent="handlePurchase('paypal')" class="space-y-3">
+                      <v-text-field v-model="paypalEmail" label="PayPal Email" type="email" required outlined :rules="[v => /.+@.+\..+/.test(v) || 'Email must contain @']" class="rounded-md"></v-text-field>
+                      <v-text-field v-model="paypalPassword" label="PayPal Password" type="password" required outlined class="rounded-md"></v-text-field>
+                      <button type="submit" class="btn-primary w-full">Pay with PayPal</button>
                     </form>
                   </div>
 
                   <div v-if="selectedPaymentMethod === 'bizum'" class="payment-method">
-                    <h4>Bizum</h4>
-                    <form @submit.prevent="handlePurchase('bizum')" class="payment-form">
-                      <div class="phone-input">
+                    <h4 class="text-lg font-medium text-amber-900 mb-3">Bizum</h4>
+                    <form @submit.prevent="handlePurchase('bizum')" class="space-y-3">
+                      <div class="flex gap-3">
                         <v-select
-                          v-model="googlePayCountryCode"
+                          v-model="bizumCountryCode"
                           :items="countryCodes"
                           item-title="displayText"
                           item-value="code"
                           outlined
                           dense
-                          class="country-code-select"
+                          class="country-code-select rounded-md"
                           label="Country Code"
                         ></v-select>
                         <v-text-field
-                          v-model="googlePayPhone"
-                          :label="`Phone Number (${googlePayDigitLength} digits)`"
+                          v-model="bizumPhone"
+                          :label="`Phone Number (${bizumDigitLength} digits)`"
                           type="tel"
                           required
                           outlined
                           :rules="phoneRules"
+                          class="rounded-md"
                         ></v-text-field>
                       </div>
-                      <v-text-field v-model="bizumPin" label="Bizum PIN" type="password" required outlined></v-text-field>
-                      <v-btn type="submit" color="primary" block>Pay with Bizum</v-btn>
+                      <v-text-field v-model="bizumPin" label="Bizum PIN" type="password" required outlined class="rounded-md"></v-text-field>
+                      <button type="submit" class="btn-primary w-full">Pay with Bizum</button>
                     </form>
                   </div>
 
                   <div v-if="selectedPaymentMethod === 'googlepay'" class="payment-method">
-                    <h4>Google Pay</h4>
-                    <form @submit.prevent="handlePurchase('googlepay')" class="payment-form">
-                      <v-text-field v-model="googlePayEmail" label="Google Pay Email" type="email" required outlined :rules="[v => /.+@.+\..+/.test(v) || 'Email must contain @']"></v-text-field>
-                      <div class="phone-input">
+                    <h4 class="text-lg font-medium text-amber-900 mb-3">Google Pay</h4>
+                    <form @submit.prevent="handlePurchase('googlepay')" class="space-y-3">
+                      <v-text-field v-model="googlePayEmail" label="Google Pay Email" type="email" required outlined :rules="[v => /.+@.+\..+/.test(v) || 'Email must contain @']" class="rounded-md"></v-text-field>
+                      <div class="flex gap-3">
                         <v-select
                           v-model="googlePayCountryCode"
                           :items="countryCodes"
@@ -146,7 +173,7 @@
                           item-value="code"
                           outlined
                           dense
-                          class="country-code-select"
+                          class="country-code-select rounded-md"
                           label="Country Code"
                         ></v-select>
                         <v-text-field
@@ -156,22 +183,27 @@
                           required
                           outlined
                           :rules="phoneRules"
+                          class="rounded-md"
                         ></v-text-field>
                       </div>
-                      <v-btn type="submit" color="primary" block>Pay with Google Pay</v-btn>
+                      <button type="submit" class="btn-primary w-full">Pay with Google Pay</button>
                     </form>
                   </div>
 
                   <div v-if="selectedPaymentMethod === 'credits'" class="payment-method">
-                    <h4>Pay with Credits</h4>
-                    <div class="credits-info">
-                      <p>Current Credits: <strong>{{ userCredits }}</strong></p>
-                      <p>Cost: <strong>{{ item.amount }} Credits</strong></p>
+                    <h4 class="text-lg font-medium text-amber-900 mb-3">Pay with Credits</h4>
+                    <div class="text-center mb-3">
+                      <p class="text-amber-800">Current Credits: <strong class="text-amber-900">{{ userCredits }}</strong></p>
+                      <p class="text-amber-800">Cost: <strong class="text-amber-900">{{ item.amount || formatPrice(item.price) }}</strong></p>
                     </div>
-                    <form @submit.prevent="handlePurchase" class="payment-form">
-                      <v-btn type="submit" color="primary" block :disabled="userCredits < item.amount">
+                    <form @submit.prevent="handlePurchase('credits')">
+                      <button
+                        type="submit"
+                        class="btn-primary w-full"
+                        :disabled="userCredits < (item.price || 0) || item.type === 'credit_pack'"
+                      >
                         Pay with Credits
-                      </v-btn>
+                      </button>
                     </form>
                   </div>
                 </div>
@@ -184,53 +216,57 @@
     <AppFooter />
 
     <!-- Success Dialog -->
-    <v-dialog v-model="showSuccessDialog" max-width="500px">
-      <v-card class="success-dialog">
-        <v-card-title class="headline">
-          <v-icon color="green" large left>mdi-check-circle</v-icon>
+    <v-dialog v-model="showSuccessDialog" max-width="500">
+      <v-card class="bg-white rounded-xl p-6">
+        <v-card-title class="text-2xl font-bold text-amber-900 flex items-center">
+          <svg class="h-8 w-8 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
           Purchase Successful!
         </v-card-title>
-        <v-card-text class="dialog-text">
-          <p>Thank you for your purchase!</p>
-          <p v-if="item && item.amount">
-            You've successfully added <strong>{{ item.amount }} credits</strong> to your account using <strong>{{ selectedPaymentMethod }}</strong>.
+        <v-card-text class="text-amber-800">
+          <p class="mb-3">Thank you for your purchase!</p>
+          <p v-if="item && item.amount" class="mb-3">
+            You've successfully added <strong class="text-amber-900">{{ item.amount }} credits</strong> to your account using <strong class="text-amber-900">{{ selectedPaymentMethod }}</strong>.
           </p>
-          <p v-else-if="item && String(item.price).includes('Credits')">
-            You've successfully purchased <strong>{{ item.name || item.title }}</strong> using <strong>{{ selectedPaymentMethod }}</strong>.
+          <p v-else class="mb-3">
+            You've successfully purchased <strong class="text-amber-900">{{ item.name || item.title }}</strong> using <strong class="text-amber-900">{{ selectedPaymentMethod }}</strong>.
           </p>
-          <p>Your current credit balance is: <strong>{{ userCredits }} credits</strong>.</p>
+          <p>Your current credit balance is: <strong class="text-amber-900">{{ userCredits }} credits</strong>.</p>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="closeSuccessDialog">Continue Shopping</v-btn>
+          <button class="btn-primary" @click="closeSuccessDialog">Continue Shopping</button>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <!-- Error Dialog -->
-    <v-dialog v-model="showErrorDialog" max-width="500px">
-      <v-card class="error-dialog">
-        <v-card-title class="headline">
-          <v-icon color="red" large left>mdi-alert-circle</v-icon>
+    <v-dialog v-model="showErrorDialog" max-width="500">
+      <v-card class="bg-white rounded-xl p-6">
+        <v-card-title class="text-2xl font-bold text-amber-900 flex items-center">
+          <svg class="h-8 w-8 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
           {{ errorTitle }}
         </v-card-title>
-        <v-card-text class="dialog-text">
-          <p>{{ errorMessage }}</p>
-          <p v-if="errorMessage === 'Insufficient credits to complete this purchase.'">
+        <v-card-text class="text-amber-800">
+          <p class="mb-3">{{ errorMessage }}</p>
+          <p v-if="errorMessage === 'Insufficient credits to complete this purchase.'" class="mb-3">
             Please buy more credits in the shop to complete your purchase.
           </p>
-          <p v-else-if="errorMessage === 'You already own this item'">
+          <p v-else-if="errorMessage === 'You already own this item'" class="mb-3">
             This item is already in your inventory. No need to purchase it again!
           </p>
-          <p v-else>
-            Please try again or contact support at <a href="mailto:hivemindnexxuscontact@gmail.com">hivemindnexxuscontact@gmail.com</a>.
+          <p v-else class="mb-3">
+            Please try again or contact support at <a href="mailto:hivemindnexxuscontact@gmail.com" class="text-amber-600 hover:text-amber-700">hivemindnexxuscontact@gmail.com</a>.
           </p>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="closeErrorDialog">
+          <button class="btn-primary" @click="closeErrorDialog">
             {{ errorMessage === 'Insufficient credits to complete this purchase.' ? 'Go to Shop' : 'OK' }}
-          </v-btn>
+          </button>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -238,10 +274,10 @@
 </template>
 
 <script>
-import NavBar from '../components/NavBar.vue';
-import AppFooter from '../components/AppFooter.vue';
+import NavBar from '@/components/NavBar.vue';
+import AppFooter from '@/components/AppFooter.vue';
 import apiClient from '@/axios.js';
-import { getNameEffectClass } from '@/utils/nameEffects'; // Import utility
+import { getNameEffectClass } from '@/utils/nameEffects';
 
 export default {
   name: 'PurchasePage',
@@ -252,6 +288,8 @@ export default {
   data() {
     return {
       item: null,
+      categoryInfo: null,
+      userInventory: [],
       cardNumber: '',
       expiryDate: '',
       cvv: '',
@@ -268,7 +306,7 @@ export default {
       showSuccessDialog: false,
       showErrorDialog: false,
       errorMessage: '',
-      errorTitle: 'Purchase Failed!', // Default title
+      errorTitle: 'Purchase Failed!',
       countryCodes: [
         { name: 'Spain', code: '+34', digits: 9, displayText: 'Spain (+34)' },
         { name: 'United States', code: '+1', digits: 10, displayText: 'United States (+1)' },
@@ -284,6 +322,7 @@ export default {
         { name: 'Mexico', code: '+52', digits: 10, displayText: 'Mexico (+52)' },
       ],
       user: { id: null },
+      fallbackImage: 'https://api.iconify.design/lucide/image-off.svg',
     };
   },
   computed: {
@@ -314,10 +353,11 @@ export default {
       this.fetchItemById(itemId);
     }
     this.fetchCurrentUser();
+    this.fetchCategorizedItems();
   },
   methods: {
-    getNameEffectClass, // Add method from utility
-    getProfileFontClass(name) { // Custom method for font preview
+    getNameEffectClass,
+    getProfileFontClass(name) {
       switch (name) {
         case 'Pixel Art': return 'font-pixel-art';
         case 'Comic Sans': return 'font-comic-sans';
@@ -338,11 +378,20 @@ export default {
         default: return '';
       }
     },
+    getOwnedCount(items) {
+      return items.filter(item => this.userInventory.includes(item.id)).length;
+    },
+    formatPrice(price) {
+      if (typeof price === 'string') return price;
+      if (this.item && this.item.type === 'credit_pack') {
+        return `${price}€`;
+      }
+      return price === 0 ? 'Free' : `${price} Credits`;
+    },
     async fetchItemById(id) {
       try {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
-
         const response = await apiClient.get(`/api/shop/items/${id}`);
         this.item = response.data;
       } catch (error) {
@@ -355,15 +404,70 @@ export default {
       try {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
-
         const response = await apiClient.get('/api/user');
         this.user = response.data;
         this.userCredits = response.data.credits || 1000;
+        await this.fetchUserInventory();
       } catch (error) {
         console.error('Failed to fetch current user:', error);
         this.errorMessage = `Failed to fetch user data: ${error.message}`;
         this.showErrorDialog = true;
       }
+    },
+    async fetchUserInventory() {
+      try {
+        const response = await apiClient.get(`/api/user/${this.user.id}/inventory`);
+        this.userInventory = response.data.map(item => item.item_id);
+      } catch (error) {
+        console.error('Failed to fetch user inventory:', error);
+      }
+    },
+    async fetchCategorizedItems() {
+      try {
+        const response = await apiClient.get('/api/shop/categorized-items');
+        const cosmeticCategories = this.categorizeCosmetics(response.data.cosmetics);
+        if (this.item && this.item.type) {
+          this.categoryInfo = cosmeticCategories.find(category =>
+            category.items.some(item => item.type === this.item.type)
+          );
+        }
+      } catch (error) {
+        console.error('Failed to fetch categorized items:', error);
+      }
+    },
+    categorizeCosmetics(cosmetics) {
+      return [
+        {
+          title: 'Profile Icons',
+          description: 'Stand out with unique profile icons that showcase your personality',
+          items: cosmetics.filter(item => item.type === 'profile_icon'),
+        },
+        {
+          title: 'Backgrounds',
+          description: 'Transform your profile with stunning background themes',
+          items: cosmetics.filter(item => item.type === 'background'),
+        },
+        {
+          title: 'Profile Fonts',
+          description: 'Customize your profile text with unique fonts',
+          items: cosmetics.filter(item => item.type === 'profile_font'),
+        },
+        {
+          title: 'Name Effects',
+          description: 'Make your username stand out with eye-catching effects',
+          items: cosmetics.filter(item => item.type === 'name_effect'),
+        },
+        {
+          title: 'Custom Banners',
+          description: 'Enhance your profile header with vibrant animated banners',
+          items: cosmetics.filter(item => item.type === 'custom_banner'),
+        },
+        {
+          title: 'Profile Badges',
+          description: 'Show off your status with exclusive profile badges',
+          items: cosmetics.filter(item => item.type === 'badge'),
+        },
+      ].filter(category => category.items.length > 0);
     },
     selectPaymentMethod(method) {
       this.selectedPaymentMethod = this.selectedPaymentMethod === method ? null : method;
@@ -372,52 +476,107 @@ export default {
       try {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
-
-        console.log('Sending payload:', { userId: this.user.id, itemId: this.item.id });
-        const response = await apiClient.post(
-          '/api/user/process-credit-purchase',
-          { userId: this.user.id, itemId: this.item.id }
-        );
-
+        const response = await apiClient.post('/api/user/process-credit-purchase', {
+          userId: this.user.id,
+          itemId: this.item.id,
+        });
         if (response.data.error) {
           throw new Error(response.data.error);
         }
-
         this.userCredits = response.data.credits;
         this.$emit('credits-updated', this.userCredits);
         console.log('Purchase successful with credits');
       } catch (error) {
         console.error('Raw error:', error);
         console.error('Response data:', error.response?.data);
-        if (error.response && error.response.data && error.response.data.error) {
-          this.errorTitle = error.response.data.error === 'You already own this item' ? 'Item Already Owned!' : 'Purchase Failed!';
-          throw new Error(error.response.data.error);
-        }
-        this.errorTitle = 'Purchase Failed!';
-        throw new Error(error.message || 'Failed to process credit purchase');
+        throw new Error(error.response?.data?.error || error.message || 'Failed to process credit purchase');
       }
     },
-    async handlePurchase() {
+    async processRealMoneyPurchase() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+        const response = await apiClient.post('/api/user/process-real-money-purchase', {
+          userId: this.user.id,
+          itemId: this.item.id,
+        });
+        if (response.data.error) {
+          throw new Error(response.data.error);
+        }
+        this.userCredits = response.data.credits;
+        this.$emit('credits-updated', this.userCredits);
+        console.log('Real-money purchase successful');
+      } catch (error) {
+        console.error('Raw error:', error);
+        console.error('Response data:', error.response?.data);
+        throw new Error(error.response?.data?.error || error.message || 'Failed to process real-money purchase');
+      }
+    },
+    async updateUserCredits(amount) {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+        const response = await apiClient.post('/api/user/update-credits', {
+          userId: this.user.id,
+          amount: amount,
+        });
+        if (response.data.error) {
+          throw new Error(response.data.error);
+        }
+        this.userCredits = response.data.credits;
+        this.$emit('credits-updated', this.userCredits);
+        console.log('User credits updated:', this.userCredits);
+      } catch (error) {
+        console.error('Failed to update user credits:', error);
+        throw new Error(error.message || 'Failed to update user credits');
+      }
+    },
+    validatePaymentInputs() {
+      if (this.selectedPaymentMethod === 'card') {
+        return (
+          /^\d{16}$/.test(this.cardNumber) &&
+          /^\d{2}\/\d{2}$/.test(this.expiryDate) &&
+          /^\d{3}$/.test(this.cvv)
+        );
+      }
+      if (this.selectedPaymentMethod === 'paypal') {
+        return /.+@.+\..+/.test(this.paypalEmail) && this.paypalPassword.length > 0;
+      }
+      if (this.selectedPaymentMethod === 'bizum') {
+        const digits = this.bizumDigitLength;
+        return /^\d+$/.test(this.bizumPhone) && this.bizumPhone.length === digits && this.bizumPin.length > 0;
+      }
+      if (this.selectedPaymentMethod === 'googlepay') {
+        const digits = this.googlePayDigitLength;
+        return /.+@.+\..+/.test(this.googlePayEmail) && /^\d+$/.test(this.googlePayPhone) && this.googlePayPhone.length === digits;
+      }
+      return true;
+    },
+    async handlePurchase(method) {
       try {
         if (this.selectedPaymentMethod === 'credits') {
-          if (this.userCredits < this.item.amount) {
+          if (this.item.type !== 'credit_pack' && this.userCredits < this.item.price) {
             this.errorTitle = 'Not Enough Credits!';
-            throw new Error('Insufficient credits to complete this purchase.');
+            this.errorMessage = 'Insufficient credits to complete this purchase.';
+            this.showErrorDialog = true;
+            return;
           }
           await this.processCreditPurchase();
         } else {
-          const itemPrice = parseFloat(this.item.price);
-          if (!isNaN(itemPrice) && itemPrice > 0) {
-            console.log(`Processing ${this.selectedPaymentMethod} payment - not implemented yet`);
-            throw new Error('Non-credit payment methods are not yet implemented.');
-          } else {
-            throw new Error('Invalid item price');
+          if (!this.validatePaymentInputs()) {
+            this.errorTitle = 'Invalid Input';
+            this.errorMessage = 'Please fill in all required payment fields correctly.';
+            this.showErrorDialog = true;
+            return;
           }
+          console.log(`Simulating ${method || this.selectedPaymentMethod} payment for ${this.item.price}€`);
+          await this.processRealMoneyPurchase();
         }
         this.showSuccessDialog = true;
       } catch (error) {
         console.error('Purchase failed:', error);
-        this.errorMessage = error.message;
+        this.errorTitle = error.response?.data?.error === 'You already own this item' ? 'Item Already Owned!' : 'Purchase Failed!';
+        this.errorMessage = error.message || 'An error occurred during the purchase.';
         this.showErrorDialog = true;
       }
     },
@@ -427,7 +586,15 @@ export default {
     },
     closeErrorDialog() {
       this.showErrorDialog = false;
-      this.$router.push('/shop');
+      if (this.errorMessage === 'Insufficient credits to complete this purchase.') {
+        this.$router.push('/shop#buy-credits');
+      } else {
+        this.$router.push('/shop');
+      }
+    },
+    handleImageError(event, item) {
+      console.warn(`Image failed to load for ${item.name} (ID: ${item.id}): ${item.iconUrl}`);
+      event.target.src = this.fallbackImage;
     },
   },
 };
@@ -435,245 +602,82 @@ export default {
 
 <style scoped>
 @import '../styles/nameEffects.css';
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Chalkduster&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
 
-.purchase-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
-  padding-top: 60px;
-  color: #1e293b;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+/* Animations from ShopPage */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.container {
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+.animate-fade-in {
+  animation: fade-in 1s ease-out;
 }
 
-.purchase-content {
-  padding: 3rem 1.5rem;
-  flex-grow: 1;
+.gradient-text {
+  background-image: linear-gradient(to right, #F59E0B, #D97706);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
-.checkout-header {
-  background: #ffffff;
-  padding: 2rem 3rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 2.5rem;
-  text-align: center;
-  width: 100%;
+/* Button styles from ShopPage */
+.btn-primary {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center;
+  @apply bg-gradient-to-r from-amber-500 to-amber-400 text-amber-900;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.checkout-header .title {
-  font-size: 2.25rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 0.75rem;
+.btn-primary:hover {
+  @apply bg-gradient-to-r from-amber-600 to-amber-500 transform -translate-y-0.5;
+  box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);
 }
 
-.checkout-header .description {
-  font-size: 1rem;
-  color: #64748b;
-  max-width: 800px;
-  margin: 0 auto;
-  line-height: 1.6;
+.btn-primary.active {
+  @apply bg-gradient-to-r from-amber-600 to-amber-500;
+  box-shadow: 0 6px 8px -2px rgba(245, 158, 11, 0.4);
 }
 
-.checkout-header .description a {
-  color: #2563eb;
-  text-decoration: none;
-  transition: color 0.3s;
+.btn-primary:disabled {
+  @apply bg-gray-400 cursor-not-allowed transform-none;
+  box-shadow: none;
 }
 
-.checkout-header .description a:hover {
-  color: #1d4ed8;
-}
-
-.checkout-container {
-  background: #ffffff;
-  padding: 2.5rem 3rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  max-width: 900px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.checkout-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  width: 100%;
-}
-
-.item-details-container {
-  padding: 1.5rem 2rem;
-  border-radius: 10px;
-  background: #f8fafc;
-  width: 100%;
-}
-
-.item-details {
-  text-align: center;
-  color: #1e293b;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.item-icon {
-  width: 120px;
-  height: 120px;
-  margin-bottom: 1.5rem;
-  object-fit: contain;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.item-details h2 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-}
-
-.item-details .price {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: #2563eb;
-  margin-bottom: 1rem;
-}
-
-.item-details .description {
-  font-size: 1rem;
-  color: #64748b;
-  margin-bottom: 1rem;
-}
-
-.item-details .features {
-  list-style: none;
-  padding: 0;
-  margin-bottom: 1rem;
-}
-
-.item-details .features li {
-  font-size: 0.95rem;
-  color: #475569;
-  margin-bottom: 0.5rem;
+/* Item preview styles from ShopPage */
+.background-preview, .banner-preview {
+  background-color: #f3e8d3;
   position: relative;
-  padding-left: 1.5rem;
+  height: 128px;
+  width: 128px;
 }
 
-.item-details .features li:before {
-  content: '✓';
-  color: #22c55e;
-  position: absolute;
-  left: 0;
-}
-
-.item-details .amount {
-  font-size: 1.1rem;
-  color: #475569;
-}
-
-.no-item p {
-  font-size: 1.1rem;
-  color: #64748b;
-  text-align: center;
-}
-
-.payment-container {
-  padding: 1.5rem 2rem;
-  border-radius: 10px;
-  background: #f8fafc;
-  width: 100%;
-}
-
-.payment-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 1.5rem;
-  text-align: center;
-}
-
-.payment-methods {
+.name-effect-preview, .profile-icon-preview, .profile-font-preview, .badge-preview {
+  background-color: #f3e8d3;
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  width: 100%;
+  align-items: center;
+  justify-content: center;
+  height: 96px;
+  width: 96px;
 }
 
-.payment-buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1.5rem;
-  justify-items: center;
-  width: 100%;
+.badge-preview img {
+  object-fit: contain;
+  padding: 8px;
 }
 
-.payment-btn {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  font-weight: 500;
-  color: #1e293b;
-  border: 2px solid #e2e8f0;
-  background: #ffffff;
-  transition: all 0.3s ease;
+.profile-font-preview img, .name-effect-preview img {
+  object-fit: contain;
+  padding: 4px;
 }
 
-.payment-btn:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+.effect-active {
+  display: inline-block;
+  padding: 0 0.25rem;
 }
 
-.payment-btn.active {
-  background: #2563eb;
-  color: #ffffff;
-  border-color: #2563eb;
-}
-
-.payment-form-container {
-  margin-top: 1rem;
-  width: 100%;
-}
-
-.payment-method h4 {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: #1e293b;
-  margin-bottom: 1rem;
-}
-
-.payment-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  width: 100%;
-}
-
-.credits-info {
-  margin-bottom: 1rem;
-  text-align: center;
-}
-
-.credits-info p {
-  font-size: 1rem;
-  color: #475569;
-  margin-bottom: 0.5rem;
-}
-
-.credits-info strong {
-  color: #2563eb;
+/* Payment form styles */
+.v-text-field, .v-select {
+  border-radius: 6px;
 }
 
 .phone-input {
@@ -688,23 +692,6 @@ export default {
   max-width: 250px;
 }
 
-.v-text-field {
-  border-radius: 6px;
-}
-
-.v-btn[color="primary"] {
-  background: #2563eb;
-  color: #ffffff;
-  padding: 0.75rem;
-  font-weight: 500;
-  border-radius: 8px;
-  transition: background 0.3s ease;
-}
-
-.v-btn[color="primary"]:hover {
-  background: #1d4ed8;
-}
-
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -715,103 +702,45 @@ export default {
   opacity: 0;
 }
 
-/* Success Dialog Styles */
-.success-dialog {
-  background: #000000;
-  padding: 1.5rem;
-  border-radius: 12px;
-}
-
-.headline {
-  display: flex;
-  align-items: center;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #ffffff;
-  padding-bottom: 1rem;
-}
-
-.dialog-text {
-  font-size: 1rem;
-  color: #ffffff;
-  line-height: 1.6;
-}
-
-.dialog-text p {
-  margin-bottom: 1rem;
-}
-
-.dialog-text strong {
-  color: #0000ff;
-}
-
-.dialog-text a {
-  color: #2563eb;
-  text-decoration: none;
-}
-
-.dialog-text a:hover {
-  color: #1d4ed8;
-}
-
-.v-card-actions {
-  padding-top: 1rem;
-}
-
-/* Error Dialog Styles */
-.error-dialog {
-  background: #000000;
-  padding: 1.5rem;
-  border-radius: 12px;
-}
-
-/* Profile Font Styles */
-.font-pixel-art { font-family: 'Press Start 2P', cursive; }
-.font-comic-sans { font-family: 'Comic Neue', cursive; }
-.font-gothic { font-family: 'Black Ops One', cursive; }
-.font-cursive { font-family: 'Dancing Script', cursive; }
-.font-typewriter { font-family: 'Courier Prime', monospace; }
-.font-bubble { font-family: 'Bungee', cursive; }
-.font-neon { font-family: 'Orbitron', sans-serif; }
-.font-graffiti { font-family: 'Wallpoet', cursive; }
-.font-retro { font-family: 'VT323', monospace; }
-.font-cyberpunk { font-family: 'Monoton', cursive; }
-.font-western { font-family: 'Special Elite', cursive; }
-.font-chalkboard { font-family: 'Chalkduster', cursive; }
-.font-horror { font-family: 'Creepster', cursive; }
-.font-futuristic { font-family: 'Audiowide', cursive; }
-.font-handwritten { font-family: 'Caveat', cursive; }
-.font-bold-script { font-family: 'Permanent Marker', cursive; }
+/* Profile Font Styles from ShopPage */
+.font-pixel-art { font-family: 'Press Start 2P', cursive; font-size: 0.75rem; }
+.font-comic-sans { font-family: 'Comic Neue', cursive; font-size: 0.85rem; }
+.font-gothic { font-family: 'Black Ops One', cursive; font-size: 0.85rem; }
+.font-cursive { font-family: 'Dancing Script', cursive; font-size: 0.85rem; }
+.font-typewriter { font-family: 'Courier Prime', monospace; font-size: 0.85rem; }
+.font-bubble { font-family: 'Bungee', cursive; font-size: 0.85rem; }
+.font-neon { font-family: 'Orbitron', sans-serif; font-size: 0.85rem; }
+.font-graffiti { font-family: 'Wallpoet', cursive; font-size: 0.85rem; }
+.font-retro { font-family: 'VT323', monospace; font-size: 0.85rem; }
+.font-cyberpunk { font-family: 'Monoton', cursive; font-size: 0.85rem; }
+.font-western { font-family: 'Special Elite', cursive; font-size: 0.85rem; }
+.font-chalkboard { font-family: 'Creepster', cursive; font-size: 0.85rem; }
+.font-horror { font-family: 'Creepster', cursive; font-size: 0.85rem; }
+.font-futuristic { font-family: 'Audiowide', cursive; font-size: 0.85rem; }
+.font-handwritten { font-family: 'Caveat', cursive; font-size: 0.85rem; }
+.font-bold-script { font-family: 'Permanent Marker', cursive; font-size: 0.85rem; }
 
 @media (max-width: 768px) {
-  .purchase-content {
-    padding: 2rem 1rem;
+  .min-h-screen {
+    padding: 1rem;
   }
 
-  .checkout-header {
-    padding: 1.5rem 2rem;
+  .max-w-7xl {
+    padding: 0.5rem;
   }
 
-  .checkout-container {
-    padding: 2rem 2rem;
-  }
-
-  .checkout-header .title {
-    font-size: 1.75rem;
-  }
-
-  .item-icon {
-    width: 80px;
-    height: 80px;
-  }
-
-  .item-details h2 {
-    font-size: 1.5rem;
-  }
-
-  .payment-buttons {
+  .grid-cols-2 {
     grid-template-columns: 1fr;
-    gap: 1rem;
+  }
+
+  .background-preview, .banner-preview {
+    height: 96px;
+    width: 96px;
+  }
+
+  .name-effect-preview, .profile-icon-preview, .profile-font-preview, .badge-preview {
+    height: 64px;
+    width: 64px;
   }
 
   .phone-input {

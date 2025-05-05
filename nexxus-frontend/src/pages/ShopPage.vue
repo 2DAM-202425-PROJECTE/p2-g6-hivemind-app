@@ -1,119 +1,193 @@
 <template>
-  <div class="shop-container">
-    <NavBar />
-    <router-view
-      :subscription-tiers="subscriptionTiers"
-      :credit-packs="creditPacks"
-      :cosmetic-categories="cosmeticCategories"
-    />
-
-    <div class="shop-content container">
-      <!-- Welcome Section -->
-      <section class="welcome-section">
-        <h1 class="text-center title">Welcome to our product page!</h1>
-        <p class="text-center subtitle">
-          Here you will find a wide range of subscriptions and credits to customize your profile.
-          Explore our options and choose the one that best suits your needs.
+  <div class="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 text-gray-800 p-32">
+    <Navbar />
+    <div class="max-w-7xl mx-auto px-6 py-12 animate-fade-in">
+      <!-- Header with bee theme -->
+      <div class="text-center mb-12">
+        <h1 class="text-5xl font-extrabold mb-4">
+          <span class="animate-letter gradient-text" style="--order: 1">S</span>
+          <span class="animate-letter gradient-text" style="--order: 2">h</span>
+          <span class="animate-letter gradient-text" style="--order: 3">o</span>
+          <span class="animate-letter gradient-text" style="--order: 4">p</span>
+          <span class="animate-letter gradient-text" style="--order: 5"> </span>
+          <span class="animate-letter gradient-text" style="--order: 6">t</span>
+          <span class="animate-letter gradient-text" style="--order: 7">h</span>
+          <span class="animate-letter gradient-text" style="--order: 8">e</span>
+          <span class="animate-letter gradient-text" style="--order: 9"> </span>
+          <span class="animate-letter gradient-text" style="--order: 10">H</span>
+          <span class="animate-letter gradient-text" style="--order: 11">i</span>
+          <span class="animate-letter gradient-text" style="--order: 12">v</span>
+          <span class="animate-letter gradient-text" style="--order: 13">e</span>
+        </h1>
+        <p class="text-lg text-amber-800">
+          Browse our selection of premium items to enhance your experience. Worker bees work hard to bring you these products!
         </p>
-      </section>
+      </div>
 
-      <!-- Trending Items Section -->
-      <section class="trending-section">
-        <h2 class="section-title">Trending Items</h2>
-        <div class="trending-grid">
-          <div v-for="item in trendingItems" :key="item.id" class="trending-item" :class="{ 'purchased': isPurchased(item.id) }">
-            <div class="item-icon" :class="{ 'background-preview': item.type === 'background', 'banner-preview': item.type === 'custom_banner' }">
-              <img :src="getItemIconUrl(item)" :alt="item.name" class="cosmetic-icon" @error="handleImageError(item)" />
+      <!-- Main shop content -->
+      <div class="space-y-12">
+        <!-- Trending Items Section -->
+        <section class="bg-white rounded-xl shadow-lg p-8 trending-items">
+          <h2 class="text-3xl font-bold mb-6 text-amber-900">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+            Trending Items
+          </h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div v-for="item in trendingItems" :key="item.id" class="bg-amber-50 rounded-lg p-4 transition-all hover:shadow-md" :class="{ 'opacity-60': isPurchased(item.id) }">
+              <div class="item-preview h-32 w-32 rounded-md overflow-hidden mb-3 mx-auto">
+                <img
+                  :src="item.iconUrl || fallbackImage"
+                  :alt="item.name"
+                  class="w-full h-full object-contain"
+                  @error="handleImageError($event, item)"
+                />
+              </div>
+              <h3 class="font-bold text-lg text-amber-900">{{ item.name }}</h3>
+              <p class="text-amber-700 font-medium mb-3">{{ formatPrice(item.price) }}</p>
+              <button
+                @click="goToPurchase(item.id)"
+                class="btn-primary w-full"
+                :disabled="isPurchased(item.id)"
+              >
+                {{ isPurchased(item.id) ? 'Owned' : 'Purchase' }}
+              </button>
             </div>
-            <h3 class="item-name">{{ item.name }}</h3>
-            <p class="item-price">{{ formatPrice(item.price) }}</p>
-            <button
-              @click="goToPurchase(item.id)"
-              class="buy-button"
-              :disabled="isPurchased(item.id)"
-            >
-              {{ isPurchased(item.id) ? 'Owned' : 'Purchase' }}
-            </button>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Subscriptions Section -->
-      <section class="subscriptions-section">
-        <h2 class="section-title">Subscriptions</h2>
-        <div class="subscription-grid">
-          <div v-for="tier in subscriptionTiers" :key="tier.id" class="subscription-card" :class="{ 'purchased': isPurchased(tier.id) }">
-            <img :src="getItemIconUrl(tier)" :alt="tier.name" class="cosmetic-icon" @error="handleImageError(tier)" />
-            <h3 class="tier-title">{{ tier.name }}</h3>
-            <p class="tier-price">{{ formatPrice(tier.price) }}</p>
-            <button
-              @click="goToPurchase(tier.id)"
-              class="buy-button"
-              :disabled="isPurchased(tier.id)"
-            >
-              {{ isPurchased(tier.id) ? 'Owned' : 'Purchase' }}
-            </button>
+        <!-- Subscriptions Section -->
+        <section class="bg-white rounded-xl shadow-lg p-8">
+          <h2 class="text-3xl font-bold mb-6 text-amber-900">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+            Subscriptions
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div v-for="tier in subscriptionTiers" :key="tier.id" class="bg-amber-50 rounded-lg p-6 border-2 border-amber-200 hover:border-amber-300 transition-all">
+              <img
+                :src="tier.iconUrl || fallbackImage"
+                :alt="tier.name"
+                class="w-16 h-16 mx-auto mb-4"
+                @error="handleImageError($event, tier)"
+              />
+              <h3 class="text-xl font-bold text-center text-amber-900 mb-2">{{ tier.name }}</h3>
+              <p class="text-center text-amber-700 font-medium mb-4">{{ formatPrice(tier.price) }}</p>
+              <button
+                @click="goToPurchase(tier.id)"
+                class="btn-primary w-full"
+                :disabled="isPurchased(tier.id)"
+              >
+                {{ isPurchased(tier.id) ? 'Current Plan' : 'Subscribe' }}
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Credits Section -->
-      <section id="buy-credits" class="credits-section">
-        <h2 class="section-title">Buy Credits</h2>
-        <div class="credits-grid">
-          <div v-for="credit in creditPacks" :key="credit.id" class="credit-card">
-            <img :src="getItemIconUrl(credit)" :alt="credit.name" class="credit-icon" @error="handleImageError(credit)" />
-            <h3 class="credit-amount">{{ credit.name }}</h3>
-            <p class="credit-price">{{ formatPrice(credit.price) }}</p>
-            <button @click="goToPurchase(credit.id)" class="buy-button">Purchase</button>
+        <!-- Credits Section -->
+        <section id="buy-credits" class="bg-white rounded-xl shadow-lg p-8">
+          <h2 class="text-3xl font-bold mb-6 text-amber-900">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Buy Credits
+          </h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div v-for="credit in creditPacks" :key="credit.id" class="bg-amber-50 rounded-lg p-4 text-center hover:shadow-md transition-all">
+              <img
+                :src="credit.iconUrl || fallbackImage"
+                :alt="credit.name"
+                class="w-12 h-12 mx-auto mb-3"
+                @error="handleImageError($event, credit)"
+              />
+              <h3 class="font-bold text-amber-900">{{ credit.name }}</h3>
+              <p class="text-amber-700 font-medium mb-3">{{ formatPrice(credit.price) }}</p>
+              <button @click="goToPurchase(credit.id)" class="btn-primary w-full">
+                Purchase
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Cosmetics Section -->
-      <section class="cosmetics-section">
-        <h2 class="section-title">Cosmetics</h2>
-        <div class="cosmetics-grid">
-          <div v-for="category in cosmeticCategories" :key="category.title" class="category-card">
-            <h3 class="category-title">{{ category.title }}</h3>
-            <p class="category-description">{{ category.description }}</p>
-            <div class="items-grid">
-              <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'purchased': isPurchased(item.id), 'background-item': item.type === 'background', 'banner-item': item.type === 'custom_banner', 'name-effect-item': item.type === 'name_effect' }">
-                <div class="item-preview" :class="{ 'background-preview': item.type === 'background', 'banner-preview': item.type === 'custom_banner', 'name-effect-preview': item.type === 'name_effect' }">
-                  <img :src="getItemIconUrl(item)" :alt="item.name" class="cosmetic-icon" @error="handleImageError(item)" />
+        <!-- Cosmetics Section -->
+        <section class="bg-white rounded-xl shadow-lg p-8">
+          <h2 class="text-3xl font-bold mb-6 text-amber-900">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+            Cosmetics
+          </h2>
+
+          <div class="space-y-8">
+            <div v-for="category in cosmeticCategories" :key="category.title" class="bg-amber-50 rounded-lg p-6">
+              <h3 class="text-2xl font-bold mb-3 text-amber-900">
+                {{ category.title }}
+                <span class="text-sm font-medium text-amber-700">
+                  ({{ getOwnedCount(category.items) }}/{{ category.items.length }} owned)
+                </span>
+              </h3>
+              <p class="text-amber-800 mb-4">{{ category.description }}</p>
+
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div v-for="item in category.items" :key="item.id" class="bg-white rounded-lg p-3 hover:shadow-md transition-all" :class="{ 'opacity-60': isPurchased(item.id) }">
+                  <div
+                    class="item-preview rounded-md overflow-hidden mb-2"
+                    :class="{
+                      'background-preview': item.type === 'background',
+                      'banner-preview': item.type === 'custom_banner',
+                      'name-effect-preview': item.type === 'name_effect',
+                      'profile-icon-preview': item.type === 'profile_icon',
+                      'profile-font-preview': item.type === 'profile_font',
+                      'badge-preview': item.type === 'badge'
+                    }"
+                  >
+                    <img
+                      :src="item.iconUrl || fallbackImage"
+                      :alt="item.name"
+                      class="w-full h-full object-cover"
+                      @error="handleImageError($event, item)"
+                    />
+                  </div>
+                  <!-- Apply effects directly to the name -->
+                  <h4 :class="[
+                    'font-medium text-amber-900 truncate',
+                    category.title === 'Name Effects' ? getNameEffectClass(item.name) : '',
+                    category.title === 'Profile Fonts' ? getProfileFontClass(item.name) : '',
+                    category.title === 'Name Effects' ? 'effect-active' : ''
+                  ]">
+                    {{ item.name }}
+                  </h4>
+                  <p class="text-amber-700 text-sm font-medium mb-2">{{ formatPrice(item.price) }}</p>
+                  <button
+                    @click="goToPurchase(item.id)"
+                    class="btn-primary w-full text-sm py-1"
+                    :disabled="isPurchased(item.id)"
+                  >
+                    {{ isPurchased(item.id) ? 'Owned' : 'Purchase' }}
+                  </button>
                 </div>
-                <h4 :class="['item-name', category.title === 'Name Effects' ? getNameEffectClass(item.name) : '', category.title === 'Profile Fonts' ? getProfileFontClass(item.name) : '']">
-                  {{ item.name }}
-                </h4>
-                <p class="item-price">{{ formatPrice(item.price) }}</p>
-                <button
-                  @click="goToPurchase(item.id)"
-                  class="buy-button"
-                  :disabled="isPurchased(item.id)"
-                >
-                  {{ isPurchased(item.id) ? 'Owned' : 'Purchase' }}
-                </button>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
-
-    <AppFooter />
+    <Footer />
   </div>
 </template>
 
 <script>
-import NavBar from '../components/NavBar.vue';
-import AppFooter from '../components/AppFooter.vue';
+import Navbar from '@/components/NavBar.vue';
+import Footer from '@/components/AppFooter.vue';
 import apiClient from '@/axios.js';
 
 export default {
   name: 'ShopPage',
   components: {
-    NavBar,
-    AppFooter,
+    Navbar,
+    Footer,
   },
   data() {
     return {
@@ -123,30 +197,20 @@ export default {
       userInventory: [],
       userId: null,
       fallbackImage: 'https://api.iconify.design/lucide/image-off.svg',
-      fallbackIcons: {
-        'Cosmic Vortex': 'https://media.tenor.com/5o2qbr5P5mUAAAAC/space-vortex.gif',
-        'Neon Cityscape': 'https://media.tenor.com/8vL1Z5j0Z7IAAAAC/neon-city.gif',
-        'Firestorm Horizon': 'https://media.tenor.com/2vL5z5z5z5IAAAAC/firestorm.gif',
-        'Mystic Nebula': 'https://media.tenor.com/1z5z5z5z5zIAAAAC/nebula-space.gif',
-        'Cyber Grid': 'https://media.tenor.com/3z5z5z5z5zIAAAAC/cyber-grid.gif',
-        'Ethereal Waves': 'https://media.tenor.com/4z5z5z5z5zIAAAAC/ethereal-waves.gif',
-        'Ocean Surge': 'https://media.tenor.com/5z5z5z5z5zIAAAAC/ocean-waves.gif',
-        'Pixel Storm': 'https://media.tenor.com/6z5z5z5z5zIAAAAC/pixel-storm.gif',
-        'Lava Flow': 'https://media.tenor.com/7z5z5z5z5zIAAAAC/lava-flow.gif',
-        'Frost Vortex': 'https://media.tenor.com/8z5z5z5z5zIAAAAC/frost-vortex.gif',
-        'Steampunk Gears': 'https://media.tenor.com/9z5z5z5z5zIAAAAC/steampunk-gears.gif',
-        'Lunar Eclipse': 'https://media.tenor.com/0z5z5z5z5zIAAAAC/lunar-eclipse.gif',
-        'Glitch Matrix': 'https://media.tenor.com/1z5z5z5z5zIAAAAC/glitch-matrix.gif',
-        'Aurora Dance': 'https://media.tenor.com/2z5z5z5z5zIAAAAC/aurora-borealis.gif',
-        'Galactic Spin': 'https://media.tenor.com/3z5z5z5z5zIAAAAC/galaxy-spin.gif',
-        'Rainbow Flux': 'https://media.tenor.com/4z5z5z5z5zIAAAAC/rainbow-flux.gif',
-      },
     };
   },
   computed: {
     trendingItems() {
       const allItems = this.cosmeticCategories.flatMap(category => category.items);
-      return this.shuffleArray([...allItems]).slice(0, 5);
+      // Filter out purchased items
+      const availableItems = allItems.filter(item => !this.userInventory.includes(item.id));
+      const customBanners = availableItems.filter(item => item.type === 'custom_banner');
+      const otherItems = availableItems.filter(item => item.type !== 'custom_banner');
+      // Prioritize custom banners (up to 2) and fill with other items to reach 4
+      const shuffledBanners = this.shuffleArray([...customBanners]).slice(0, Math.min(2, customBanners.length));
+      const remainingSlots = 4 - shuffledBanners.length;
+      const shuffledOthers = this.shuffleArray([...otherItems]).slice(0, Math.min(remainingSlots, otherItems.length));
+      return [...shuffledBanners, ...shuffledOthers].slice(0, 4);
     },
   },
   created() {
@@ -154,12 +218,6 @@ export default {
     this.fetchCategorizedItems();
   },
   methods: {
-    getItemIconUrl(item) {
-      if (item.iconUrl && !item.iconFailed) {
-        return item.iconUrl;
-      }
-      return this.fallbackIcons[item.name] || this.fallbackImage;
-    },
     getNameEffectClass(name) {
       if (!name) return '';
       return name.toLowerCase().replace(/\s+/g, '-');
@@ -185,11 +243,13 @@ export default {
         default: return '';
       }
     },
+    getOwnedCount(items) {
+      return items.filter(item => this.userInventory.includes(item.id)).length;
+    },
     async fetchCurrentUser() {
       try {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
-
         const response = await apiClient.get('/api/user');
         this.userId = response.data.id;
         await this.fetchUserInventory();
@@ -247,7 +307,7 @@ export default {
         },
         {
           title: 'Custom Banners',
-          description: 'Enhance your profile header with animated 4K banners',
+          description: 'Enhance your profile header with vibrant animated banners',
           items: cosmetics.filter(item => item.type === 'custom_banner'),
         },
         {
@@ -276,10 +336,9 @@ export default {
     isPurchased(itemId) {
       return this.userInventory.includes(itemId);
     },
-    handleImageError(item) {
-      console.warn(`Image failed to load for ${item.name}: ${item.iconUrl}`);
-      item.iconFailed = true;
-      item.iconUrl = this.fallbackIcons[item.name] || this.fallbackImage;
+    handleImageError(event, item) {
+      console.warn(`Image failed to load for ${item.name} (ID: ${item.id}): ${item.iconUrl}`);
+      event.target.src = this.fallbackImage;
     },
   },
 };
@@ -289,160 +348,144 @@ export default {
 @import '../styles/nameEffects.css';
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
 
-.shop-container {
-  min-height: 100vh;
-  background-color: #f0f2f5;
-  padding-top: 60px;
+/* Reuse your existing animations */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.container {
-  width: 100%;
-  max-width: 1200px;
+@keyframes letter {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 1s ease-out;
+}
+
+.animate-letter {
+  display: inline-block;
+  opacity: 0;
+  animation: letter 0.5s ease-out forwards;
+  animation-delay: calc(var(--order) * 0.1s);
+}
+
+.gradient-text {
+  background-image: linear-gradient(to right, #F59E0B, #D97706);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Button styles matching your theme */
+.btn-primary {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center;
+  @apply bg-gradient-to-r from-amber-500 to-amber-400 text-amber-900;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+  @apply bg-gradient-to-r from-amber-600 to-amber-500 transform -translate-y-0.5;
+  box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);
+}
+
+.btn-primary:disabled {
+  @apply bg-gray-400 cursor-not-allowed transform-none;
+  box-shadow: none;
+}
+
+/* Item preview styles for Trending Items */
+.trending-items .item-preview {
+  background-color: #f3e8d3;
+  height: 128px;
+  width: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trending-items .item-preview img {
+  object-fit: contain;
+  padding: 8px;
+}
+
+/* Item preview styles for Cosmetics section */
+.background-preview, .banner-preview {
+  background-color: #f3e8d3;
+  position: relative;
+  height: 128px;
+}
+
+.name-effect-preview, .profile-icon-preview, .profile-font-preview, .badge-preview {
+  background-color: #f3e8d3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96px;
+  width: 96px;
   margin: 0 auto;
-  padding: 0 1rem;
 }
 
-.category-description {
-  color: #666;
-  margin-bottom: 1rem;
-  font-size: 0.95rem;
+.badge-preview img {
+  object-fit: contain;
+  padding: 8px;
 }
 
-.items-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  max-width: 100%;
+.profile-font-preview img, .name-effect-preview img {
+  object-fit: contain;
+  padding: 4px;
 }
 
-@media (min-width: 768px) {
-  .items-grid { grid-template-columns: repeat(4, 1fr); }
-}
-@media (min-width: 480px) and (max-width: 767px) {
-  .items-grid { grid-template-columns: repeat(3, 1fr); }
-}
-@media (max-width: 479px) {
-  .items-grid { grid-template-columns: repeat(2, 1fr); }
+/* Ensure name effects are active */
+.effect-active {
+  display: inline-block;
+  padding: 0 0.25rem;
 }
 
-.shop-content {
-  padding: 2rem 1rem;
-}
-
-section {
-  background: white;
-  border-radius: 8px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.text-center { text-align: center; color: #000; }
-.title { font-size: 2.5rem; font-weight: bold; color: #000; margin-bottom: 1rem; }
-.subtitle { font-size: 1.1rem; color: #000; margin-bottom: 2rem; }
-.section-title { font-size: 1.75rem; font-weight: bold; margin-bottom: 1.5rem; color: #000; }
-.tier-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; color: #000; }
-.tier-price { font-size: 1.25rem; color: #000; font-weight: bold; margin-bottom: 1.5rem; }
-
-.trending-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
-.trending-item { background: #fff; border-radius: 8px; padding: 1.5rem; text-align: center; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-.trending-item h3, .trending-item p { color: #000; }
-
-.subscription-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
-.subscription-card { background: #fff; border-radius: 8px; padding: 2rem; text-align: center; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-.credits-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-.credit-card { background: #fff; border-radius: 8px; padding: 1.5rem; text-align: center; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-.credit-card h3, .credit-card p { color: #000; }
-.cosmetics-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
-.category-card { background: #fff; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-.cosmetic-item { padding: 1rem; background: #f8f9fa; border-radius: 8px; text-align: center; }
-
-.background-item .item-preview,
-.banner-item .item-preview {
-  height: 100px;
-  overflow: hidden;
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
-}
-
-.background-preview .cosmetic-icon,
-.banner-preview .cosmetic-icon {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  animation: banner-preview-animation 10s infinite linear;
-}
-
-.name-effect-item .item-preview {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 0.5rem;
-}
-
-.cosmetic-icon {
-  width: 32px;
-  height: 32px;
-  margin-bottom: 0.5rem;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.category-card h3, .cosmetic-item h4, .cosmetic-item p { color: #000; }
-.purchased { background: #e0e0e0; opacity: 0.7; }
-.purchased .buy-button { background-color: #a0a0a0; cursor: not-allowed; }
-.purchased .buy-button:hover { background-color: #a0a0a0; }
+/* Profile Font Styles - smaller font sizes */
+.font-pixel-art { font-family: 'Press Start 2P', cursive; font-size: 0.75rem; }
+.font-comic-sans { font-family: 'Comic Neue', cursive; font-size: 0.85rem; }
+.font-gothic { font-family: 'Black Ops One', cursive; font-size: 0.85rem; }
+.font-cursive { font-family: 'Dancing Script', cursive; font-size: 0.85rem; }
+.font-typewriter { font-family: 'Courier Prime', monospace; font-size: 0.85rem; }
+.font-bubble { font-family: 'Bungee', cursive; font-size: 0.85rem; }
+.font-neon { font-family: 'Orbitron', sans-serif; font-size: 0.85rem; }
+.font-graffiti { font-family: 'Wallpoet', cursive; font-size: 0.85rem; }
+.font-retro { font-family: 'VT323', monospace; font-size: 0.85rem; }
+.font-cyberpunk { font-family: 'Monoton', cursive; font-size: 0.85rem; }
+.font-western { font-family: 'Special Elite', cursive; font-size: 0.85rem; }
+.font-chalkboard { font-family: 'Creepster', cursive; font-size: 0.85rem; }
+.font-horror { font-family: 'Creepster', cursive; font-size: 0.85rem; }
+.font-futuristic { font-family: 'Audiowide', cursive; font-size: 0.85rem; }
+.font-handwritten { font-family: 'Caveat', cursive; font-size: 0.85rem; }
+.font-bold-script { font-family: 'Permanent Marker', cursive; font-size: 0.85rem; }
 
 @media (max-width: 768px) {
-  .shop-content { padding: 1rem; }
-  .title { font-size: 2rem; }
-  .section-title { font-size: 1.5rem; }
-  .subscription-grid, .cosmetics-grid { grid-template-columns: 1fr; }
-}
+  .min-h-screen {
+    padding: 1rem;
+  }
 
-.credit-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  margin-bottom: 1rem;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
+  .max-w-7xl {
+    padding: 0.5rem;
+  }
 
-.buy-button {
-  background-color: grey;
-  color: white;
-  border: none;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 0.5rem;
-  transition: background-color 0.3s;
-}
+  /* Adjust grid for mobile */
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
 
-.buy-button:hover { background-color: darkgrey; }
+  .trending-items .item-preview {
+    height: 96px;
+    width: 96px;
+  }
 
-/* Profile Font Styles */
-.font-pixel-art { font-family: 'Press Start 2P', cursive; }
-.font-comic-sans { font-family: 'Comic Neue', cursive; }
-.font-gothic { font-family: 'Black Ops One', cursive; }
-.font-cursive { font-family: 'Dancing Script', cursive; }
-.font-typewriter { font-family: 'Courier Prime', monospace; }
-.font-bubble { font-family: 'Bungee', cursive; }
-.font-neon { font-family: 'Orbitron', sans-serif; }
-.font-graffiti { font-family: 'Wallpoet', cursive; }
-.font-retro { font-family: 'VT323', monospace; }
-.font-cyberpunk { font-family: 'Monoton', cursive; }
-.font-western { font-family: 'Special Elite', cursive; }
-.font-chalkboard { font-family: 'Creepster', cursive; }
-.font-horror { font-family: 'Creepster', cursive; }
-.font-futuristic { font-family: 'Audiowide', cursive; }
-.font-handwritten { font-family: 'Caveat', cursive; }
-.font-bold-script { font-family: 'Permanent Marker', cursive; }
+  .background-preview, .banner-preview {
+    height: 96px;
+  }
 
-@keyframes banner-preview-animation {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
+  .name-effect-preview, .profile-icon-preview, .profile-font-preview, .badge-preview {
+    height: 64px;
+    width: 64px;
+  }
 }
 </style>

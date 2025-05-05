@@ -1,7 +1,6 @@
 <template>
-  <div class="home-container">
+  <div class="home-container" :style="equippedBackgroundStyle">
     <Navbar />
-    <h1>Home</h1>
     <StoriesBar :stories="stories.data" />
 
     <!-- Post Input Section -->
@@ -168,7 +167,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
@@ -179,20 +178,7 @@ import VEmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 import apiClient from "@/axios.js";
 
-onMounted(() => {
-  fetchPosts(1, true);
-  window.addEventListener('scroll', handleScroll);
-  window.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
-  window.removeEventListener('click', handleClickOutside);
-  if (scrollDebounce.value) {
-    clearTimeout(scrollDebounce.value);
-  }
-});
-
+// Initialize refs
 const router = useRouter();
 const posts = ref([]);
 const loading = ref(false);
@@ -221,8 +207,42 @@ const currentUser = ref({
   id: null,
   name: 'Current User',
   profile_photo_path: null,
+  equipped_background_path: null,
 });
 
+// Load cached background path from localStorage (if available)
+const cachedBackgroundPath = ref(localStorage.getItem('equipped_background_path') || null);
+
+// Fetch user data immediately on mount
+const fetchUserData = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token available');
+      return;
+    }
+
+    // Fetch current user data
+    const userResult = await apiClient.get('/api/user');
+    currentUser.value = userResult.data;
+
+    // Fetch equipped items to get equipped_background_path
+    const equippedItemsResult = await apiClient.get(`/api/user/${currentUser.value.id}/equipped-items`);
+    currentUser.value.equipped_background_path = equippedItemsResult.data.equipped_background_path;
+    console.log('Equipped background path:', currentUser.value.equipped_background_path);
+
+    // Cache the background path in localStorage
+    if (currentUser.value.equipped_background_path) {
+      localStorage.setItem('equipped_background_path', currentUser.value.equipped_background_path);
+    } else {
+      localStorage.removeItem('equipped_background_path');
+    }
+  } catch (error) {
+    console.error('Error fetching user data:', error.response?.data || error.message);
+  }
+};
+
+// Fetch posts and other data
 const fetchPosts = async (page = 1, initialLoad = false) => {
   if (loading.value || (noMorePosts.value && !initialLoad)) return;
 
@@ -262,9 +282,6 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
       return acc;
     }, {});
 
-    const userResult = await apiClient.get('/api/user');
-    currentUser.value = userResult.data;
-
     const storiesResult = await apiClient.get('/api/stories');
     stories.value = storiesResult.data;
   } catch (error) {
@@ -273,6 +290,33 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
     loading.value = false;
   }
 };
+
+// Computed property for background style
+const equippedBackgroundStyle = computed(() => {
+  // Use the currentUser's equipped_background_path if available, otherwise fall back to cached value
+  const bgPath = currentUser.value.equipped_background_path || cachedBackgroundPath.value;
+  return bgPath
+    ? { backgroundImage: `url(${bgPath})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
+    : {};
+});
+
+// Mount and unmount lifecycle hooks
+onMounted(async () => {
+  // Fetch user data first to set the background immediately
+  await fetchUserData();
+  // Then fetch posts and other data
+  fetchPosts(1, true);
+  window.addEventListener('scroll', handleScroll);
+  window.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
+  window.removeEventListener('click', handleClickOutside);
+  if (scrollDebounce.value) {
+    clearTimeout(scrollDebounce.value);
+  }
+});
 
 const handleScroll = () => {
   if (scrollDebounce.value) {
@@ -436,7 +480,11 @@ const submitPost = async () => {
     if (newPostFile.value) formData.append('file', newPostFile.value);
     if (selectedLocation.value) formData.append('location', selectedLocation.value.name);
 
-    await apiClient.post('/api/posts', formData);
+    await apiClient.post('/api/posts', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
 
     await fetchPosts(1, true);
     newPostContent.value = '';
@@ -555,20 +603,21 @@ const saveEditPost = async () => {
       formData.append('file', editPostFile.value);
     }
 
-    const response = await apiClient.put(`/api/posts/${selectedPost.value.id}`, formData);
-
-    const updatedPost = response.data.post;
-    const postIndex = posts.value.findIndex(p => p.id === selectedPost.value.id);
-    if (postIndex !== -1) {
-      posts.value[postIndex] = {
-        ...posts.value[postIndex],
-        description: updatedPost.description,
-        file_path: updatedPost.file_path || posts.value[postIndex].file_path,
-        updated_at: updatedPost.updated_at,
-      };
+    for (let pair of formData.entries()) {
+      console.log(pair[0] + ': ' + pair[1]);
     }
 
+    await apiClient.post(`/api/posts/${selectedPost.value.id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    await fetchPosts(1, true);
+
     editPostPopup.value = false;
+    editPostDescription.value = '';
+    editPostFile.value = null;
   } catch (error) {
     console.error('Error updating post:', error);
     alert('Error: ' + (error.response?.data?.message || error.message));
@@ -604,9 +653,11 @@ const formatDate = (dateString) => {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
-  background-color: #f0f2f5;
+  background-color: #f0f2f5; /* Fallback background color */
   min-height: 100vh;
   color: black;
+  width: 100%;
+  position: relative;
 }
 
 h1 {
@@ -662,7 +713,7 @@ h1 {
   display: inline-block;
 }
 
-.preview-media {
+.previewぞmedia {
   max-width: 100%;
   max-height: 200px;
   border-radius: 10px;

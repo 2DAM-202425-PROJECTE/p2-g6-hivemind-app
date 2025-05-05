@@ -15,11 +15,32 @@
       </div>
       <div v-if="inventoryCategories.length > 0" class="cosmetics-grid">
         <div v-for="category in inventoryCategories" :key="category.title" class="category-card">
-          <h3 class="category-title">{{ category.title }}</h3>
+          <div
+            class="category-header"
+            @click="toggleCategory(category.title)"
+          >
+            <h3 class="category-title">{{ category.title }}</h3>
+            <p class="category-count">
+              (You own {{ category.items.length }}/{{ getTotalItems(category.title) }})
+            </p>
+            <i
+              :class="['fas', category.isOpen ? 'fa-chevron-up' : 'fa-chevron-down', 'toggle-icon']"
+            ></i>
+          </div>
           <p class="category-description">{{ category.description }}</p>
-          <div class="items-grid">
-            <div v-for="item in category.items" :key="item.id" class="cosmetic-item" :class="{ 'background-item': item.type === 'background', 'banner-item': item.type === 'custom_banner' }">
-              <img :src="getItemIconUrl(item)" :alt="item.name" class="cosmetic-icon" @error="handleImageError(item)" />
+          <div v-if="category.isOpen" class="items-grid">
+            <div
+              v-for="item in category.items"
+              :key="item.id"
+              class="cosmetic-item"
+              :class="{ 'background-item': item.type === 'background', 'banner-item': item.type === 'custom_banner' }"
+            >
+              <img
+                :src="getItemIconUrl(item)"
+                :alt="item.name"
+                class="cosmetic-icon"
+                @error="handleImageError($event, item)"
+              />
               <h4 class="item-name">{{ item.name }}</h4>
               <p class="item-price">{{ formatPrice(item.price) }}</p>
               <button
@@ -43,7 +64,7 @@
       @click="closeEquipPopupOnBackdrop"
     >
       <div class="bg-white dark:bg-gray-800 rounded-lg p-4" @click.stop>
-        <p class="text-gray-900 dark:text-white">{{ equippedItemName }}</p>
+        <p class="text-gray-900 dark:text-white">{{ equippedItemMessage }}</p>
         <button
           @click="showEquipPopup = false"
           class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -66,29 +87,31 @@ const props = defineProps({
 const emit = defineEmits(['close', 'update-user']);
 
 const showEquipPopup = ref(false);
-const equippedItemName = ref('');
+const equippedItemMessage = ref('');
 const inventory = ref([]);
 const inventoryCategories = ref([]);
 
-// Fallback image and icons for when GIFs fail to load
+// Track open/closed state of categories
+const categoryStates = ref({});
+
 const fallbackImage = 'https://api.iconify.design/lucide/image-off.svg';
 const fallbackIcons = {
-  'Cosmic Vortex': 'https://api.iconify.design/mdi/star-four-points.svg?color=%2300BFFF',
-  'Neon Cityscape': 'https://api.iconify.design/mdi/pulse.svg?color=%23FF4500',
-  'Firestorm Horizon': 'https://api.iconify.design/mdi/fire.svg?color=%23FF4500',
-  'Mystic Nebula': 'https://api.iconify.design/mdi/cloud.svg?color=%2300FFFF',
-  'Cyber Grid': 'https://api.iconify.design/mdi/grid.svg?color=%2300FFFF',
-  'Ethereal Waves': 'https://api.iconify.design/mdi/wave.svg?color=%2300FFFF',
-  'Ocean Surge': 'https://api.iconify.design/mdi/water.svg?color=%2300FFFF',
-  'Pixel Storm': 'https://api.iconify.design/mdi/lightning-bolt.svg?color=%23FF00FF',
-  'Lava Flow': 'https://api.iconify.design/mdi/lava.svg?color=%23FF4500',
-  'Frost Vortex': 'https://api.iconify.design/mdi/snowflake.svg?color=%2300FFFF',
-  'Steampunk Gears': 'https://api.iconify.design/mdi/cog.svg?color=%23FFD700',
-  'Lunar Eclipse': 'https://api.iconify.design/mdi/moon.svg?color=%23FFFFFF',
-  'Glitch Matrix': 'https://api.iconify.design/mdi/matrix.svg?color=%2300FF00',
-  'Aurora Dance': 'https://api.iconify.design/mdi/weather-night.svg?color=%2300FF00',
-  'Galactic Spin': 'https://api.iconify.design/mdi/galaxy.svg?color=%2300FFFF',
-  'Rainbow Flux': 'https://api.iconify.design/mdi/rainbow.svg?color=%23FF00FF',
+  'Misty Peaks': 'https://api.iconify.design/mdi/mountain.svg?color=%23666666',
+  'Cascading Falls': 'https://api.iconify.design/mdi/waterfall.svg?color=%2300FFFF',
+  'Stormy Waves': 'https://api.iconify.design/mdi/wave.svg?color=%230066CC',
+  'Desert Sunset': 'https://api.iconify.design/mdi/weather-sunset.svg?color=%23FF4500',
+  'Northern Lights': 'https://api.iconify.design/mdi/weather-night.svg?color=%2300FF00',
+  'Gentle Waterfall': 'https://api.iconify.design/mdi/water.svg?color=%2300FFFF',
+  'Autumn Drift': 'https://api.iconify.design/mdi/leaf.svg?color=%23FFA500',
+  'Tech Grid': 'https://api.iconify.design/mdi/grid.svg?color=%2300FFFF',
+  'Particle Flow': 'https://api.iconify.design/mdi/dots-horizontal.svg?color=%23FF00FF',
+  'Circuit Pulse': 'https://api.iconify.design/mdi/circuit-board.svg?color=%2300FF00',
+  'Matrix Rain': 'https://api.iconify.design/mdi/matrix.svg?color=%2300FF00',
+  'Cyber Skyline': 'https://api.iconify.design/mdi/city.svg?color=%23FF4500',
+  'Code Rainfall': 'https://api.iconify.design/mdi/code-braces.svg?color=%2300FF00',
+  'Holo Waves': 'https://api.iconify.design/mdi/waveform.svg?color=%2300FFFF',
+  'Neon Pulse': 'https://api.iconify.design/mdi/pulse.svg?color=%23FF00FF',
+  'Star Warp': 'https://api.iconify.design/mdi/star-four-points.svg?color=%2300FFFF',
 };
 
 const closeInventoryOnBackdrop = (event) => {
@@ -99,7 +122,6 @@ const closeEquipPopupOnBackdrop = (event) => {
   if (event.target === event.currentTarget) showEquipPopup.value = false;
 };
 
-// Method to get the item icon URL with fallback
 const getItemIconUrl = (item) => {
   if (item.icon_url && !item.iconFailed) {
     return item.icon_url;
@@ -107,33 +129,51 @@ const getItemIconUrl = (item) => {
   return fallbackIcons[item.name] || fallbackImage;
 };
 
-// Handle image load errors
-const handleImageError = (item) => {
-  console.warn(`Image failed to load for ${item.name}: ${item.icon_url}`);
+const handleImageError = (event, item) => {
+  console.warn(`Image failed to load for ${item.name} (ID: ${item.id}): ${item.icon_url}`);
   item.iconFailed = true;
-  item.icon_url = fallbackIcons[item.name] || fallbackImage;
+  event.target.src = fallbackIcons[item.name] || fallbackImage;
 };
 
-const updateEquipped = async (itemId, type, isUnequip = false) => {
+const updateEquipped = async (item, type, isUnequip = false) => {
   try {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token found.');
+    if (!props.user?.id) throw new Error('User ID is missing');
 
-    let endpoint;
+    const typeToEndpointMap = {
+      background: '/api/user/update-equipped-background',
+      custom_banner: '/api/user/update-equipped-banner',
+      profile_icon: '/api/user/update-equipped-profile-icon',
+      name_effect: '/api/user/update-equipped-name-effect',
+      profile_font: '/api/user/update-equipped-profile-font',
+      badge: '/api/user/update-equipped-badge',
+    };
+
+    const endpoint = typeToEndpointMap[type] || `/api/user/update-equipped-${type.replace('_', '-')}`;
+
     let payload;
-
     if (type === 'custom_banner') {
-      endpoint = '/api/user/update-equipped-banner';
-      payload = isUnequip ? { banner_id: null } : { banner_id: itemId };
+      payload = isUnequip
+        ? { userId: props.user.id, equipped_banner_photo_path: null }
+        : { userId: props.user.id, equipped_banner_photo_path: item.icon_url };
+    } else if (['name_effect', 'profile_font'].includes(type)) {
+      payload = isUnequip
+        ? { userId: props.user.id, item_id: null }
+        : { userId: props.user.id, item_id: item.item_id };
     } else {
-      endpoint = `/api/user/update-equipped-${type}`;
-      payload = isUnequip ? { item_id: null } : { item_id: itemId };
+      payload = isUnequip
+        ? { userId: props.user.id, [`equipped_${type}_path`]: null }
+        : { userId: props.user.id, [`equipped_${type}_path`]: item.icon_url };
     }
+
+    console.log(`Sending payload to ${endpoint}:`, payload);
 
     const response = await apiClient.post(endpoint, payload, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
+    console.log(`${isUnequip ? 'Unequipped' : 'Equipped'} ${type} response:`, response.data);
     return response.data;
   } catch (error) {
     console.error(`Failed to ${isUnequip ? 'unequip' : 'equip'} ${type}:`, error.response?.data || error.message);
@@ -143,42 +183,74 @@ const updateEquipped = async (itemId, type, isUnequip = false) => {
 
 const equipItem = async (item) => {
   try {
-    equippedItemName.value = `${item.name} has been equipped`;
-    showEquipPopup.value = true;
+    console.log('Attempting to equip item:', item);
+    const response = await updateEquipped(item, item.type);
+    console.log('Equip response:', response);
 
-    const response = await updateEquipped(item.id, item.type);
-    item.isEquipped = true;
-
+    // Update local inventory state
     inventory.value.forEach(i => {
-      if (i.type === item.type && i.id !== item.id) i.isEquipped = false;
+      if (i.type === item.type) i.isEquipped = (i.id === item.id);
     });
     inventory.value = [...inventory.value];
     inventoryCategories.value = categorizeInventory(inventory.value);
 
-    const field = item.type === 'custom_banner' ? 'equipped_banner_photo_path' : `equipped_${item.type}_path`;
-    emit('update-user', { [field]: item.icon_url });
+    // Determine the field to update based on item type
+    const fieldMap = {
+      custom_banner: 'equipped_banner_photo_path',
+      name_effect: 'equipped_name_effect_path',
+      profile_font: 'equipped_profile_font_path',
+      profile_icon: 'equipped_profile_icon_path',
+      background: 'equipped_background_path',
+      badge: 'equipped_badge_path',
+    };
+    const field = fieldMap[item.type] || `equipped_${item.type}_path`;
+    const value = ['name_effect', 'profile_font'].includes(item.type) ? item.name : item.icon_url;
+
+    console.log(`Emitting update for ${field}: ${value}`);
+    emit('update-user', { [field]: value });
+
+    equippedItemMessage.value = `${item.name} has been equipped`;
+    showEquipPopup.value = true;
     console.log('Equipped item:', item);
   } catch (error) {
-    console.error('Equip failed:', error);
+    equippedItemMessage.value = `Failed to equip ${item.name}. Please try again.`;
+    showEquipPopup.value = true;
+    console.error('Equip failed:', error.response?.data || error.message);
   }
 };
 
 const unequipItem = async (item) => {
   try {
-    equippedItemName.value = `${item.name} has been unequipped`;
-    showEquipPopup.value = true;
+    console.log('Attempting to unequip item:', item);
+    const response = await updateEquipped(item, item.type, true);
+    console.log('Unequip response:', response);
 
-    const response = await updateEquipped(item.id, item.type, true);
+    // Update local inventory state
     item.isEquipped = false;
-
     inventory.value = [...inventory.value];
     inventoryCategories.value = categorizeInventory(inventory.value);
 
-    const field = item.type === 'custom_banner' ? 'equipped_banner_photo_path' : `equipped_${item.type}_path`;
+    // Determine the field to update based on item type
+    const fieldMap = {
+      custom_banner: 'equipped_banner_photo_path',
+      name_effect: 'equipped_name_effect_path',
+      profile_font: 'equipped_profile_font_path',
+      profile_icon: 'equipped_profile_icon_path',
+      background: 'equipped_background_path',
+      badge: 'equipped_badge_path',
+    };
+    const field = fieldMap[item.type] || `equipped_${item.type}_path`;
+
+    console.log(`Emitting update for ${field}: null`);
     emit('update-user', { [field]: null });
+
+    equippedItemMessage.value = `${item.name} has been unequipped`;
+    showEquipPopup.value = true;
     console.log('Unequipped item:', item);
   } catch (error) {
-    console.error('Unequip failed:', error);
+    equippedItemMessage.value = `Failed to unequip ${item.name}. Please try again.`;
+    showEquipPopup.value = true;
+    console.error('Unequip failed:', error.response?.data || error.message);
   }
 };
 
@@ -192,12 +264,36 @@ const categorizeInventory = (items) => {
     { title: 'Profile Icons', description: 'Stand out with unique profile icons', items: items.filter(item => item.type === 'profile_icon') },
     { title: 'Backgrounds', description: 'Transform your profile with stunning themes', items: items.filter(item => item.type === 'background') },
     { title: 'Name Effects', description: 'Make your username pop', items: items.filter(item => item.type === 'name_effect') },
-    { title: 'Custom Banners', description: 'Enhance your profile header with animated 4K banners', items: items.filter(item => item.type === 'custom_banner') },
+    { title: 'Custom Banners', description: 'Enhance your profile header with vibrant animated banners', items: items.filter(item => item.type === 'custom_banner') },
     { title: 'Profile Badges', description: 'Show off your status', items: items.filter(item => item.type === 'badge') },
     { title: 'Profile Fonts', description: 'Customize your text style', items: items.filter(item => item.type === 'profile_font') },
     { title: 'Other Items', description: 'Miscellaneous items', items: items.filter(item => !['profile_icon', 'background', 'name_effect', 'custom_banner', 'badge', 'profile_font'].includes(item.type)) },
-  ].filter(category => category.items.length > 0);
+  ].filter(category => category.items.length > 0).map(category => ({
+    ...category,
+    isOpen: categoryStates.value[category.title] ?? false, // Default to collapsed
+  }));
   return categorized;
+};
+
+// Toggle category open/close state
+const toggleCategory = (title) => {
+  categoryStates.value[title] = !categoryStates.value[title];
+  inventoryCategories.value = categorizeInventory(inventory.value);
+};
+
+// Placeholder for total items per category
+const getTotalItems = (categoryTitle) => {
+  // Replace with actual logic to fetch total items (e.g., from API or static data)
+  const totalItemsMap = {
+    'Profile Icons': 16, // Based on determineItemType
+    'Backgrounds': 16,
+    'Name Effects': 16,
+    'Custom Banners': 16,
+    'Profile Badges': 16,
+    'Profile Fonts': 16,
+    'Other Items': 0,
+  };
+  return totalItemsMap[categoryTitle] || 0;
 };
 
 const loadInventory = async () => {
@@ -206,14 +302,15 @@ const loadInventory = async () => {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token found.');
     const response = await apiClient.get(`/api/user/${props.user.id}/inventory`);
-    console.log('Raw API response:', response.data);
+    console.log('Raw inventory API response:', response.data);
     const mappedInventory = response.data.map(item => {
       const itemData = item.item || item;
       return {
-        id: itemData.id || item.id,
+        id: item.id,
+        item_id: item.item_id,
         name: itemData.name,
         price: itemData.price || 0,
-        icon_url: itemData.iconUrl || itemData.icon_url,
+        icon_url: itemData.icon_url || itemData.iconUrl,
         type: itemData.type || determineItemType(itemData.name),
         isEquipped: checkIfEquipped(itemData),
       };
@@ -223,6 +320,8 @@ const loadInventory = async () => {
     console.log('Loaded inventory:', mappedInventory);
   } catch (error) {
     console.error('Failed to load inventory:', error.response?.data || error.message);
+    equippedItemMessage.value = 'Failed to load inventory. Please try again.';
+    showEquipPopup.value = true;
   }
 };
 
@@ -230,11 +329,11 @@ const determineItemType = (itemName) => {
   if (['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem', 'Thunder Bolt', 'Moon Glow', 'Sun Flare',
     'Flame Crest', 'Snowflake Spark', 'Leaf Whisper', 'Wave Ripple', 'Cloud Drift', 'Gear Spin', 'Anchor Drop', 'Feather Light'].includes(itemName)) return 'profile_icon';
   if (['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes',
-    'Mountain Peak', 'Polar Glow', 'Lush Valley', 'Dusk Metropolis', 'Golden Fields', 'Volcanic Ash', 'Nebula Cloud', 'Twilight Horizon'].includes(itemName)) return 'background';
+    'Mountain Peak', 'Pollution', 'Lush Valley', 'Dusk Metropolis', 'Golden Fields', 'Volcanic Ash', 'Nebula Cloud', 'Twilight Horizon'].includes(itemName)) return 'background';
   if (['Gradient Fade', 'Golden Outline', 'Dark Pulse', 'Cosmic Shine', 'Neon Edge', 'Frost Glow', 'Fire Flicker',
     'Emerald Sheen', 'Phantom Haze', 'Electric Glow', 'Solar Flare', 'Wave Shimmer', 'Crystal Pulse', 'Mystic Aura', 'Shadow Veil', 'Digital Pulse'].includes(itemName)) return 'name_effect';
-  if (['Cosmic Vortex', 'Neon Cityscape', 'Firestorm Horizon', 'Mystic Nebula', 'Cyber Grid', 'Ethereal Waves', 'Ocean Surge', 'Pixel Storm',
-    'Lava Flow', 'Frost Vortex', 'Steampunk Gears', 'Lunar Eclipse', 'Glitch Matrix', 'Aurora Dance', 'Galactic Spin', 'Rainbow Flux'].includes(itemName)) return 'custom_banner';
+  if (['Misty Peaks', 'Cascading Falls', 'Stormy Waves', 'Desert Sunset', 'Northern Lights', 'Gentle Waterfall', 'Autumn Drift',
+    'Tech Grid', 'Particle Flow', 'Circuit Pulse', 'Matrix Rain', 'Cyber Skyline', 'Code Rainfall', 'Holo Waves', 'Neon Pulse', 'Star Warp'].includes(itemName)) return 'custom_banner';
   if (['Verified Badge', 'Founder Badge', 'VIP Badge', 'Creator Badge', 'Explorer Badge', 'Legend Badge', 'Pioneer Badge', 'Guardian Badge',
     'Warrior Badge', 'Sage Badge', 'Star Gazer Badge', 'Trailblazer Badge', 'Elementalist Badge', 'Innovator Badge', 'Nomad Badge', 'Champion Badge'].includes(itemName)) return 'badge';
   if (['Pixel Art', 'Comic Sans', 'Gothic', 'Cursive', 'Typewriter', 'Bubble', 'Neon', 'Graffiti', 'Retro', 'Cyberpunk',
@@ -243,10 +342,10 @@ const determineItemType = (itemName) => {
 };
 
 const checkIfEquipped = (item) => {
-  const iconUrl = item.iconUrl || item.icon_url;
+  const iconUrl = item.icon_url || item.iconUrl;
   if (item.type === 'profile_icon') return iconUrl === props.user.equipped_profile_icon_path;
   if (item.type === 'background') return iconUrl === props.user.equipped_background_path;
-  if (item.type === 'name_effect') return iconUrl === props.user.equipped_name_effect_path;
+  if (item.type === 'name_effect') return item.name === props.user.equipped_name_effect_path;
   if (item.type === 'custom_banner') return iconUrl === props.user.equipped_banner_photo_path;
   if (item.type === 'badge') return iconUrl === props.user.equipped_badge_path;
   if (item.type === 'profile_font') return item.name === props.user.equipped_profile_font_path;
@@ -272,11 +371,30 @@ onMounted(() => {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
 .category-title {
   font-size: 1.5rem;
   font-weight: bold;
   color: #000;
-  margin-bottom: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+.category-count {
+  font-size: 1.2rem;
+  color: #666;
+  margin-right: auto;
+}
+
+.toggle-icon {
+  color: #666;
+  transition: transform 0.3s;
 }
 
 .category-description {
@@ -287,7 +405,7 @@ onMounted(() => {
 
 .items-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 1rem;
 }
 
@@ -306,10 +424,11 @@ onMounted(() => {
 .cosmetic-item.background-item .cosmetic-icon,
 .cosmetic-item.banner-item .cosmetic-icon {
   width: 100%;
-  height: 80px;
+  height: 120px;
   object-fit: cover;
   border-radius: 4px;
   margin-bottom: 0.5rem;
+  background-color: #e0e0e0;
 }
 
 .cosmetic-item:not(.background-item):not(.banner-item) .cosmetic-icon {
@@ -338,7 +457,7 @@ onMounted(() => {
   background-color: grey;
   color: white;
   border: none;
-  padding: 0.25rem 0.5rem;
+  padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
   margin-top: 0.5rem;
@@ -355,5 +474,21 @@ onMounted(() => {
 
 .unequip-button:hover {
   background-color: #c82333;
+}
+
+@media (max-width: 768px) {
+  .items-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+  .cosmetic-item.background-item .cosmetic-icon,
+  .cosmetic-item.banner-item .cosmetic-icon {
+    height: 100px;
+  }
+  .category-title {
+    font-size: 1.3rem;
+  }
+  .category-count {
+    font-size: 1rem;
+  }
 }
 </style>
