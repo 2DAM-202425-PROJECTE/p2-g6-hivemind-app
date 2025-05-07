@@ -14,8 +14,8 @@
     <!-- Search Field Container -->
     <div class="flex-1 mx-4 relative" ref="searchContainer">
       <v-text-field v-model="searchQuery" placeholder="Search users..." hide-details solo flat
-        prepend-inner-icon="mdi-magnify" class="bg-gray-800 text-white rounded-lg" @focus="handleFocus"
-        @input="debouncedSearchUsers" @blur="handleBlur"></v-text-field>
+                    prepend-inner-icon="mdi-magnify" class="bg-gray-800 text-white rounded-lg" @focus="handleFocus"
+                    @input="debouncedSearchUsers" @blur="handleBlur"></v-text-field>
     </div>
 
     <!-- Right Section -->
@@ -24,20 +24,17 @@
         <v-btn icon :to="`/profile/${user.username}`" class="text-white">
           <v-avatar size="48">
             <img :src="getProfilePhotoUrl" alt="Profile Picture" class="object-cover w-full h-full"
-              @error="e => e.target.src = generateAvatar(user.value?.name || 'User')" />
+                 @error="e => e.target.src = generateAvatar(user.value?.name || 'User')" />
           </v-avatar>
         </v-btn>
         <span class="text-white hidden md:block">{{ user.name }}</span>
         <v-btn text :to="'/shop'" class="text-white hidden md:flex items-center">
           {{ user.credits || 0 }} Credits
         </v-btn>
-        <v-btn icon @click="popup = true" class="text-white">
-          <v-icon>mdi-plus</v-icon>
-        </v-btn>
         <v-btn icon @click="showNotifications = true" class="text-white relative">
           <v-icon>mdi-bell</v-icon>
           <span v-if="notifications.length"
-            class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1">
+                class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1">
             {{ notifications.length }}
           </span>
         </v-btn>
@@ -49,17 +46,17 @@
   <!-- Search Results Overlay -->
   <div v-if="showSearchResults && searchQuery" class="fixed inset-0 z-[10000] pointer-events-none">
     <div class="absolute bg-gray-800 text-white rounded-b-lg shadow-lg max-h-60 overflow-y-auto pointer-events-auto"
-      :style="searchResultsStyle" @mousedown.prevent>
+         :style="searchResultsStyle" @mousedown.prevent>
       <ul v-if="isSearching" class="py-1">
         <li class="px-4 py-2 text-gray-400 text-sm">Searching...</li>
       </ul>
       <ul v-else-if="searchResults.length > 0" class="py-1">
         <v-list-item v-for="(result, index) in searchResults" :key="result.id" @click="goToUserProfile(result.username)"
-          class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center"
-          :class="{ 'border-b border-gray-700': index < searchResults.length - 1 }">
+                     class="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center"
+                     :class="{ 'border-b border-gray-700': index < searchResults.length - 1 }">
           <v-avatar size="32" class="mr-3 flex-shrink-0">
             <img :src="getSearchResultPhotoUrl(result)" alt="User Avatar" class="object-cover w-full h-full"
-              @error="e => e.target.src = generateAvatar(result.name || 'User')" />
+                 @error="e => e.target.src = generateAvatar(result.name || 'User')" />
           </v-avatar>
           <div class="flex flex-col justify-center flex-grow">
             <span class="text-white font-medium text-base leading-tight">{{ result.name }}</span>
@@ -82,7 +79,7 @@
       <v-divider class="bg-gray-700"></v-divider>
       <v-list class="flex-1 py-4">
         <v-list-item v-for="item in menuItems" :key="item.text" :to="item.to"
-          class="text-white py-4 px-6 flex items-center" @click="item.action && item.action()">
+                     class="text-white py-4 px-6 flex items-center" @click="item.action && item.action()">
           <v-icon class="mr-4 text-xl flex-shrink-0">{{ item.icon }}</v-icon>
           <v-list-item-title class="text-lg font-medium flex-grow">{{ item.text }}</v-list-item-title>
         </v-list-item>
@@ -96,52 +93,6 @@
   </v-navigation-drawer>
 
   <!-- Dialogs -->
-  <v-dialog v-model="popup" max-width="400">
-    <v-card>
-      <v-card-title>Select an option</v-card-title>
-      <v-card-text>
-        <v-btn block class="mb-2" @click="storyPopup = true; popup = false">Create a Story</v-btn>
-        <v-btn block @click="postPopup = true; popup = false">Create a Post (Image/Video)</v-btn>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn text @click="popup = false">Close</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-
-  <v-dialog v-model="postPopup" max-width="500">
-    <v-card>
-      <v-card-title>Create a Post</v-card-title>
-      <v-card-text>
-        <v-file-input label="Upload Image/Video (.png, .mp4)" accept=".png, .mp4" v-model="postFile"
-          outlined></v-file-input>
-        <v-text-field v-model="postDescription" label="Description" outlined></v-text-field>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn text @click="postPopup = false">Cancel</v-btn>
-        <v-btn color="primary" @click="submitPost">Post</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-
-  <v-dialog v-model="storyPopup" max-width="500">
-    <v-card>
-      <v-card-title>Create a Story</v-card-title>
-      <v-card-text>
-        <v-file-input v-model="storyFile" label="Upload Image/Video (.png, .mp4)" accept=".png, .mp4"
-          outlined></v-file-input>
-        <v-text-field v-model="storyDescription" label="Description" outlined></v-text-field>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn text @click="storyPopup = false">Cancel</v-btn>
-        <v-btn color="primary" @click="submitStory">Submit</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-
   <v-dialog v-model="showLogoutConfirm" max-width="400">
     <v-card>
       <v-card-title>Confirm Logout</v-card-title>
@@ -154,29 +105,9 @@
     </v-card>
   </v-dialog>
 
-  <!-- Snackbars -->
-  <v-snackbar v-model="showPostSuccessSnackbar" :timeout="3000" color="black" class="white--text" bottom right>
-    <v-icon color="green" class="mr-2">mdi-check-circle</v-icon>
-    Post Created Successfully!
-  </v-snackbar>
-
-  <v-snackbar v-model="showPostFailedSnackbar" :timeout="3000" color="black" class="white--text" bottom right>
-    <v-icon color="red" class="mr-2">mdi-alert-circle</v-icon>
-    Post Creation Failed - Retrying in a moment...
-  </v-snackbar>
-
-  <v-snackbar v-model="showStorySuccessSnackbar" :timeout="3000" color="black" class="white--text" bottom right>
-    <v-icon color="green" class="mr-2">mdi-check-circle</v-icon>
-    Story Created Successfully!
-  </v-snackbar>
-
-  <v-snackbar v-model="showStoryFailedSnackbar" :timeout="3000" color="black" class="white--text" bottom right>
-    <v-icon color="red" class="mr-2">mdi-alert-circle</v-icon>
-    Story Creation Failed - Retrying in a moment...
-  </v-snackbar>
-
+  <!-- Notifications Modal -->
   <NotificationsModal :visible="showNotifications" :notifications="notifications" @close="showNotifications = false"
-    @update:notifications="notifications = $event" />
+                      @update:notifications="notifications = $event" />
 </template>
 
 <script setup>
@@ -190,25 +121,13 @@ const router = useRouter();
 const menu = ref(false);
 const searchQuery = ref('');
 const user = ref(null);
-const popup = ref(false);
-const postPopup = ref(false);
-const storyPopup = ref(false);
-const postDescription = ref('');
-const postFile = ref(null);
-const storyFile = ref(null);
-const storyDescription = ref('');
 const showLogoutConfirm = ref(false);
 const showNotifications = ref(false);
 const searchResults = ref([]);
 const showSearchResults = ref(false);
-const showPostSuccessSnackbar = ref(false);
-const showPostFailedSnackbar = ref(false);
-const showStorySuccessSnackbar = ref(false); // Added for story success
-const showStoryFailedSnackbar = ref(false);  // Added for story failure
 const searchContainer = ref(null);
 const searchResultsStyle = ref({});
 const isSearching = ref(false);
-
 const notifications = ref([]);
 
 const menuItems = ref([
@@ -248,71 +167,6 @@ const logout = async () => {
     await router.push('/auth/login');
   } catch (error) {
     console.error('Logout failed:', error);
-  }
-};
-
-const submitPost = async () => {
-  if (!postFile.value && !postDescription.value) {
-    alert('Please upload a file or add a description!');
-    return;
-  }
-  const formData = new FormData();
-  formData.append('description', postDescription.value);
-  formData.append('id_user', user.value.id);
-  formData.append('publish_date', new Date().toISOString());
-  if (postFile.value) formData.append('file', postFile.value);
-  try {
-    await apiClient.post('/api/posts', formData);
-    postPopup.value = false;
-    showPostSuccessSnackbar.value = true;
-
-    setTimeout(() => {
-      showPostSuccessSnackbar.value = false;
-      postDescription.value = '';
-      postFile.value = null;
-      router.push('/home');
-      window.location.reload();
-    }, 3000);
-  } catch (error) {
-    console.error('Failed to create post:', error);
-    postPopup.value = false;
-    showPostFailedSnackbar.value = true;
-    setTimeout(() => {
-      showPostFailedSnackbar.value = false;
-      postPopup.value = true;
-    }, 3000);
-  }
-};
-
-const submitStory = async () => {
-  if (!storyFile.value && !storyDescription.value) {
-    alert('Please upload a file or add a description!');
-    return;
-  }
-  const formData = new FormData();
-  formData.append('description', storyDescription.value);
-  formData.append('id_user', user.value.id);
-  formData.append('publish_date', new Date().toISOString());
-  if (storyFile.value) formData.append('file', storyFile.value);
-  try {
-    await apiClient.post('/api/stories', formData);
-    storyPopup.value = false;
-    showStorySuccessSnackbar.value = true; // Use story-specific success snackbar
-    setTimeout(() => {
-      showStorySuccessSnackbar.value = false;
-      storyDescription.value = '';
-      storyFile.value = null;
-      router.push('/home');
-      window.location.reload();
-    }, 3000);
-  } catch (error) {
-    console.error('Failed to create story:', error);
-    storyPopup.value = false;
-    showStoryFailedSnackbar.value = true; // Use story-specific failure snackbar
-    setTimeout(() => {
-      showStoryFailedSnackbar.value = false;
-      storyPopup.value = true;
-    }, 3000);
   }
 };
 
@@ -370,10 +224,6 @@ const fetchNotifications = async () => {
   }
 };
 
-const updateNotifications = (updatedNotifications) => {
-  notifications.value = updatedNotifications;
-};
-
 const getProfilePhotoUrl = computed(() => {
   if (!user.value) return generateAvatar('User');
   if (user.value.profile_photo_path) {
@@ -383,8 +233,6 @@ const getProfilePhotoUrl = computed(() => {
   }
   return generateAvatar(user.value.name || 'User');
 });
-
-const hasNotifications = computed(() => notifications.value.length > 0);
 
 const handleBlur = () => {
   setTimeout(() => {
@@ -444,10 +292,6 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', updateSearchResultsPosition);
   window.removeEventListener('resize', updateSearchResultsPosition);
-  showPostSuccessSnackbar.value = false;
-  showPostFailedSnackbar.value = false;
-  showStorySuccessSnackbar.value = false; // Cleanup story snackbars
-  showStoryFailedSnackbar.value = false;
 });
 
 function debounce(func, wait) {
