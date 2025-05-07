@@ -2,14 +2,16 @@
   <div class="stories-bar">
     <!-- Botó per afegir històries -->
     <div class="story-item add-story" @click="showCreateStoryModal = true">
-      <div class="add-story-icon">+</div>
-      <p>Add Story</p>
+      <div class="add-story-icon">
+        <span class="plus-sign">+</span>
+      </div>
+      <p class="story-name">Add Story</p>
     </div>
 
     <!-- Històries existents -->
     <div class="story-item" v-for="(story, index) in stories" :key="index" @click="viewStory(story)">
       <img :src="getProfilePhotoById(story.id_user)" alt="Story" class="story-image" />
-      <p>{{ getUserNameById(story.id_user) }}</p>
+      <p class="story-name">{{ getUserNameById(story.id_user) }}</p>
     </div>
 
     <CreateStoryImage v-model="showCreateStoryModal" @storyCreated="fetchStories" />
@@ -45,12 +47,12 @@ import CreateStoryImage from './CreateStoryImage.vue';
 const users = ref([]);
 const showCreateStoryModal = ref(false);
 const showStoryModal = ref(false);
-const showDeleteConfirm = ref(false); // For delete confirmation dialog
-const showSuccessPopup = ref(false); // For success message popup
-const showFailurePopup = ref(false); // For failure message popup
+const showDeleteConfirm = ref(false);
+const showSuccessPopup = ref(false);
+const showFailurePopup = ref(false);
 const selectedStory = ref(null);
 const story = ref([]);
-const storyIdToDelete = ref(null); // Store the ID of the story to delete
+const storyIdToDelete = ref(null);
 const isImage = (filePath) => /\.(jpeg|jpg|png)$/i.test(filePath);
 
 const currentUser = ref({
@@ -67,7 +69,6 @@ const props = defineProps({
 });
 
 onMounted(async () => {
-
   const usersResult = await apiClient.get('/api/users');
   users.value = usersResult.data.data;
   console.log(users.value);
@@ -75,11 +76,9 @@ onMounted(async () => {
   const storiesResult = await apiClient.get('/api/stories');
   story.value = storiesResult.data;
 
-
   const userResult = await apiClient.get('/api/user');
   currentUser.value = userResult.data;
 });
-
 
 const viewStory = (story) => {
   getStoryImagePath(story.file_path);
@@ -92,15 +91,27 @@ const isStoryFromUser = (story) => story?.id_user === currentUser.value.id;
 const getProfilePhotoById = (id) => {
   const position = users.value.findIndex(user => user.id === id);
   const user = users.value[position];
-
   return user && user.profile_photo_path ? user.profile_photo_path : user.profile_photo_url;
-
 };
 
 const getUserNameById = (id) => {
   const position = users.value.findIndex(user => user.id === id);
   const user = users.value[position];
-  return user && user.name ? user.name : 'usuario desconocido';
+  if (!user || !user.name) return 'Unknown';
+
+  const name = user.name.trim();
+  // If name is longer than 10 characters, convert to initials
+  if (name.length > 10) {
+    const words = name.split(' ').filter(word => word.length > 0);
+    if (words.length > 1) {
+      // Take first letter of first two words
+      return `${words[0][0]}.${words[1][0]}.`.toUpperCase();
+    } else {
+      // Take first two letters of single word
+      return name.substring(0, 2).toUpperCase();
+    }
+  }
+  return name;
 };
 
 const getStoryImagePath = (path) => {
@@ -116,34 +127,32 @@ const fetchStories = async () => {
 const deleteStory = async (id) => {
   try {
     await apiClient.delete(`/api/stories/${id}`);
-    //showStoryModal.value = false;
     showSuccessPopup.value = true;
     await fetchStories();
 
     setTimeout(() => {
       window.location.reload();
     }, 500);
-
   } catch (error) {
     console.error('Error deleting story:', error);
     showFailurePopup.value = true;
   }
-}
+};
 
 const deleteStoryConfirmed = async () => {
   try {
     await apiClient.delete(`/api/stories/${storyIdToDelete.value}`);
-    showStoryModal.value = false; // Close the story modal
-    showDeleteConfirm.value = false; // Close the confirmation dialog
-    showSuccessPopup.value = true; // Show success popup
-    await fetchStories(); // Refresh the stories list
+    showStoryModal.value = false;
+    showDeleteConfirm.value = false;
+    showSuccessPopup.value = true;
+    await fetchStories();
     setTimeout(() => {
-      window.location.reload(); // Reload the page after a short delay
-    }, 1000); // Delay to allow the user to see the success message
+      window.location.reload();
+    }, 1000);
   } catch (error) {
     console.error('Error deleting story:', error);
-    showDeleteConfirm.value = false; // Close the confirmation dialog
-    showFailurePopup.value = true; // Show failure popup
+    showDeleteConfirm.value = false;
+    showFailurePopup.value = true;
   }
 };
 
@@ -153,7 +162,7 @@ const openCreateStoryModal = () => {
 
 const submitNewStory = async () => {
   if (!newStoryFile.value && !newStoryDescription.value) {
-    alert('Please upload a file or add a description')
+    alert('Please upload a file or add a description');
     return;
   }
 
@@ -169,16 +178,14 @@ const submitNewStory = async () => {
     await fetchStories();
   } catch (error) {
     console.error('Error creating story:', error);
-
   }
-}
-
+};
 </script>
 
 <style scoped>
 .stories-bar {
   display: flex;
-  gap: 10px;
+  gap: 2px; /* Reduced from 5px to 2px */
   overflow-x: auto;
   padding: 10px;
   background: white;
@@ -192,6 +199,7 @@ const submitNewStory = async () => {
   flex-direction: column;
   align-items: center;
   cursor: pointer;
+  width: 80px; /* Fixed width for each story item */
 }
 
 .story-image {
@@ -199,12 +207,39 @@ const submitNewStory = async () => {
   height: 60px;
   border-radius: 50%;
   border: 2px solid #007bff;
+  object-fit: cover;
 }
 
-.story-item p {
+.add-story {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80px; /* Match story item width */
+}
+
+.add-story-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid #007bff;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.story-name {
   margin: 5px 0 0;
   font-size: 12px;
   text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .story-modal-image {
@@ -221,11 +256,9 @@ const submitNewStory = async () => {
 
 .headline.success {
   color: #4caf50;
-  /* Green for success */
 }
 
 .headline.error {
   color: #f44336;
-  /* Red for error */
 }
 </style>
