@@ -64,12 +64,13 @@ export function useChat() {
 
   const initializeWebSocket = async (chatName) => {
     if (!userId.value) {
+      console.log('initializeWebSocket - No userId, redirigiendo a login');
       router.push('/login');
       return;
     }
 
     await fetchCsrfToken();
-    console.log('Subscribing to channel:', `private-${chatName}`);
+    console.log('Subscribing to channel:', chatName); // Depurar nombre del canal
 
     window.Pusher = Pusher;
     echo = new Echo({
@@ -88,24 +89,27 @@ export function useChat() {
       },
     });
 
-    echo.channel(`${chatName}`)
+    echo.channel(chatName)
+      .subscribed(() => {
+        console.log('Subscribed to channel:', chatName); // Confirmar suscripción
+      })
       .listen('MessageSentEvent', (message) => {
-        if (message.user_id !== userId.value) {
-          selectedChat.value.messages.push({
-            id: message.id,
-            text: message.content,
-            isMine: message.user_id === userId.value,
-            user: {
-              id: message.user_id,
-              name: message.user?.name || 'Unknown',
-              profile_photo_url: message.user?.profile_photo_url || '',
-            },
-            timestamp: new Date(message.created_at).toLocaleString(),
-            is_edited: false,
-          });
-        }
+        console.log('Received MessageSentEvent:', message); // Depurar evento recibido
+        selectedChat.value.messages.push({
+          id: message.id,
+          text: message.content,
+          isMine: message.user_id === userId.value,
+          user: {
+            id: message.user.id, // Cambiado de user_id a user.id
+            name: message.user?.name || 'Unknown',
+            profile_photo_url: message.user?.profile_photo_url || '',
+          },
+          timestamp: new Date(message.created_at).toLocaleString(),
+          is_edited: false,
+        });
       })
       .listen('MessageEditedEvent', (event) => {
+        console.log('Received MessageEditedEvent:', event);
         const message = selectedChat.value.messages.find(msg => msg.id === event.id);
         if (message) {
           message.text = event.content;
@@ -113,6 +117,7 @@ export function useChat() {
         }
       })
       .listen('MessageDeletedEvent', (event) => {
+        console.log('Received MessageDeletedEvent:', event);
         const index = selectedChat.value.messages.findIndex(msg => msg.id === event.message_id);
         if (index !== -1) {
           selectedChat.value.messages.splice(index, 1);
