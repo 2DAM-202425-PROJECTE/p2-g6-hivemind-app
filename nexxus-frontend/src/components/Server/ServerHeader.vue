@@ -15,7 +15,6 @@
     >
       <ul>
         <li @click="$emit('show-server-details')">View Server Details</li>
-        <li @click="$emit('edit-server')">Server Settings</li>
         <li @click="$emit('leave-server')">Leave Server</li>
         <li @click="$emit('report-server')">Report Server</li>
       </ul>
@@ -31,7 +30,6 @@ defineProps({
 
 defineEmits([
   'toggle-options-menu',
-  'edit-server',
   'leave-server',
   'report-server',
   'show-server-details',
@@ -43,7 +41,8 @@ defineEmits([
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  position: relative;
+  padding: 0 16px;
 }
 
 .options-button {
@@ -51,36 +50,48 @@ defineEmits([
   border: none;
   font-size: 18px;
   cursor: pointer;
-  margin-left: 10px;
+  color: #78350f;
+  padding: 8px;
+  transition: color 0.2s ease;
+}
+
+.options-button:hover {
+  color: #7c2d12;
 }
 
 .options-menu {
   position: absolute;
-  right: 10px;
-  top: 40px;
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-  z-index: 100;
+  top: 100%;
+  right: 16px;
+  background: #fff8e1;
+  border: 1px solid #e5d5b3;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  z-index: 1001; /* Increased to ensure visibility above modals */
+  min-width: 160px;
 }
 
 .options-menu ul {
   list-style: none;
-  padding: 0;
+  padding: 8px 0;
   margin: 0;
 }
 
 .options-menu li {
-  padding: 10px;
+  padding: 8px 16px;
   cursor: pointer;
-  background-color: #7f7f7f;
-  color: white;
-  border-radius: 5px;
+  background: #fff8e1;
+  color: #78350f;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+  margin: 2px 4px;
 }
 
 .options-menu li:hover {
-  background-color: #0056b3;
+  background: #fef3c7;
+  color: #7c2d12;
+  transform: translateY(-1px);
 }
 
 .hidden {

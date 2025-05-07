@@ -23,23 +23,11 @@
           </div>
         </div>
       </div>
-
-      <div class="voice-channels">
-        <div class="category-header">
-          <i class="fas fa-volume-up text-amber-900"></i>
-          <span class="text-amber-900">VOICE CHANNELS</span>
-        </div>
-        <div class="channel-list">
-          <div class="channel-item">
-            <span>🔊 General</span>
-          </div>
-        </div>
-      </div>
     </div>
 
     <div class="user-panel">
       <div class="user-info" @click="goToProfile">
-        <div class="avatar"></div>
+        <div class="avatar" :style="{ backgroundImage: `url(${currentUser.avatar})` }"></div>
         <div class="username">
           <span class="font-bold text-amber-900">{{ currentUser.username }}</span>
           <span class="text-amber-700">#{{ currentUser.id }}</span>
@@ -55,7 +43,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -70,15 +58,36 @@ defineEmits(['select-channel']);
 
 const collapsedCategories = ref({});
 
-const categories = ref([
-  {
-    id: 1,
-    name: 'TEXT CHANNELS',
-    channels: [
-      { id: 1, name: 'general' },
-    ],
-  },
-]);
+// Dynamically compute categories and their channels
+const categories = computed(() => {
+  if (!props.selectedServer) return [];
+
+  // Get all categories
+  const cats = props.selectedServer.channels
+    .filter((c) => c.isCategory)
+    .map((category) => ({
+      ...category,
+      channels: props.selectedServer.channels.filter(
+        (c) => c.parentCategoryId === category.id && !c.isCategory
+      ),
+    }));
+
+  // Add uncategorized channels under a default category
+  const uncategorized = props.selectedServer.channels.filter(
+    (c) => !c.isCategory && !c.parentCategoryId
+  );
+
+  if (uncategorized.length) {
+    cats.unshift({
+      id: 0,
+      name: 'TEXT CHANNELS',
+      isCategory: true,
+      channels: uncategorized,
+    });
+  }
+
+  return cats;
+});
 
 const toggleCategory = (id) => {
   collapsedCategories.value[id] = !collapsedCategories.value[id];
@@ -161,10 +170,6 @@ const goToProfile = () => {
   color: #7c2d12;
 }
 
-.voice-channels {
-  margin-top: 16px;
-}
-
 .user-panel {
   background: #fef3c7;
   padding: 12px;
@@ -189,6 +194,8 @@ const goToProfile = () => {
   height: 32px;
   border-radius: 50%;
   background: #f59e0b;
+  background-size: cover;
+  background-position: center;
 }
 
 .username {

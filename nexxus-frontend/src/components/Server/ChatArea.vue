@@ -1,67 +1,133 @@
 <template>
   <div class="chat-area">
     <div class="chat-header">
+      <ServerHeader
+        :selected-server="selectedServer"
+        :show-options-menu="showOptionsMenu"
+        @toggle-options-menu="$emit('toggle-options-menu')"
+        @show-server-details="$emit('show-server-details')"
+        @edit-server="$emit('edit-server')"
+        @leave-server="$emit('leave-server')"
+        @report-server="$emit('report-server')"
+      />
       <div class="channel-info">
         <i class="fas fa-hashtag"></i>
         <span>{{ selectedChannel?.name || 'Select a channel' }}</span>
       </div>
     </div>
 
-    <div class="messages-container">
-      <div
+    <div ref="chatMessages" class="messages-container" @scroll="handleScroll">
+      <ChatMessage
         v-for="(message, index) in selectedChannel?.messages"
         :key="index"
-        class="message"
-      >
-        <div class="avatar">
-          <img v-if="message.user?.avatar" :src="message.user.avatar" :alt="message.user.name">
-          <span v-else>{{ message.user?.name?.charAt(0) }}</span>
-        </div>
-        <div class="message-content">
-          <div class="message-header">
-            <span class="username">{{ message.user?.name || 'Guest' }}</span>
-            <span class="timestamp">{{ message.time }}</span>
-          </div>
-          <div class="message-text">{{ message.text }}</div>
-        </div>
-      </div>
+        :message="message"
+        :user-id="currentUser?.id"
+        @edit="editMessage"
+        @delete="displayDeleteModal"
+        @report="reportMessage"
+      />
     </div>
 
-    <div class="message-input">
-      <div class="input-container">
-        <i class="fas fa-plus"></i>
-        <input
-          v-model="newMessage"
-          :placeholder="'Message #' + (selectedChannel?.name || '')"
-          @keyup.enter="sendMessage"
-          :disabled="!selectedChannel"
-        />
-        <div class="input-icons">
-          <i class="fas fa-gift"></i>
-          <i class="fas fa-grin"></i>
-        </div>
-      </div>
-    </div>
+    <ChatInput :channel-name="selectedChannel?.name" @send="sendMessage" />
+
+    <DeleteMessageModal
+      v-if="showDeleteModal"
+      :message="messageToDelete"
+      @confirm="confirmDeleteMessage"
+      @cancel="cancelDeleteMessage"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import ChatMessage from './ChatMessage.vue';
+import ChatInput from './ChatInput.vue';
+import DeleteMessageModal from './DeleteMessageModal.vue';
+import ServerHeader from './ServerHeader.vue';
 
 const props = defineProps({
   selectedChannel: Object,
+  selectedServer: Object,
+  currentUser: Object,
+  showOptionsMenu: Boolean,
 });
 
-const emit = defineEmits(['send-message']);
+const emit = defineEmits([
+  'send-message',
+  'edit-message',
+  'delete-message',
+  'report-message',
+  'toggle-options-menu',
+  'show-server-details',
+  'edit-server',
+  'leave-server',
+  'report-server',
+]);
 
-const newMessage = ref('');
+const chatMessages = ref(null);
+const isNearBottom = ref(true);
+const showDeleteModal = ref(false);
+const messageToDelete = ref(null);
 
-const sendMessage = () => {
-  if (newMessage.value.trim()) {
-    emit('send-message', newMessage.value);
-    newMessage.value = ''; // Clear input after sending
+const sendMessage = (messageContent) => {
+  if (messageContent.trim()) {
+    emit('send-message', messageContent);
   }
 };
+
+const editMessage = (message) => {
+  emit('edit-message', message);
+};
+
+const reportMessage = (message) => {
+  emit('report-message', message);
+};
+
+const displayDeleteModal = (message) => {
+  messageToDelete.value = message;
+  showDeleteModal.value = true;
+};
+
+const confirmDeleteMessage = () => {
+  emit('delete-message', messageToDelete.value);
+  showDeleteModal.value = false;
+};
+
+const cancelDeleteMessage = () => {
+  showDeleteModal.value = false;
+};
+
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (chatMessages.value && isNearBottom.value) {
+      chatMessages.value.scrollTop = chatMessages.value.scrollHeight;
+    }
+  });
+};
+
+const handleScroll = () => {
+  if (chatMessages.value) {
+    const threshold = 75;
+    isNearBottom.value =
+      chatMessages.value.scrollHeight - chatMessages.value.scrollTop <=
+      chatMessages.value.clientHeight + threshold;
+  }
+};
+
+const observer = new MutationObserver(() => {
+  scrollToBottom();
+});
+
+onMounted(() => {
+  if (chatMessages.value) {
+    observer.observe(chatMessages.value, { childList: true, subtree: true });
+  }
+});
+
+onBeforeUnmount(() => {
+  observer.disconnect();
+});
 </script>
 
 <style scoped>
@@ -70,7 +136,7 @@ const sendMessage = () => {
   background: #f3e8d3;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - 128px);
 }
 
 .chat-header {
@@ -79,7 +145,8 @@ const sendMessage = () => {
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
   color: #78350f;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .channel-info {
@@ -96,102 +163,8 @@ const sendMessage = () => {
   flex: 1;
   padding: 16px;
   overflow-y: auto;
-}
-
-.message {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #f59e0b;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar span {
-  color: #78350f;
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.message-content {
   display: flex;
   flex-direction: column;
-}
-
-.message-header {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
-}
-
-.username {
-  font-weight: bold;
-  color: #78350f;
-}
-
-.timestamp {
-  font-size: 12px;
-  color: #7c2d12;
-}
-
-.message-text {
-  color: #78350f;
-}
-
-.message-input {
-  padding: 16px;
-}
-
-.input-container {
-  background: #fff8e1;
-  border-radius: 8px;
-  padding: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid #e5d5b3;
-}
-
-.input-container input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: #78350f;
-  outline: none;
-}
-
-.input-container input:disabled {
-  color: #b0a68b;
-  cursor: not-allowed;
-}
-
-.input-icons {
-  display: flex;
-  gap: 8px;
-  color: #78350f;
-}
-
-.input-icons i {
-  cursor: pointer;
-}
-
-.input-icons i:hover {
-  color: #7c2d12;
 }
 </style>

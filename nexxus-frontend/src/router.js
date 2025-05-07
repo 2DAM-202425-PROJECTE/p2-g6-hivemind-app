@@ -17,7 +17,7 @@ import PrivacyPolicy from "./pages/Footer/PrivacyPolicyPage.vue";
 import TermsOfService from "./pages/Footer/TermsOfServicePage.vue";
 import ContactPage from "./pages/Footer/ContactPage.vue";
 import ChatPage from "./pages/ChatPage.vue";
-import ServerPage from "./components/Server/ServerPage.vue";
+import ServerPage from "./pages/ServerPage.vue";
 import ShopPage from "./pages/ShopPage.vue";
 import PurchasePage from "./pages/PurchasePage.vue";
 import AppSettingsPage from "./pages/AppSettingsPage.vue";

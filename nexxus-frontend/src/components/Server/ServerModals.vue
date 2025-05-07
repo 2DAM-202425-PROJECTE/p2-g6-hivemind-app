@@ -5,8 +5,28 @@
     class="modal-overlay"
     @click.self="$emit('update:show-create-server', false)"
   >
-    <div class="modal">
-      <h2>Create a New Server</h2>
+    <div class="modal animate-fade-in">
+      <h2>
+        <span class="animate-letter gradient-text" style="--order: 1">C</span>
+        <span class="animate-letter gradient-text" style="--order: 2">r</span>
+        <span class="animate-letter gradient-text" style="--order: 3">e</span>
+        <span class="animate-letter gradient-text" style="--order: 4">a</span>
+        <span class="animate-letter gradient-text" style="--order: 5">t</span>
+        <span class="animate-letter gradient-text" style="--order: 6">e</span>
+        <span class="animate-letter gradient-text" style="--order: 7"> </span>
+        <span class="animate-letter gradient-text" style="--order: 8">a</span>
+        <span class="animate-letter gradient-text" style="--order: 9"> </span>
+        <span class="animate-letter gradient-text" style="--order: 10">N</span>
+        <span class="animate-letter gradient-text" style="--order: 11">e</span>
+        <span class="animate-letter gradient-text" style="--order: 12">w</span>
+        <span class="animate-letter gradient-text" style="--order: 13"> </span>
+        <span class="animate-letter gradient-text" style="--order: 14">S</span>
+        <span class="animate-letter gradient-text" style="--order: 15">e</span>
+        <span class="animate-letter gradient-text" style="--order: 16">r</span>
+        <span class="animate-letter gradient-text" style="--order: 17">v</span>
+        <span class="animate-letter gradient-text" style="--order: 18">e</span>
+        <span class="animate-letter gradient-text" style="--order: 19">r</span>
+      </h2>
       <label>Server Name</label>
       <input
         :value="newServer.name"
@@ -54,7 +74,7 @@
         </label>
       </div>
       <div class="modal-buttons">
-        <button @click="$emit('create-server')" class="modal-button create-modal-button">
+        <button @click="$emit('create-server')" class="modal-button confirm-button">
           Create
         </button>
         <button
@@ -73,15 +93,40 @@
     class="modal-overlay"
     @click.self="$emit('update:show-channel-popup', false)"
   >
-    <div class="modal">
-      <h2>Create a New Channel</h2>
+    <div class="modal animate-fade-in">
+      <h2>
+        <span class="animate-letter gradient-text" style="--order: 1">C</span>
+        <span class="animate-letter gradient-text" style="--order: 2">r</span>
+        <span class="animate-letter gradient-text" style="--order: 3">e</span>
+        <span class="animate-letter gradient-text" style="--order: 4">a</span>
+        <span class="animate-letter gradient-text" style="--order: 5">t</span>
+        <span class="animate-letter gradient-text" style="--order: 6">e</span>
+        <span class="animate-letter gradient-text" style="--order: 7"> </span>
+        <span class="animate-letter gradient-text" style="--order: 8">a</span>
+        <span class="animate-letter gradient-text" style="--order: 9"> </span>
+        <span class="animate-letter gradient-text" style="--order: 10">N</span>
+        <span class="animate-letter gradient-text" style="--order: 11">e</span>
+        <span class="animate-letter gradient-text" style="--order: 12">w</span>
+        <span class="animate-letter gradient-text" style="--order: 13"> </span>
+        <span class="animate-letter gradient-text" style="--order: 14">C</span>
+        <span class="animate-letter gradient-text" style="--order: 15">h</span>
+        <span class="animate-letter gradient-text" style="--order: 16">a</span>
+        <span class="animate-letter gradient-text" style="--order: 17">n</span>
+        <span class="animate-letter gradient-text" style="--order: 18">n</span>
+        <span class="animate-letter gradient-text" style="--order: 19">e</span>
+        <span class="animate-letter gradient-text" style="--order: 20">l</span>
+      </h2>
       <label>Category Name</label>
-      <input
+      <select
         :value="newChannel.category"
-        @input="$emit('update:new-channel', { ...newChannel, category: $event.target.value })"
-        placeholder="Enter category name"
+        @change="$emit('update:new-channel', { ...newChannel, category: $event.target.value })"
         class="modal-input"
-      />
+      >
+        <option value="">No Category</option>
+        <option v-for="category in categories" :key="category.id" :value="category.name">
+          {{ category.name }}
+        </option>
+      </select>
       <label>Channel Name</label>
       <input
         :value="newChannel.name"
@@ -90,13 +135,105 @@
         class="modal-input"
       />
       <div class="modal-buttons">
-        <button @click="$emit('create-channel')" class="modal-button create-modal-button">
+        <button @click="$emit('create-channel')" class="modal-button confirm-button">
           Create
         </button>
         <button
           @click="$emit('update:show-channel-popup', false)"
           class="modal-button cancel-button"
         >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Channel Modal -->
+  <div
+    v-if="showEditChannelPopup"
+    class="modal-overlay"
+    @click.self="$emit('update:show-edit-channel-popup', false)"
+  >
+    <div class="modal animate-fade-in">
+      <h2>
+        <span class="animate-letter gradient-text" style="--order: 1">E</span>
+        <span class="animate-letter gradient-text" style="--order: 2">d</span>
+        <span class="animate-letter gradient-text" style="--order: 3">i</span>
+        <span class="animate-letter gradient-text" style="--order: 4">t</span>
+        <span class="animate-letter gradient-text" style="--order: 5"> </span>
+        <span class="animate-letter gradient-text" style="--order: 6">C</span>
+        <span class="animate-letter gradient-text" style="--order: 7">h</span>
+        <span class="animate-letter gradient-text" style="--order: 8">a</span>
+        <span class="animate-letter gradient-text" style="--order: 9">n</span>
+        <span class="animate-letter gradient-text" style="--order: 10">n</span>
+        <span class="animate-letter gradient-text" style="--order: 11">e</span>
+        <span class="animate-letter gradient-text" style="--order: 12">l</span>
+      </h2>
+      <label>Category Name</label>
+      <select
+        :value="editChannel.category"
+        @change="$emit('update:edit-channel', { ...editChannel, category: $event.target.value })"
+        class="modal-input"
+      >
+        <option value="">No Category</option>
+        <option v-for="category in categories" :key="category.id" :value="category.name">
+          {{ category.name }}
+        </option>
+      </select>
+      <label>Channel Name</label>
+      <input
+        :value="editChannel.name"
+        @input="$emit('update:edit-channel', { ...editChannel, name: $event.target.value })"
+        placeholder="Enter channel name"
+        class="modal-input"
+      />
+      <div class="modal-buttons">
+        <button @click="$emit('save-channel-changes')" class="modal-button confirm-button">
+          Save
+        </button>
+        <button
+          @click="$emit('update:show-edit-channel-popup', false)"
+          class="modal-button cancel-button"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Channel Modal -->
+  <div
+    v-if="showDeleteChannelPopup"
+    class="modal-overlay"
+    @click.self="$emit('update:show-delete-channel-popup', false)"
+  >
+    <div class="modal animate-fade-in">
+      <h2>
+        <span class="animate-letter gradient-text" style="--order: 1">D</span>
+        <span class="animate-letter gradient-text" style="--order: 2">e</span>
+        <span class="animate-letter gradient-text" style="--order: 3">l</span>
+        <span class="animate-letter gradient-text" style="--order: 4">e</span>
+        <span class="animate-letter gradient-text" style="--order: 5">t</span>
+        <span class="animate-letter gradient-text" style="--order: 6">e</span>
+        <span class="animate-letter gradient-text" style="--order: 7"> </span>
+        <span class="animate-letter gradient-text" style="--order: 8">C</span>
+        <span class="animate-letter gradient-text" style="--order: 9">h</span>
+        <span class="animate-letter gradient-text" style="--order: 10">a</span>
+        <span class="animate-letter gradient-text" style="--order: 11">n</span>
+        <span class="animate-letter gradient-text" style="--order: 12">n</span>
+        <span class="animate-letter gradient-text" style="--order: 13">e</span>
+        <span class="animate-letter gradient-text" style="--order: 14">l</span>
+      </h2>
+      <p>Are you sure you want to delete this channel?</p>
+      <div class="modal-buttons">
+        <button @click="$emit('confirm-delete-channel')" class="modal-button confirm-button">
+          Yes
+        </button>
+        <button
+          @click="$emit('update:show-delete-channel-popup', false)"
+          class="modal-button cancel-button"
+        >
+          No
         </button>
       </div>
     </div>
@@ -108,8 +245,30 @@
     class="modal-overlay"
     @click.self="$emit('update:show-category-popup', false)"
   >
-    <div class="modal">
-      <h2>Create a New Category</h2>
+    <div class="modal animate-fade-in">
+      <h2>
+        <span class="animate-letter gradient-text" style="--order: 1">C</span>
+        <span class="animate-letter gradient-text" style="--order: 2">r</span>
+        <span class="animate-letter gradient-text" style="--order: 3">e</span>
+        <span class="animate-letter gradient-text" style="--order: 4">a</span>
+        <span class="animate-letter gradient-text" style="--order: 5">t</span>
+        <span class="animate-letter gradient-text" style="--order: 6">e</span>
+        <span class="animate-letter gradient-text" style="--order: 7"> </span>
+        <span class="animate-letter gradient-text" style="--order: 8">a</span>
+        <span class="animate-letter gradient-text" style="--order: 9"> </span>
+        <span class="animate-letter gradient-text" style="--order: 10">N</span>
+        <span class="animate-letter gradient-text" style="--order: 11">e</span>
+        <span class="animate-letter gradient-text" style="--order: 12">w</span>
+        <span class="animate-letter gradient-text" style="--order: 13"> </span>
+        <span class="animate-letter gradient-text" style="--order: 14">C</span>
+        <span class="animate-letter gradient-text" style="--order: 15">a</span>
+        <span class="animate-letter gradient-text" style="--order: 16">t</span>
+        <span class="animate-letter gradient-text" style="--order: 17">e</span>
+        <span class="animate-letter gradient-text" style="--order: 18">g</span>
+        <span class="animate-letter gradient-text" style="--order: 19">o</span>
+        <span class="animate-letter gradient-text" style="--order: 20">r</span>
+        <span class="animate-letter gradient-text" style="--order: 21">y</span>
+      </h2>
       <label>Category Name</label>
       <input
         :value="newCategory.name"
@@ -118,7 +277,7 @@
         class="modal-input"
       />
       <div class="modal-buttons">
-        <button @click="$emit('create-category')" class="modal-button create-modal-button">
+        <button @click="$emit('create-category')" class="modal-button confirm-button">
           Create
         </button>
         <button
@@ -131,14 +290,111 @@
     </div>
   </div>
 
+  <!-- Edit Category Modal -->
+  <div
+    v-if="showEditCategoryPopup"
+    class="modal-overlay"
+    @click.self="$emit('update:show-edit-category-popup', false)"
+  >
+    <div class="modal animate-fade-in">
+      <h2>
+        <span class="animate-letter gradient-text" style="--order: 1">E</span>
+        <span class="animate-letter gradient-text" style="--order: 2">d</span>
+        <span class="animate-letter gradient-text" style="--order: 3">i</span>
+        <span class="animate-letter gradient-text" style="--order: 4">t</span>
+        <span class="animate-letter gradient-text" style="--order: 5"> </span>
+        <span class="animate-letter gradient-text" style="--order: 6">C</span>
+        <span class="animate-letter gradient-text" style="--order: 7">a</span>
+        <span class="animate-letter gradient-text" style="--order: 8">t</span>
+        <span class="animate-letter gradient-text" style="--order: 9">e</span>
+        <span class="animate-letter gradient-text" style="--order: 10">g</span>
+        <span class="animate-letter gradient-text" style="--order: 11">o</span>
+        <span class="animate-letter gradient-text" style="--order: 12">r</span>
+        <span class="animate-letter gradient-text" style="--order: 13">y</span>
+      </h2>
+      <label>Category Name</label>
+      <input
+        :value="editCategory.name"
+        @input="$emit('update:edit-category', { ...editCategory, name: $event.target.value })"
+        placeholder="Enter category name"
+        class="modal-input"
+      />
+      <div class="modal-buttons">
+        <button @click="$emit('save-category-changes')" class="modal-button confirm-button">
+          Save
+        </button>
+        <button
+          @click="$emit('update:show-edit-category-popup', false)"
+          class="modal-button cancel-button"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Category Modal -->
+  <div
+    v-if="showDeleteCategoryPopup"
+    class="modal-overlay"
+    @click.self="$emit('update:show-delete-category-popup', false)"
+  >
+    <div class="modal animate-fade-in">
+      <h2>
+        <span class="animate-letter gradient-text" style="--order: 1">D</span>
+        <span class="animate-letter gradient-text" style="--order: 2">e</span>
+        <span class="animate-letter gradient-text" style="--order: 3">l</span>
+        <span class="animate-letter gradient-text" style="--order: 4">e</span>
+        <span class="animate-letter gradient-text" style="--order: 5">t</span>
+        <span class="animate-letter gradient-text" style="--order: 6">e</span>
+        <span class="animate-letter gradient-text" style="--order: 7"> </span>
+        <span class="animate-letter gradient-text" style="--order: 8">C</span>
+        <span class="animate-letter gradient-text" style="--order: 9">a</span>
+        <span class="animate-letter gradient-text" style="--order: 10">t</span>
+        <span class="animate-letter gradient-text" style="--order: 11">e</span>
+        <span class="animate-letter gradient-text" style="--order: 12">g</span>
+        <span class="animate-letter gradient-text" style="--order: 13">o</span>
+        <span class="animate-letter gradient-text" style="--order: 14">r</span>
+        <span class="animate-letter gradient-text" style="--order: 15">y</span>
+      </h2>
+      <p>Are you sure you want to delete this category? All channels within it will be moved to uncategorized.</p>
+      <div class="modal-buttons">
+        <button @click="$emit('confirm-delete-category')" class="modal-button confirm-button">
+          Yes
+        </button>
+        <button
+          @click="$emit('update:show-delete-category-popup', false)"
+          class="modal-button cancel-button"
+        >
+          No
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Server Details Modal -->
   <div
     v-if="showServerDetailsPopup"
     class="modal-overlay"
     @click.self="$emit('update:show-server-details-popup', false)"
   >
-    <div class="modal">
-      <h2>Server Details</h2>
+    <div class="modal animate-fade-in">
+      <h2>
+        <span class="animate-letter gradient-text" style="--order: 1">S</span>
+        <span class="animate-letter gradient-text" style="--order: 2">e</span>
+        <span class="animate-letter gradient-text" style="--order: 3">r</span>
+        <span class="animate-letter gradient-text" style="--order: 4">v</span>
+        <span class="animate-letter gradient-text" style="--order: 5">e</span>
+        <span class="animate-letter gradient-text" style="--order: 6">r</span>
+        <span class="animate-letter gradient-text" style="--order: 7"> </span>
+        <span class="animate-letter gradient-text" style="--order: 8">D</span>
+        <span class="animate-letter gradient-text" style="--order: 9">e</span>
+        <span class="animate-letter gradient-text" style="--order: 10">t</span>
+        <span class="animate-letter gradient-text" style="--order: 11">a</span>
+        <span class="animate-letter gradient-text" style="--order: 12">i</span>
+        <span class="animate-letter gradient-text" style="--order: 13">l</span>
+        <span class="animate-letter gradient-text" style="--order: 14">s</span>
+      </h2>
       <label>Server Name</label>
       <input :value="selectedServer.name" disabled class="modal-input" />
       <label>Description</label>
@@ -150,6 +406,9 @@
       <label>Visibility</label>
       <input :value="selectedServer.visibility" disabled class="modal-input" />
       <div class="modal-buttons">
+        <button @click="openEditServer" class="modal-button confirm-button">
+          Edit
+        </button>
         <button
           @click="$emit('update:show-server-details-popup', false)"
           class="modal-button cancel-button"
@@ -166,8 +425,20 @@
     class="modal-overlay"
     @click.self="$emit('update:show-edit-server', false)"
   >
-    <div class="modal">
-      <h2>Edit Server</h2>
+    <div class="modal animate-fade-in">
+      <h2>
+        <span class="animate-letter gradient-text" style="--order: 1">E</span>
+        <span class="animate-letter gradient-text" style="--order: 2">d</span>
+        <span class="animate-letter gradient-text" style="--order: 3">i</span>
+        <span class="animate-letter gradient-text" style="--order: 4">t</span>
+        <span class="animate-letter gradient-text" style="--order: 5"> </span>
+        <span class="animate-letter gradient-text" style="--order: 6">S</span>
+        <span class="animate-letter gradient-text" style="--order: 7">e</span>
+        <span class="animate-letter gradient-text" style="--order: 8">r</span>
+        <span class="animate-letter gradient-text" style="--order: 9">v</span>
+        <span class="animate-letter gradient-text" style="--order: 10">e</span>
+        <span class="animate-letter gradient-text" style="--order: 11">r</span>
+      </h2>
       <label>Server Name</label>
       <input
         :value="editServer.name"
@@ -215,10 +486,7 @@
         </label>
       </div>
       <div class="modal-buttons">
-        <button
-          @click="$emit('save-server-changes')"
-          class="modal-button create-modal-button"
-        >
+        <button @click="saveAndShowDetails" class="modal-button confirm-button">
           Save Changes
         </button>
         <button
@@ -237,13 +505,26 @@
     class="modal-overlay"
     @click.self="$emit('update:show-leave-server-popup', false)"
   >
-    <div class="modal">
-      <h2>Leave Server</h2>
+    <div class="modal animate-fade-in">
+      <h2>
+        <span class="animate-letter gradient-text" style="--order: 1">L</span>
+        <span class="animate-letter gradient-text" style="--order: 2">e</span>
+        <span class="animate-letter gradient-text" style="--order: 3">a</span>
+        <span class="animate-letter gradient-text" style="--order: 4">v</span>
+        <span class="animate-letter gradient-text" style="--order: 5">e</span>
+        <span class="animate-letter gradient-text" style="--order: 6"> </span>
+        <span class="animate-letter gradient-text" style="--order: 7">S</span>
+        <span class="animate-letter gradient-text" style="--order: 8">e</span>
+        <span class="animate-letter gradient-text" style="--order: 9">r</span>
+        <span class="animate-letter gradient-text" style="--order: 10">v</span>
+        <span class="animate-letter gradient-text" style="--order: 11">e</span>
+        <span class="animate-letter gradient-text" style="--order: 12">r</span>
+      </h2>
       <p>Are you sure you want to leave the server?</p>
       <div class="modal-buttons">
         <button
           @click="$emit('confirm-leave-server')"
-          class="modal-button create-modal-button"
+          class="modal-button confirm-button"
         >
           Yes
         </button>
@@ -263,8 +544,22 @@
     class="modal-overlay"
     @click.self="$emit('update:show-report-popup', false)"
   >
-    <div class="modal">
-      <h2>Report Server</h2>
+    <div class="modal animate-fade-in">
+      <h2>
+        <span class="animate-letter gradient-text" style="--order: 1">R</span>
+        <span class="animate-letter gradient-text" style="--order: 2">e</span>
+        <span class="animate-letter gradient-text" style="--order: 3">p</span>
+        <span class="animate-letter gradient-text" style="--order: 4">o</span>
+        <span class="animate-letter gradient-text" style="--order: 5">r</span>
+        <span class="animate-letter gradient-text" style="--order: 6">t</span>
+        <span class="animate-letter gradient-text" style="--order: 7"> </span>
+        <span class="animate-letter gradient-text" style="--order: 8">S</span>
+        <span class="animate-letter gradient-text" style="--order: 9">e</span>
+        <span class="animate-letter gradient-text" style="--order: 10">r</span>
+        <span class="animate-letter gradient-text" style="--order: 11">v</span>
+        <span class="animate-letter gradient-text" style="--order: 12">e</span>
+        <span class="animate-letter gradient-text" style="--order: 13">r</span>
+      </h2>
       <label>Reason</label>
       <select
         :value="reportReason"
@@ -283,7 +578,7 @@
         class="modal-textarea"
       ></textarea>
       <div class="modal-buttons">
-        <button @click="$emit('submit-report')" class="modal-button create-modal-button">
+        <button @click="$emit('submit-report')" class="modal-button confirm-button">
           Submit
         </button>
         <button
@@ -298,6 +593,11 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
+import { useServer } from '@/composables/Server/useServer';
+
+const { selectedServer } = useServer();
+
 defineProps({
   showCreateServer: Boolean,
   newServer: Object,
@@ -305,7 +605,6 @@ defineProps({
   newChannel: Object,
   showCategoryPopup: Boolean,
   newCategory: Object,
-  showOptionsMenu: Boolean,
   showServerDetailsPopup: Boolean,
   selectedServer: Object,
   showEditServer: Boolean,
@@ -314,6 +613,12 @@ defineProps({
   showReportPopup: Boolean,
   reportReason: String,
   customReportReason: String,
+  showEditChannelPopup: Boolean,
+  editChannel: Object,
+  showDeleteChannelPopup: Boolean,
+  showEditCategoryPopup: Boolean,
+  editCategory: Object,
+  showDeleteCategoryPopup: Boolean,
 });
 
 defineEmits([
@@ -323,7 +628,6 @@ defineEmits([
   'create-channel',
   'update:show-category-popup',
   'create-category',
-  'update:show-options-menu',
   'update:show-server-details-popup',
   'update:show-edit-server',
   'save-server-changes',
@@ -339,17 +643,45 @@ defineEmits([
   'update:edit-server',
   'update:report-reason',
   'update:custom-report-reason',
+  'update:show-edit-channel-popup',
+  'update:edit-channel',
+  'save-channel-changes',
+  'update:show-delete-channel-popup',
+  'confirm-delete-channel',
+  'update:show-edit-category-popup',
+  'update:edit-category',
+  'save-category-changes',
+  'update:show-delete-category-popup',
+  'confirm-delete-category',
 ]);
+
+// Compute categories for channel creation/editing
+const categories = computed(() => {
+  return selectedServer.value?.channels.filter((c) => c.isCategory) || [];
+});
+
+const openEditServer = () => {
+  emit('update:show-server-details-popup', false);
+  emit('update:show-edit-server', true);
+};
+
+const saveAndShowDetails = () => {
+  emit('save-server-changes');
+  emit('update:show-edit-server', false);
+  emit('update:show-server-details-popup', true);
+};
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
+
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.75);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -357,26 +689,77 @@ defineEmits([
 }
 
 .modal {
-  background: white;
-  padding: 30px;
+  background: #fff8e1;
+  padding: 24px;
   border-radius: 12px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   max-width: 500px;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 16px;
+}
+
+.animate-fade-in {
+  animation: fade-in 1s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-letter {
+  display: inline-block;
+  opacity: 0;
+  animation: letter 0.5s ease-out forwards;
+  animation-delay: calc(var(--order) * 0.1s);
+}
+
+@keyframes letter {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.gradient-text {
+  background-image: linear-gradient(to right, #f59e0b, #d97706);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.modal h2 {
+  margin-bottom: 8px;
+}
+
+.modal p {
+  color: #78350f;
+  font-size: 14px;
+}
+
+.modal label {
+  font-size: 14px;
+  color: #78350f;
+  margin-bottom: 4px;
 }
 
 .modal-input,
-.modal-textarea,
-.modal-button,
-.visibility-options label {
+.modal-textarea {
   width: 100%;
-  padding: 12px;
+  padding: 10px;
   border-radius: 6px;
-  border: 1px solid #ddd;
-  font-size: 16px;
+  border: 1px solid #e5d5b3;
+  font-size: 14px;
+  color: #78350f;
+  background: #fef3c7;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.modal-input:focus,
+.modal-textarea:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
 }
 
 .modal-textarea {
@@ -387,33 +770,53 @@ defineEmits([
 .visibility-options {
   display: flex;
   gap: 20px;
+  font-size: 14px;
+  color: #78350f;
+}
+
+.visibility-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .modal-buttons {
   display: flex;
-  justify-content: space-between;
-  margin-top: 15px;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
 }
 
-.create-modal-button {
-  background-color: white;
-  color: black;
+.modal-button {
+  padding: 8px 16px;
   border: none;
-  padding: 10px;
-  border-radius: 5px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.create-modal-button:hover {
-  background-color: #f0f0f0;
+.confirm-button {
+  background: linear-gradient(to right, #f59e0b, #d97706);
+  color: #78350f;
+}
+
+.confirm-button:hover {
+  background: linear-gradient(to right, #f59e0b, #b45309);
+  transform: translateY(-0.5px);
+  box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);
 }
 
 .cancel-button {
-  background-color: #ff0000;
+  background: #78350f;
+  color: #fff8e1;
 }
 
 .cancel-button:hover {
-  background-color: #cc0000;
+  background: #7c2d12;
+  transform: translateY(-0.5px);
 }
 
 .server-icon {
