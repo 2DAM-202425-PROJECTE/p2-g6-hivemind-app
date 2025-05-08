@@ -57,9 +57,6 @@
             <template v-else-if="selectedMedia.file_path">
               <img :src="getImageUrl(selectedMedia.file_path)" alt="Media Image" class="media-content" />
             </template>
-            <template v-else>
-              <p>No media file available</p>
-            </template>
           </div>
           <div class="media-actions">
             <div class="action-item" @click.stop="toggleLike(selectedMedia)">
@@ -745,8 +742,6 @@ h1 {
 .media-card.highlight {
   animation: highlight 2s ease-out;
 }
-
-
 
 .media-header {
   display: flex;
