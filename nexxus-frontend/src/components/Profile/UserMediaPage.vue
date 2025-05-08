@@ -13,7 +13,11 @@
                 <img :src="getProfilePhotoById(selectedMedia.id_user)" class="profile-pic" alt="Profile" />
               </div>
               <div class="media-info">
-                <strong class="media-username" @click="goToUserProfile(getUsernameById(selectedMedia.id_user))">
+                <strong class="media-username" :class="[
+                  getNameEffectClass(selectedMedia.equipped_name_effect_path),
+                  getProfileFontClass(selectedMedia.equipped_profile_font_path),
+                  selectedMedia.equipped_name_effect_path ? 'effect-active' : ''
+                ]" @click="goToUserProfile(getUsernameById(selectedMedia.id_user))">
                   {{ getUserNameById(selectedMedia.id_user) }}
                 </strong>
                 <p class="post-date">{{ formatDate(selectedMedia.created_at) }}</p>
@@ -87,7 +91,11 @@
                   <img :src="getCommentUserPhoto(comment.user)" class="comment-profile-pic" alt="User Profile" />
                 </div>
                 <div class="comment-content">
-                  <strong class="comment-username" @click="goToUserProfile(comment.user?.username)">
+                  <strong class="comment-username" :class="[
+                    getNameEffectClass(comment.equipped_name_effect_path),
+                    getProfileFontClass(comment.equipped_profile_font_path),
+                    comment.equipped_name_effect_path ? 'effect-active' : ''
+                  ]" @click="goToUserProfile(comment.user?.username)">
                     {{ comment.user?.name || 'Unknown User' }}
                   </strong>
                   <p>{{ comment.content }}</p>
@@ -104,7 +112,11 @@
                   <!-- Display Replies -->
                   <div v-if="areRepliesVisible(comment.id)" class="replies-list">
                     <div v-for="reply in comment.replies" :key="reply.id" class="reply">
-                      <strong>{{ reply.user?.name || 'Unknown User' }}</strong>
+                      <strong :class="[
+                        getNameEffectClass(reply.equipped_name_effect_path),
+                        getProfileFontClass(reply.equipped_profile_font_path),
+                        reply.equipped_name_effect_path ? 'effect-active' : ''
+                      ]">{{ reply.user?.name || 'Unknown User' }}</strong>
                       <p>{{ reply.content }}</p>
                     </div>
                   </div>
@@ -147,7 +159,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn text @click="cancelEditMedia">Cancel</v-btn>
-          <v-btn color="primary" @click="saveEditMedia">Update {{ isVideo ? 'Video' : 'Post' }}</v-btn>
+          <v-btn class="btn-primary" @click="saveEditMedia">Update {{ isVideo ? 'Video' : 'Post' }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -163,7 +175,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn text @click="cancelDelete">Cancel</v-btn>
-          <v-btn color="error" @click="confirmDelete">Delete</v-btn>
+          <v-btn class="btn-primary" @click="confirmDelete">Delete</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -178,7 +190,11 @@
           </div>
           <div v-else class="replies-list">
             <div v-for="reply in selectedCommentReplies" :key="reply.id" class="reply">
-              <strong>{{ reply.user?.name || 'Unknown User' }}</strong>
+              <strong :class="[
+                getNameEffectClass(reply.equipped_name_effect_path),
+                getProfileFontClass(reply.equipped_profile_font_path),
+                reply.equipped_name_effect_path ? 'effect-active' : ''
+              ]">{{ reply.user?.name || 'Unknown User' }}</strong>
               <p>{{ reply.content }}</p>
             </div>
           </div>
@@ -239,7 +255,7 @@ const equippedBackgroundStyle = computed(() => {
   const bgPath = currentUser.value.equipped_background_path || cachedBackgroundPath.value;
   return bgPath
     ? { backgroundImage: `url(${bgPath})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
-    : { backgroundColor: '#f0f2f5' };
+    : { background: 'linear-gradient(to bottom right, #FEFCE8, #FDE68A)' };
 });
 
 // Fetch user data including equipped background
@@ -350,12 +366,40 @@ onMounted(async () => {
     console.log('Fetching media with ID:', postId);
     const postResult = await apiClient.get(`/api/posts/${postId}`);
     console.log('Media data:', postResult.data);
-    selectedMedia.value = postResult.data.data;
+    const postData = postResult.data.data;
+
+    // Fetch equipped items for the post's user
+    const equippedItemsResult = await apiClient.get(`/api/user/${postData.id_user}/equipped-items`);
+    selectedMedia.value = {
+      ...postData,
+      equipped_name_effect_path: equippedItemsResult.data.equipped_name_effect_path,
+      equipped_profile_font_path: equippedItemsResult.data.equipped_profile_font_path,
+    };
 
     console.log('Fetching comments for media ID:', postId);
     const commentsResult = await apiClient.get(`/api/posts/${postId}/comments`);
     console.log('Comments data:', commentsResult.data);
-    comments.value = commentsResult.data || [];
+    comments.value = await Promise.all(
+      commentsResult.data.map(async (comment) => {
+        const equippedItems = await apiClient.get(`/api/user/${comment.user.id}/equipped-items`);
+        const repliesWithEquippedItems = await Promise.all(
+          (comment.replies || []).map(async (reply) => {
+            const replyEquippedItems = await apiClient.get(`/api/user/${reply.user.id}/equipped-items`);
+            return {
+              ...reply,
+              equipped_name_effect_path: replyEquippedItems.data.equipped_name_effect_path,
+              equipped_profile_font_path: replyEquippedItems.data.equipped_profile_font_path,
+            };
+          })
+        );
+        return {
+          ...comment,
+          equipped_name_effect_path: equippedItems.data.equipped_name_effect_path,
+          equipped_profile_font_path: equippedItems.data.equipped_profile_font_path,
+          replies: repliesWithEquippedItems,
+        };
+      })
+    );
 
     await nextTick();
     const mediaElement = document.getElementById(`media-${postId}`);
@@ -413,6 +457,52 @@ const getUserNameById = (id) => users.value[id]?.name || 'Unknown User';
 const getUsernameById = (id) => users.value[id]?.username || null;
 const isMediaFromUser = (media) => media.id_user === currentUser.value.id;
 
+const getNameEffectClass = (nameEffectPath) => {
+  if (!nameEffectPath) return '';
+  const effectMap = {
+    'Gradient Fade': 'gradient-fade',
+    'Golden Outline': 'gradient-fade',
+    'Dark Pulse': 'dark-pulse',
+    'Cosmic Shine': 'cosmic-shine',
+    'Neon Edge': 'neon-edge',
+    'Frost Glow': 'frost-glow',
+    'Fire Flicker': 'fire-flicker',
+    'Emerald Sheen': 'emerald-sheen',
+    'Phantom Haze': 'phantom-haze',
+    'Electric Glow': 'electric-glow',
+    'Solar Flare': 'solar-flare',
+    'Wave Shimmer': 'wave-shimmer',
+    'Crystal Pulse': 'crystal-pulse',
+    'Mystic Aura': 'mystic-aura',
+    'Shadow Veil': 'shadow-veil',
+    'Digital Pulse': 'digital-pulse',
+  };
+  return effectMap[nameEffectPath] || '';
+};
+
+const getProfileFontClass = (fontPath) => {
+  if (!fontPath) return '';
+  switch (fontPath) {
+    case 'Pixel Art': return 'font-pixel-art';
+    case 'Comic Sans': return 'font-comic-sans';
+    case 'Gothic': return 'font-gothic';
+    case 'Cursive': return 'font-cursive';
+    case 'Typewriter': return 'font-typewriter';
+    case 'Bubble': return 'font-bubble';
+    case 'Neon': return 'font-neon';
+    case 'Graffiti': return 'font-graffiti';
+    case 'Retro': return 'font-retro';
+    case 'Cyberpunk': return 'font-cyberpunk';
+    case 'Western': return 'font-western';
+    case 'Chalkboard': return 'font-chalkboard';
+    case 'Horror': return 'font-horror';
+    case 'Futuristic': return 'font-futuristic';
+    case 'Handwritten': return 'font-handwritten';
+    case 'Bold Script': return 'font-bold-script';
+    default: return '';
+  }
+};
+
 const goToUserProfile = (username) => {
   console.log('Navigating to profile with username:', username);
   if (username) {
@@ -447,7 +537,12 @@ const addComment = async () => {
     const response = await apiClient.post(`/api/posts/${selectedMedia.value.id}/comments`, {
       content: newComment.value
     });
-    comments.value.push(response.data);
+    const equippedItems = await apiClient.get(`/api/user/${response.data.user.id}/equipped-items`);
+    comments.value.push({
+      ...response.data,
+      equipped_name_effect_path: equippedItems.data.equipped_name_effect_path,
+      equipped_profile_font_path: equippedItems.data.equipped_profile_font_path,
+    });
     newComment.value = '';
   } catch (error) {
     console.error('Error adding comment:', error);
@@ -564,8 +659,15 @@ const saveEditMedia = async () => {
     }
 
     const response = await apiClient.post(`/api/posts/${selectedMedia.value.id}`, formData);
+    const updatedPost = response.data.post || response.data.data;
 
-    selectedMedia.value = response.data.post || response.data.data;
+    // Fetch equipped items for the updated post
+    const equippedItemsResult = await apiClient.get(`/api/user/${updatedPost.id_user}/equipped-items`);
+    selectedMedia.value = {
+      ...updatedPost,
+      equipped_name_effect_path: equippedItemsResult.data.equipped_name_effect_path,
+      equipped_profile_font_path: equippedItemsResult.data.equipped_profile_font_path,
+    };
     editMediaPopup.value = false;
   } catch (error) {
     console.error('Error updating media:', error);
@@ -602,13 +704,17 @@ const formatDate = (dateString) => {
 </script>
 
 <style scoped>
+@import '@/styles/nameEffects.css';
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
+
 .user-media-container {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
   padding-bottom: 60px;
+  background: linear-gradient(to bottom right, #FEFCE8, #FDE68A);
   min-height: 100vh;
-  color: black;
+  color: #000000;
 }
 
 h1 {
@@ -630,8 +736,8 @@ h1 {
 
 .media-card {
   background: #ffffff;
-  border: 1px solid #ffffff;
-  border-radius: 24px;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   padding: 20px;
   width: 100%;
 }
@@ -639,6 +745,8 @@ h1 {
 .media-card.highlight {
   animation: highlight 2s ease-out;
 }
+
+
 
 .media-header {
   display: flex;
@@ -661,6 +769,7 @@ h1 {
   width: 40px;
   height: 40px;
   border-radius: 50%;
+  border: 2px solid #FEFCE8;
 }
 
 .media-info {
@@ -672,6 +781,7 @@ h1 {
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
+  color: #000000;
 }
 
 .media-username:hover {
@@ -680,12 +790,12 @@ h1 {
 
 .post-date {
   font-size: 12px;
-  color: #666;
+  color: #000000;
 }
 
 .username-handle {
   font-size: 14px;
-  color: #666;
+  color: #000000;
 }
 
 .media-description {
@@ -694,6 +804,7 @@ h1 {
 
 .post-description {
   font-size: 16px;
+  color: #000000;
 }
 
 .post-location {
@@ -704,12 +815,12 @@ h1 {
 }
 
 .location-icon {
-  color: #1da1f2;
+  color: #000000;
   font-size: 16px;
 }
 
 .location-link {
-  color: #1da1f2;
+  color: #000000;
   text-decoration: none;
   font-size: 14px;
 }
@@ -721,7 +832,7 @@ h1 {
 .location-preview {
   margin-top: 10px;
   padding: 10px;
-  background: #e6f3ff;
+  background: #FEFCE8;
   border-radius: 5px;
   display: flex;
   align-items: center;
@@ -729,21 +840,21 @@ h1 {
 }
 
 .location-preview i {
-  color: #1da1f2;
+  color: #000000;
 }
 
 .location-btn {
   display: inline-block;
   padding: 5px 10px;
-  background-color: #1da1f2;
-  color: white;
+  background-color: #555555;
+  color: #000000;
   text-decoration: none;
   border-radius: 5px;
   font-size: 14px;
 }
 
 .location-btn:hover {
-  background-color: #0d91e2;
+  background-color: #333333;
 }
 
 .remove-btn {
@@ -765,7 +876,7 @@ h1 {
   border: none;
   cursor: pointer;
   padding: 5px;
-  color: #1da1f2;
+  color: #000000;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -776,7 +887,23 @@ h1 {
 }
 
 .action-btn:hover {
-  color: #0d91e2;
+  color: #333333;
+}
+
+.btn-primary {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: linear-gradient(to right, #555555, #333333);
+  color: #000000;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(to right, #333333, #1a1a1a);
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(85, 85, 85, 0.3);
 }
 
 .media-content {
@@ -784,6 +911,7 @@ h1 {
   max-height: 600px;
   border-radius: 20px;
   margin-bottom: 15px;
+  object-fit: contain;
 }
 
 .media-menu {
@@ -794,14 +922,15 @@ h1 {
   background: none;
   border: none;
   cursor: pointer;
+  color: #000000;
 }
 
 .dropdown-menu {
   position: absolute;
   top: 100%;
   right: 0;
-  background: white;
-  border: 1px solid #d3d3d3;
+  background: #FEFCE8;
+  border: 1px solid #555555;
   border-radius: 5px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   z-index: 1000;
@@ -817,10 +946,11 @@ h1 {
 .dropdown-menu li {
   padding: 10px;
   cursor: pointer;
+  color: #000000;
 }
 
 .dropdown-menu li:hover {
-  background: #f0f0f0;
+  background: #FDE68A;
 }
 
 .media-actions {
@@ -828,6 +958,7 @@ h1 {
   justify-content: space-between;
   font-size: 14px;
   margin-bottom: 20px;
+  color: #000000;
 }
 
 .action-item {
@@ -839,7 +970,7 @@ h1 {
 
 .action-item i {
   font-size: 18px;
-  color: #333;
+  color: #000000;
 }
 
 .action-item span {
@@ -849,16 +980,15 @@ h1 {
 .comments-section {
   margin-top: 20px;
   padding: 15px;
-  background: #f9f9f9;
-  border-radius: 10px;
+  background: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .comments-section h3 {
   font-size: 18px;
   margin-bottom: 15px;
-}
-
-.comments-list {
+  color: #000000;
 }
 
 .comment {
@@ -878,6 +1008,7 @@ h1 {
   height: 40px;
   border-radius: 50%;
   margin-right: 10px;
+  border: 2px solid #FEFCE8;
 }
 
 .comment-content {
@@ -885,8 +1016,9 @@ h1 {
 }
 
 .comment-username {
-  font-size: 14px;
+  font-size: 16px;
   cursor: pointer;
+  color: #000000;
 }
 
 .comment-username:hover {
@@ -896,30 +1028,32 @@ h1 {
 .comment-content p {
   margin: 5px 0 0;
   font-size: 14px;
+  color: #000000;
 }
 
-.delete-comment-btn {
+.comment-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.reply-btn,
+.view-replies-btn {
   background: none;
   border: none;
-  color: #ff4444;
+  color: #000000;
   cursor: pointer;
-  padding: 0;
-  position: absolute;
-  right: 10px;
-  top: 10px;
+  font-size: 14px;
 }
 
-.delete-comment-btn i {
-  font-size: 18px;
-}
-
-.delete-comment-btn:hover {
-  color: #cc0000;
+.reply-btn:hover,
+.view-replies-btn:hover {
+  color: #333333;
 }
 
 .no-comments {
   text-align: center;
-  color: #666;
+  color: #000000;
   padding: 10px 0;
 }
 
@@ -934,39 +1068,20 @@ h1 {
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
+  color: #000000;
 }
 
 .comment-input button {
   padding: 10px 20px;
-  background: #007bff;
-  color: white;
+  background: linear-gradient(to right, #555555, #333333);
+  color: #000000;
   border: none;
   border-radius: 5px;
   cursor: pointer;
 }
 
 .comment-input button:hover {
-  background: #0056b3;
-}
-
-.comment-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 5px;
-}
-
-.reply-btn,
-.view-replies-btn {
-  background: none;
-  border: none;
-  color: #007bff;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.reply-btn:hover,
-.view-replies-btn:hover {
-  text-decoration: underline;
+  background: linear-gradient(to right, #333333, #1a1a1a);
 }
 
 .replies-list {
@@ -990,43 +1105,53 @@ h1 {
   padding: 5px;
   border: 1px solid #ddd;
   border-radius: 5px;
+  color: #000000;
 }
 
 .reply-input button {
   padding: 5px 10px;
-  background: #007bff;
-  color: white;
+  background: linear-gradient(to right, #555555, #333333);
+  color: #000000;
   border: none;
   border-radius: 5px;
   cursor: pointer;
 }
 
 .reply-input button:hover {
-  background: #0056b3;
-}
-
-.view-replies-btn {
-  background: none;
-  border: none;
-  color: #007bff;
-  cursor: pointer;
-  font-size: 14px;
-  margin-top: 5px;
-}
-
-.view-replies-btn:hover {
-  text-decoration: underline;
+  background: linear-gradient(to right, #333333, #1a1a1a);
 }
 
 .no-replies {
   text-align: center;
-  color: #666;
+  color: #000000;
   padding: 10px 0;
 }
 
 .no-media {
   text-align: center;
-  color: #666;
+  color: #000000;
   padding: 20px;
 }
+
+.effect-active {
+  display: inline-block;
+  padding: 0 0.25rem;
+}
+
+.font-pixel-art { font-family: 'Press Start 2P', cursive; font-size: 16px; }
+.font-comic-sans { font-family: 'Comic Neue', cursive; font-size: 16px; }
+.font-gothic { font-family: 'Black Ops One', cursive; font-size: 16px; }
+.font-cursive { font-family: 'Dancing Script', cursive; font-size: 16px; }
+.font-typewriter { font-family: 'Courier Prime', monospace; font-size: 16px; }
+.font-bubble { font-family: 'Bungee', cursive; font-size: 16px; }
+.font-neon { font-family: 'Orbitron', sans-serif; font-size: 16px; }
+.font-graffiti { font-family: 'Wallpoet', cursive; font-size: 16px; }
+.font-retro { font-family: 'VT323', monospace; font-size: 16px; }
+.font-cyberpunk { font-family: 'Monoton', cursive; font-size: 16px; }
+.font-western { font-family: 'Special Elite', cursive; font-size: 16px; }
+.font-chalkboard { font-family: 'Creepster', cursive; font-size: 16px; }
+.font-horror { font-family: 'Creepster', cursive; font-size: 16px; }
+.font-futuristic { font-family: 'Audiowide', cursive; font-size: 16px; }
+.font-handwritten { font-family: 'Caveat', cursive; font-size: 16px; }
+.font-bold-script { font-family: 'Permanent Marker', cursive; font-size: 16px; }
 </style>
