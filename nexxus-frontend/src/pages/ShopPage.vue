@@ -35,7 +35,7 @@
             Trending Items
           </h2>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div v-for="item in trendingItems" :key="item.id" class="bg-amber-50 rounded-lg p-4 transition-all hover:shadow-md" :class="{ 'opacity-60': isPurchased(item.id) }">
+            <div v-for="item in trendingItems" :key="item.id" class="bg-amber-50 rounded-lg p-4" :class="{ 'opacity-60': isPurchased(item.id) }">
               <div class="item-preview h-32 w-32 rounded-md overflow-hidden mb-3 mx-auto">
                 <img
                   :src="item.iconUrl || fallbackImage"
@@ -67,21 +67,35 @@
             Subscriptions
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div v-for="tier in subscriptionTiers" :key="tier.id" class="bg-amber-50 rounded-lg p-6 border-2 border-amber-200 hover:border-amber-300 transition-all">
+            <div v-for="tier in subscriptionTiers" :key="tier.id" class="bg-amber-50 rounded-lg p-6 border-2 border-amber-200">
               <img
                 :src="tier.iconUrl || fallbackImage"
                 :alt="tier.name"
                 class="w-16 h-16 mx-auto mb-4"
                 @error="handleImageError($event, tier)"
               />
-              <h3 class="text-xl font-bold text-center text-amber-900 mb-2">{{ tier.name }}</h3>
-              <p class="text-center text-amber-700 font-medium mb-4">{{ formatPrice(tier.price) }}</p>
+              <h3 class="text-xl font-bold text-center color-black mb-2">{{ tier.name }}</h3>
+              <ul class="feature-list text-left color-black mb-4">
+                <li class="flex items-center">
+                  <svg class="h-5 w-5 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Includes {{ tier.freeItemsCount }} {{ tier.freeItemsCount === 1 ? 'item' : 'items' }}
+                </li>
+                <li class="flex items-center">
+                  <svg class="h-5 w-5 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  {{ tier.freeCredits }} {{ tier.freeCredits === 1 ? 'credit' : 'credits' }} {{ tier.price === 'Free' ? '' : 'monthly' }}
+                </li>
+              </ul>
+              <p class="text-center font-medium color-black mb-4">{{ formatPrice(tier.price) }}</p>
               <button
-                @click="goToPurchase(tier.id)"
+                @click="handleSubscription(tier)"
                 class="btn-primary w-full"
-                :disabled="isPurchased(tier.id)"
+                :disabled="currentSubscriptionTier === tier.name"
               >
-                {{ isPurchased(tier.id) ? 'Current Plan' : 'Subscribe' }}
+                {{ getButtonLabel(tier) }}
               </button>
             </div>
           </div>
@@ -96,17 +110,23 @@
             Buy Credits
           </h2>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div v-for="credit in creditPacks" :key="credit.id" class="bg-amber-50 rounded-lg p-4 text-center hover:shadow-md transition-all">
-              <img
-                :src="credit.iconUrl || fallbackImage"
-                :alt="credit.name"
-                class="w-12 h-12 mx-auto mb-3"
-                @error="handleImageError($event, credit)"
-              />
-              <h3 class="font-bold text-amber-900">{{ credit.name }}</h3>
-              <p class="text-amber-700 font-medium mb-3">{{ formatPrice(credit.price) }}</p>
-              <button @click="goToPurchase(credit.id)" class="btn-primary w-full">
-                Purchase
+            <div v-for="credit in creditPacks" :key="credit.id" class="bg-amber-50 rounded-lg p-4 text-center" :class="{ 'opacity-60': isPurchased(credit.id) }">
+              <div class="credit-preview rounded-md overflow-hidden mb-3 mx-auto">
+                <img
+                  :src="credit.iconUrl || fallbackImage"
+                  :alt="credit.name"
+                  class="w-full h-full object-contain"
+                  @error="handleImageError($event, credit)"
+                />
+              </div>
+              <h3 class="font-bold color-black">{{ credit.name }}</h3>
+              <p class="font-medium mb-3 color-black">{{ formatPrice(credit.price) }}</p>
+              <button
+                @click="goToPurchase(credit.id)"
+                class="btn-primary w-full"
+                :disabled="isPurchased(credit.id)"
+              >
+                {{ isPurchased(credit.id) ? 'Owned' : 'Purchase' }}
               </button>
             </div>
           </div>
@@ -132,7 +152,7 @@
               <p class="text-amber-800 mb-4">{{ category.description }}</p>
 
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div v-for="item in category.items" :key="item.id" class="bg-white rounded-lg p-3 hover:shadow-md transition-all" :class="{ 'opacity-60': isPurchased(item.id) }">
+                <div v-for="item in category.items" :key="item.id" class="bg-white rounded-lg p-3" :class="{ 'opacity-60': isPurchased(item.id) }">
                   <div
                     class="item-preview rounded-md overflow-hidden mb-2"
                     :class="{
@@ -151,7 +171,6 @@
                       @error="handleImageError($event, item)"
                     />
                   </div>
-                  <!-- Apply effects directly to the name -->
                   <h4 :class="[
                     'font-medium text-amber-900 truncate',
                     category.title === 'Name Effects' ? getNameEffectClass(item.name) : '',
@@ -197,17 +216,16 @@ export default {
       cosmeticCategories: [],
       userInventory: [],
       userId: null,
+      currentSubscriptionTier: null,
       fallbackImage: 'https://api.iconify.design/lucide/image-off.svg',
     };
   },
   computed: {
     trendingItems() {
       const allItems = this.cosmeticCategories.flatMap(category => category.items);
-      // Filter out purchased items
       const availableItems = allItems.filter(item => !this.userInventory.includes(item.id));
       const customBanners = availableItems.filter(item => item.type === 'custom_banner');
       const otherItems = availableItems.filter(item => item.type !== 'custom_banner');
-      // Prioritize custom banners (up to 2) and fill with other items to reach 4
       const shuffledBanners = this.shuffleArray([...customBanners]).slice(0, Math.min(2, customBanners.length));
       const remainingSlots = 4 - shuffledBanners.length;
       const shuffledOthers = this.shuffleArray([...otherItems]).slice(0, Math.min(remainingSlots, otherItems.length));
@@ -247,12 +265,41 @@ export default {
     getOwnedCount(items) {
       return items.filter(item => this.userInventory.includes(item.id)).length;
     },
+    getFreeItemsCount(tierName) {
+      switch (tierName) {
+        case 'Basic': return 1;
+        case 'Premium': return 3;
+        case 'Elite': return 5;
+        default: return 0;
+      }
+    },
+    getFreeCreditsForTier(tierName) {
+      switch (tierName) {
+        case 'Basic': return 100;
+        case 'Premium': return 500;
+        case 'Elite': return 1000;
+        default: return 0;
+      }
+    },
+    getButtonLabel(tier) {
+      if (this.currentSubscriptionTier === tier.name) {
+        return 'Subscribed';
+      }
+      if (tier.name === 'Basic') {
+        return 'Redeem';
+      }
+      const tierOrder = { 'Basic': 0, 'Premium': 1, 'Elite': 2 };
+      const currentOrder = this.currentSubscriptionTier ? tierOrder[this.currentSubscriptionTier] : 0;
+      const selectedOrder = tierOrder[tier.name] || 0;
+      return selectedOrder > currentOrder ? 'Upgrade' : 'Downgrade';
+    },
     async fetchCurrentUser() {
       try {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
         const response = await apiClient.get('/api/user');
         this.userId = response.data.id;
+        this.currentSubscriptionTier = response.data.subscriptionTier || null;
         await this.fetchUserInventory();
       } catch (error) {
         console.error('Failed to fetch current user:', error);
@@ -272,6 +319,8 @@ export default {
         this.subscriptionTiers = response.data.subscriptions.map(tier => ({
           ...tier,
           price: tier.price === 0 ? 'Free' : `${tier.price}€/month`,
+          freeItemsCount: this.getFreeItemsCount(tier.name),
+          freeCredits: this.getFreeCreditsForTier(tier.name),
         }));
         this.creditPacks = response.data.creditPacks
           .sort((a, b) => parseInt(a.name) - parseInt(b.name))
@@ -282,6 +331,17 @@ export default {
         this.cosmeticCategories = this.categorizeCosmetics(response.data.cosmetics);
       } catch (error) {
         console.error('Failed to fetch categorized items:', error);
+      }
+    },
+    async handleSubscription(tier) {
+      try {
+        if (this.currentSubscriptionTier === tier.name) {
+          console.log(`User already subscribed to ${tier.name}`);
+          return;
+        }
+        await this.goToPurchase(tier.id);
+      } catch (error) {
+        console.error('Failed to handle subscription:', error);
       }
     },
     categorizeCosmetics(cosmetics) {
@@ -307,7 +367,7 @@ export default {
           items: cosmetics.filter(item => item.type === 'name_effect'),
         },
         {
-          title: "Custom Banners",
+          title: 'Custom Banners',
           description: 'Enhance your profile header with vibrant animated banners',
           items: cosmetics.filter(item => item.type === 'custom_banner'),
         },
@@ -349,7 +409,7 @@ export default {
 @import '../styles/nameEffects.css';
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
 
-/* Reuse your existing animations */
+/* Animations */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
@@ -378,20 +438,21 @@ export default {
   color: transparent;
 }
 
-/* Button styles matching your theme */
+/* Button styles */
 .btn-primary {
   @apply px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center;
-  @apply bg-gradient-to-r from-amber-500 to-amber-400 text-amber-900;
+  @apply bg-gradient-to-r from-amber-500 to-amber-400;
+  color: #000000;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:hover {
-  @apply bg-gradient-to-r from-amber-600 to-amber-500 transform -translate-y-0.5;
+  @apply bg-gradient-to-r from-amber-600 to-amber-500;
   box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);
 }
 
 .btn-primary:disabled {
-  @apply bg-gray-400 cursor-not-allowed transform-none;
+  @apply bg-gray-400 cursor-not-allowed;
   box-shadow: none;
 }
 
@@ -414,7 +475,24 @@ export default {
 
 .trending-items .item-preview.banner-preview img,
 .trending-items .item-preview.background-preview img {
-  padding: 0; /* Remove padding to ensure full coverage */
+  padding: 0;
+}
+
+/* Item preview styles for Credits section */
+.credit-preview {
+  background-color: #f3e8d3;
+  height: 96px;
+  width: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.credit-preview img {
+  width: 100%;
+  height: 100%;
+  padding: 8px;
 }
 
 /* Item preview styles for Cosmetics section */
@@ -444,13 +522,25 @@ export default {
   padding: 4px;
 }
 
+/* Feature list for subscriptions */
+.feature-list {
+  list-style: none;
+  padding: 0;
+}
+
+.feature-list li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
 /* Ensure name effects are active */
 .effect-active {
   display: inline-block;
   padding: 0 0.25rem;
 }
 
-/* Profile Font Styles - smaller font sizes */
+/* Profile Font Styles */
 .font-pixel-art { font-family: 'Press Start 2P', cursive; font-size: 0.75rem; }
 .font-comic-sans { font-family: 'Comic Neue', cursive; font-size: 0.85rem; }
 .font-gothic { font-family: 'Black Ops One', cursive; font-size: 0.85rem; }
@@ -468,6 +558,10 @@ export default {
 .font-handwritten { font-family: 'Caveat', cursive; font-size: 0.85rem; }
 .font-bold-script { font-family: 'Permanent Marker', cursive; font-size: 0.85rem; }
 
+.color-black {
+  color: #000000;
+}
+
 @media (max-width: 768px) {
   .min-h-screen {
     padding: 1rem;
@@ -477,7 +571,6 @@ export default {
     padding: 0.5rem;
   }
 
-  /* Adjust grid for mobile */
   .grid-cols-2 {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -485,6 +578,11 @@ export default {
   .trending-items .item-preview {
     height: 96px;
     width: 96px;
+  }
+
+  .credit-preview {
+    height: 64px;
+    width: 64px;
   }
 
   .background-preview, .banner-preview {

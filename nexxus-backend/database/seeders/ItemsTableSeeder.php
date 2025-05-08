@@ -13,9 +13,9 @@ class ItemsTableSeeder extends Seeder
 
         $items = [
             // Subscriptions (IDs 1-3)
-            ['id' => 1, 'name' => 'Basic', 'price' => 0.00, 'iconUrl' => 'https://api.iconify.design/lucide/sprout.svg', 'type' => 'subscription', 'theme_value' => null, 'amount' => null],
-            ['id' => 2, 'name' => 'Premium', 'price' => 9.99, 'iconUrl' => 'https://api.iconify.design/lucide/shield-check.svg', 'type' => 'subscription', 'theme_value' => null, 'amount' => null],
-            ['id' => 3, 'name' => 'Elite', 'price' => 19.99, 'iconUrl' => 'https://api.iconify.design/lucide/crown.svg', 'type' => 'subscription', 'theme_value' => null, 'amount' => null],
+            ['id' => 1, 'name' => 'Basic', 'price' => 0.00, 'iconUrl' => 'https://api.iconify.design/mdi/seed-outline.svg', 'type' => 'subscription', 'theme_value' => null, 'amount' => null],
+            ['id' => 2, 'name' => 'Premium', 'price' => 9.99, 'iconUrl' => 'https://api.iconify.design/mdi/shield-star-outline.svg', 'type' => 'subscription', 'theme_value' => null, 'amount' => null],
+            ['id' => 3, 'name' => 'Elite', 'price' => 19.99, 'iconUrl' => 'https://api.iconify.design/mdi/crown-circle-outline.svg', 'type' => 'subscription', 'theme_value' => null, 'amount' => null],
 
             // Credit Packs (IDs 4-11)
             ['id' => 4, 'name' => '100 Credits', 'price' => 1.99, 'iconUrl' => 'https://api.iconify.design/lucide/coins.svg', 'type' => 'credit_pack', 'theme_value' => null, 'amount' => 100],

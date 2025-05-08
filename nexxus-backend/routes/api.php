@@ -57,7 +57,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function ()
 
     // Delete all notifications
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
-    
+
     // Search users by username
     Route::get('/search/users', [UserController::class, 'searchUsers']);
 
@@ -117,4 +117,5 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function ()
     Route::post('/user/process-credit-purchase', [UserController::class, 'processCreditPurchase']);
     Route::post('/user/update-credits', [UserController::class, 'updateCredits']);
     Route::get('/user/{id}/inventory', [UserInventoryController::class, 'index']);
+    Route::post('/user/inventory', [UserInventoryController::class, 'store']);
 });
