@@ -449,7 +449,20 @@ const getProfilePhotoById = (id) => {
   return generateAvatar(user?.name || 'User');
 };
 
-const getCommentUserPhoto = (user) => user?.profile_photo_path ? `${API_BASE_URL}/storage/${user.profile_photo_path}` : 'https://via.placeholder.com/40';
+const getCommentUserPhoto = (user) => {
+  if (!user || !user.id) {
+    return generateAvatar('Unknown User');
+  }
+  const userData = users.value[user.id];
+  if (userData?.profile_photo_path) {
+    if (userData.profile_photo_path.startsWith('http://') || userData.profile_photo_path.startsWith('https://')) {
+      return userData.profile_photo_path;
+    }
+    return `${API_BASE_URL}/storage/${userData.profile_photo_path}`;
+  }
+  return generateAvatar(userData?.name || user.name || 'Unknown User');
+};
+
 const getUserNameById = (id) => users.value[id]?.name || 'Unknown User';
 const getUsernameById = (id) => users.value[id]?.username || null;
 const isMediaFromUser = (media) => media.id_user === currentUser.value.id;
