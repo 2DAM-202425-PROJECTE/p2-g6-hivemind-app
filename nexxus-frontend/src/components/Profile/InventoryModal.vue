@@ -33,7 +33,11 @@
               v-for="item in category.items"
               :key="item.id"
               class="cosmetic-item"
-              :class="{ 'background-item': item.type === 'background', 'banner-item': item.type === 'custom_banner' }"
+              :class="{
+                'background-item': item.type === 'background',
+                'banner-item': item.type === 'custom_banner',
+                'subscription-item': item.type === 'subscription'
+              }"
             >
               <img
                 :src="getItemIconUrl(item)"
@@ -43,7 +47,11 @@
               />
               <h4 class="item-name">{{ item.name }}</h4>
               <p class="item-price">{{ formatPrice(item.price) }}</p>
+              <p v-if="item.type === 'subscription'" class="item-status">
+                {{ item.isActive ? 'Active' : 'Inactive' }}
+              </p>
               <button
+                v-if="item.type !== 'subscription'"
                 :class="['buy-button', item.isEquipped ? 'unequip-button' : '']"
                 @click="item.isEquipped ? unequipItem(item) : equipItem(item)"
               >
@@ -112,6 +120,9 @@ const fallbackIcons = {
   'Holo Waves': 'https://api.iconify.design/mdi/waveform.svg?color=%2300FFFF',
   'Neon Pulse': 'https://api.iconify.design/mdi/pulse.svg?color=%23FF00FF',
   'Star Warp': 'https://api.iconify.design/mdi/star-four-points.svg?color=%2300FFFF',
+  'Basic': 'https://api.iconify.design/mdi/crown.svg?color=%23FFD700',
+  'Premium': 'https://api.iconify.design/mdi/star.svg?color=%23FFD700',
+  'Elite': 'https://api.iconify.design/mdi/diamond.svg?color=%23FFD700',
 };
 
 const closeInventoryOnBackdrop = (event) => {
@@ -261,13 +272,18 @@ const formatPrice = (price) => {
 
 const categorizeInventory = (items) => {
   const categorized = [
+    {
+      title: 'Subscriptions',
+      description: 'Your active and owned subscription tiers',
+      items: items.filter(item => item.type === 'subscription')
+    },
     { title: 'Profile Icons', description: 'Stand out with unique profile icons', items: items.filter(item => item.type === 'profile_icon') },
     { title: 'Backgrounds', description: 'Transform your profile with stunning themes', items: items.filter(item => item.type === 'background') },
     { title: 'Name Effects', description: 'Make your username pop', items: items.filter(item => item.type === 'name_effect') },
     { title: 'Custom Banners', description: 'Enhance your profile header with vibrant animated banners', items: items.filter(item => item.type === 'custom_banner') },
     { title: 'Profile Badges', description: 'Show off your status', items: items.filter(item => item.type === 'badge') },
     { title: 'Profile Fonts', description: 'Customize your text style', items: items.filter(item => item.type === 'profile_font') },
-    { title: 'Other Items', description: 'Miscellaneous items', items: items.filter(item => !['profile_icon', 'background', 'name_effect', 'custom_banner', 'badge', 'profile_font'].includes(item.type)) },
+    { title: 'Other Items', description: 'Miscellaneous items', items: items.filter(item => !['subscription', 'profile_icon', 'background', 'name_effect', 'custom_banner', 'badge', 'profile_font'].includes(item.type)) },
   ].filter(category => category.items.length > 0).map(category => ({
     ...category,
     isOpen: categoryStates.value[category.title] ?? false, // Default to collapsed
@@ -281,11 +297,11 @@ const toggleCategory = (title) => {
   inventoryCategories.value = categorizeInventory(inventory.value);
 };
 
-// Placeholder for total items per category
+// Total items per category
 const getTotalItems = (categoryTitle) => {
-  // Replace with actual logic to fetch total items (e.g., from API or static data)
   const totalItemsMap = {
-    'Profile Icons': 16, // Based on determineItemType
+    'Subscriptions': 3, // Assuming Basic, Premium, Elite
+    'Profile Icons': 16,
     'Backgrounds': 16,
     'Name Effects': 16,
     'Custom Banners': 16,
@@ -305,14 +321,16 @@ const loadInventory = async () => {
     console.log('Raw inventory API response:', response.data);
     const mappedInventory = response.data.map(item => {
       const itemData = item.item || item;
+      const isSubscription = [1, 2, 3].includes(item.item_id) || itemData.type === 'subscription';
       return {
         id: item.id,
         item_id: item.item_id,
         name: itemData.name,
         price: itemData.price || 0,
         icon_url: itemData.icon_url || itemData.iconUrl,
-        type: itemData.type || determineItemType(itemData.name),
-        isEquipped: checkIfEquipped(itemData),
+        type: isSubscription ? 'subscription' : (itemData.type || determineItemType(itemData.name)),
+        isEquipped: isSubscription ? false : checkIfEquipped(itemData),
+        isActive: isSubscription && itemData.name === props.user.subscription_tier,
       };
     });
     inventory.value = mappedInventory;
@@ -326,6 +344,7 @@ const loadInventory = async () => {
 };
 
 const determineItemType = (itemName) => {
+  if (['Basic', 'Premium', 'Elite'].includes(itemName)) return 'subscription';
   if (['Mini Crown', 'Shining Star', 'Glowing Heart', 'Ghostly Aura', 'Crystal Gem', 'Thunder Bolt', 'Moon Glow', 'Sun Flare',
     'Flame Crest', 'Snowflake Spark', 'Leaf Whisper', 'Wave Ripple', 'Cloud Drift', 'Gear Spin', 'Anchor Drop', 'Feather Light'].includes(itemName)) return 'profile_icon';
   if (['Soft Gradient', 'Starry Night', 'Minimal Waves', 'Pastel Sky', 'Urban Glow', 'Forest Mist', 'Ocean Depth', 'Desert Dunes',
@@ -431,7 +450,16 @@ onMounted(() => {
   background-color: #e0e0e0;
 }
 
-.cosmetic-item:not(.background-item):not(.banner-item) .cosmetic-icon {
+.cosmetic-item.subscription-item .cosmetic-icon {
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 0.5rem;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cosmetic-item:not(.background-item):not(.banner-item):not(.subscription-item) .cosmetic-icon {
   width: 2rem;
   height: 2rem;
   margin-bottom: 0.5rem;
@@ -451,6 +479,21 @@ onMounted(() => {
   font-size: 0.8rem;
   color: #000;
   margin-bottom: 0.5rem;
+}
+
+.item-status {
+  font-size: 0.8rem;
+  color: #000;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.item-status.active {
+  color: #4caf50;
+}
+
+.item-status.inactive {
+  color: #666;
 }
 
 .buy-button {
@@ -483,6 +526,10 @@ onMounted(() => {
   .cosmetic-item.background-item .cosmetic-icon,
   .cosmetic-item.banner-item .cosmetic-icon {
     height: 100px;
+  }
+  .cosmetic-item.subscription-item .cosmetic-icon {
+    width: 2.5rem;
+    height: 2.5rem;
   }
   .category-title {
     font-size: 1.3rem;
