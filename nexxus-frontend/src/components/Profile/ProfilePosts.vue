@@ -2,57 +2,49 @@
   <div>
     <p v-if="userPosts.length === 0" class="text-gray-500 text-center">No posts yet</p>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div
-        v-for="post in userPosts"
-        :key="post.id"
-        @click="viewPost(post.id)"
-        class="relative bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
-      >
+      <div v-for="post in userPosts" :key="post.id" @click="viewPost(post.id)"
+        class="relative bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer">
         <!-- Fixed height container for consistency -->
         <div class="w-full h-48 flex items-center justify-center">
-          <img
-            v-if="post.file_path"
-            :src="getImageUrl(post.file_path)"
-            :alt="`Post ${post.id}`"
-            class="w-full h-full object-contain"
+          <img 
+            v-if="post.thumbnail_path" 
+            :src="getThumbnailUrl(post.thumbnail_path)" 
+            alt="thumbnail"
+            class="object-cover w-full h-full" 
           />
-          <p v-else class="text-gray-800 dark:text-gray-200 text-center px-4">
+          <img 
+            v-else-if="post.file_path" 
+            :src="getImageUrl(post.file_path)" 
+            alt="post image"
+            class="object-cover w-full h-full"
+          />
+          <p 
+            v-else 
+            class="text-gray-800 dark:text-gray-200 text-center px-4"
+          >
             {{ post.description || 'No description' }}
           </p>
         </div>
         <!-- Botón de tres puntos -->
         <div class="absolute top-2 right-2" @click.stop>
-          <button
-            @click="toggleMenu(post.id)"
-            class="p-1 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
-          >
+          <button @click="toggleMenu(post.id)"
+            class="p-1 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white">
             <i class="mdi mdi-dots-vertical"></i>
           </button>
           <!-- Menú desplegable -->
-          <div
-            v-if="activeMenu === post.id"
-            class="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-700 rounded-md shadow-lg z-10"
-          >
+          <div v-if="activeMenu === post.id"
+            class="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-700 rounded-md shadow-lg z-10">
             <ul class="py-1 text-sm text-gray-700 dark:text-gray-200">
-              <li
-                v-if="isCurrentUser"
-                @click.stop="editPost(post)"
-                class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
-              >
+              <li v-if="isCurrentUser" @click.stop="editPost(post)"
+                class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
                 Edit
               </li>
-              <li
-                v-if="isCurrentUser"
-                @click.stop="deletePost(post.id)"
-                class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
-              >
+              <li v-if="isCurrentUser" @click.stop="deletePost(post.id)"
+                class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
                 Delete
               </li>
-              <li
-                v-if="!isCurrentUser"
-                @click.stop="reportPost(post)"
-                class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
-              >
+              <li v-if="!isCurrentUser" @click.stop="reportPost(post)"
+                class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
                 Report
               </li>
             </ul>
@@ -72,38 +64,22 @@
         <!-- Imagen actual (only if it exists) -->
         <div v-if="selectedPost && selectedPost.file_path" class="mb-4">
           <p class="text-sm text-gray-600 dark:text-gray-300">Current Image:</p>
-          <img
-            :src="getImageUrl(selectedPost.file_path)"
-            alt="Current post image"
-            class="max-w-full h-auto max-h-48 mb-2"
-          />
+          <img :src="getImageUrl(selectedPost.file_path)" alt="Current post image"
+            class="max-w-full h-auto max-h-48 mb-2" />
         </div>
         <!-- Input para reemplazar imagen -->
-        <input
-          type="file"
-          accept=".png, .jpg, .jpeg, .mp4"
-          @change="handleEditFileUpload"
-          class="mb-4 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-500 file:text-white hover:file:bg-blue-600"
-        />
+        <input type="file" accept=".png, .jpg, .jpeg, .mp4" @change="handleEditFileUpload"
+          class="mb-4 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-500 file:text-white hover:file:bg-blue-600" />
         <!-- Campo de descripción -->
-        <input
-          v-model="editPostDescription"
-          type="text"
-          placeholder="Description"
-          class="w-full p-2 border rounded mb-4 dark:bg-gray-700 dark:text-white"
-        />
+        <input v-model="editPostDescription" type="text" placeholder="Description"
+          class="w-full p-2 border rounded mb-4 dark:bg-gray-700 dark:text-white" />
         <!-- Botones de acción -->
         <div class="flex justify-end gap-2">
-          <button
-            @click="cancelEditPost"
-            class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
-          >
+          <button @click="cancelEditPost"
+            class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white">
             Cancel
           </button>
-          <button
-            @click="saveEditPost"
-            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
+          <button @click="saveEditPost" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
             Update Post
           </button>
         </div>
@@ -116,7 +92,7 @@
 import { ref, defineProps, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-import {generateAvatar} from "@/utils/avatar.js";
+import { generateAvatar } from "@/utils/avatar.js";
 import apiClient from "@/axios.js";
 
 const router = useRouter();
@@ -164,6 +140,11 @@ const getImageUrl = (path) => {
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
   // Si es una ruta local, añadir el prefijo de storage
   return `http://localhost:8000/storage/${path}`;
+};
+
+const getThumbnailUrl = (thumbnailPath) => {
+  if (!thumbnailPath) return null; // Return null if no thumbnail exists
+  return `http://localhost:8000/storage/${thumbnailPath}`;
 };
 
 const viewPost = async (postId) => {
@@ -286,10 +267,12 @@ const reportPost = async (post) => {
 <style scoped>
 /* Add styles to ensure text-only posts look good */
 .h-48 {
-  height: 12rem; /* Ensure consistent height */
+  height: 12rem;
+  /* Ensure consistent height */
 }
 
 .text-gray-800 {
-  word-break: break-word; /* Prevent text overflow */
+  word-break: break-word;
+  /* Prevent text overflow */
 }
 </style>
