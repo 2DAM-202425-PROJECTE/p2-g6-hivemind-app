@@ -92,10 +92,15 @@
               <p class="text-center font-medium color-black mb-4">{{ formatPrice(tier.price) }}</p>
               <button
                 @click="handleSubscription(tier)"
-                class="btn-primary w-full"
-                :disabled="currentSubscriptionTier === tier.name"
+                class="w-full text-sm py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center"
+                :class="{
+                  'btn-owned': tier.status === 'Owned',
+                  'btn-downgrade': tier.status === 'Downgrade',
+                  'btn-available': tier.status === 'Available'
+                }"
+                :disabled="tier.status === 'Owned'"
               >
-                {{ getButtonLabel(tier) }}
+                {{ tier.status === 'Owned' ? 'Owned' : tier.status === 'Downgrade' ? 'Downgrade' : 'Buy' }}
               </button>
             </div>
           </div>
@@ -156,7 +161,7 @@
                   <div
                     class="item-preview rounded-md overflow-hidden mb-2"
                     :class="{
-                      'background-preview': item.type === 'background',
+                      '/background-preview': item.type === 'background',
                       'banner-preview': item.type === 'custom_banner',
                       'name-effect-preview': item.type === 'name_effect',
                       'profile-icon-preview': item.type === 'profile_icon',
@@ -281,18 +286,6 @@ export default {
         default: return 0;
       }
     },
-    getButtonLabel(tier) {
-      if (this.currentSubscriptionTier === tier.name) {
-        return 'Subscribed';
-      }
-      if (tier.name === 'Basic') {
-        return 'Redeem';
-      }
-      const tierOrder = { 'Basic': 0, 'Premium': 1, 'Elite': 2 };
-      const currentOrder = this.currentSubscriptionTier ? tierOrder[this.currentSubscriptionTier] : 0;
-      const selectedOrder = tierOrder[tier.name] || 0;
-      return selectedOrder > currentOrder ? 'Upgrade' : 'Downgrade';
-    },
     async fetchCurrentUser() {
       try {
         const token = localStorage.getItem('token');
@@ -321,6 +314,7 @@ export default {
           price: tier.price === 0 ? 'Free' : `${tier.price}€/month`,
           freeItemsCount: this.getFreeItemsCount(tier.name),
           freeCredits: this.getFreeCreditsForTier(tier.name),
+          status: tier.status // Include status field from backend
         }));
         this.creditPacks = response.data.creditPacks
           .sort((a, b) => parseInt(a.name) - parseInt(b.name))
@@ -335,7 +329,7 @@ export default {
     },
     async handleSubscription(tier) {
       try {
-        if (this.currentSubscriptionTier === tier.name) {
+        if (tier.status === 'Owned') {
           console.log(`User already subscribed to ${tier.name}`);
           return;
         }
@@ -454,6 +448,35 @@ export default {
 .btn-primary:disabled {
   @apply bg-gray-400 cursor-not-allowed;
   box-shadow: none;
+}
+
+.btn-owned {
+  background: #4caf50;
+  color: white;
+  cursor: not-allowed;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-downgrade {
+  background: #f44336;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-downgrade:hover {
+  background: #d32f2f;
+  box-shadow: 0 10px 15px -3px rgba(244, 67, 54, 0.3);
+}
+
+.btn-available {
+  background-image: linear-gradient(to right, #f59e0b, #d97706);
+  color: #000000;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-available:hover {
+  background-image: linear-gradient(to right, #f59e0b, #b45309);
+  box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);
 }
 
 /* Item preview styles for Trending Items */

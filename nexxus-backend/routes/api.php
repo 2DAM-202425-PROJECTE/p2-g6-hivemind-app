@@ -103,6 +103,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function ()
     Route::get('/shop/categorized-items', [ItemController::class, 'categorizedItems']);
     Route::get('/shop/items/{id}', [ItemController::class, 'show']);
     Route::post('/user/process-real-money-purchase', [UserController::class, 'processRealMoneyPurchase']);
+    Route::post('/user/update-subscription', [UserController::class, 'updateSubscription']);
 
     // Purchase and inventory routes
     Route::get('/user/{id}/equipped-items', [UserController::class, 'getEquippedItems']);

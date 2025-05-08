@@ -195,6 +195,29 @@ class UserController extends Controller
         return response()->json(['user' => $this->appendEquippedItems($user), 'posts' => $posts], 200);
     }
 
+    public function updateSubscription(Request $request)
+    {
+        $request->validate([
+            'userId' => 'required|integer|exists:users,id',
+            'subscriptionTier' => 'required|string',
+        ]);
+
+        $user = User::findOrFail($request->input('userId'));
+        $currentTier = $user->subscription_tier;
+        $newTier = $request->input('subscriptionTier');
+
+        // Determine if it's an upgrade or downgrade
+        $tiers = ['basic', 'standard', 'premium']; // Example tier hierarchy
+        $isUpgrade = array_search($newTier, $tiers) > array_search($currentTier, $tiers);
+
+        $user->subscription_tier = $newTier;
+        $user->save();
+
+        return response()->json([
+            'message' => $isUpgrade ? 'Subscription upgraded successfully' : 'Subscription downgraded successfully',
+            'action' => $isUpgrade ? 'Upgrade' : 'Downgrade',
+        ], 200);
+    }
     public function updateEquippedProfileIcon(Request $request)
     {
         $request->validate([

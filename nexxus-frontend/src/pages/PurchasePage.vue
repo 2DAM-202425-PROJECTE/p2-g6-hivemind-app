@@ -587,16 +587,39 @@ export default {
         const freeItems = this.getFreeItemsForTier(tier.name, cosmetics);
         const freeCredits = this.getFreeCreditsForTier(tier.name);
 
-        // Add free items
+        // Check if there are items to add
+        if (freeItems.length === 0) {
+          console.warn(`No available items to add for ${tier.name} subscription.`);
+          this.errorTitle = 'No Items Available';
+          this.errorMessage = 'There are no new items available to add with this subscription. You may already own all available items.';
+          this.showErrorDialog = true;
+        }
+
+        // Add free items and track added items
+        const addedItems = [];
         for (const itemId of freeItems) {
-          const addItemResponse = await apiClient.post('/api/user/inventory', {
-            item_id: parseInt(itemId, 10),
-          }, {
-            headers: { 'Content-Type': 'application/json' },
-          });
-          if (addItemResponse.data.error) {
-            console.warn(`Failed to add item ${itemId}:`, addItemResponse.data.error);
+          try {
+            const addItemResponse = await apiClient.post('/api/user/inventory', {
+              item_id: parseInt(itemId, 10),
+            }, {
+              headers: { 'Content-Type': 'application/json' },
+            });
+            if (addItemResponse.data.error) {
+              console.warn(`Failed to add item ${itemId}:`, addItemResponse.data.error);
+            } else {
+              addedItems.push(itemId);
+              console.log(`Successfully added item ${itemId} to user inventory`);
+            }
+          } catch (error) {
+            console.warn(`Error adding item ${itemId}:`, error.response?.data || error.message);
           }
+        }
+
+        // Log the added items
+        if (addedItems.length > 0) {
+          console.log(`Added ${addedItems.length} items for ${tier.name} subscription:`, addedItems);
+        } else {
+          console.warn(`No items were added for ${tier.name} subscription.`);
         }
 
         // Update credits
@@ -611,6 +634,9 @@ export default {
       } catch (error) {
         console.error('Failed to add subscription benefits:', error);
         console.error('Response data:', error.response?.data);
+        this.errorTitle = 'Failed to Add Benefits';
+        this.errorMessage = error.response?.data?.message || error.message || 'An error occurred while adding subscription benefits.';
+        this.showErrorDialog = true;
         throw error;
       }
     },
