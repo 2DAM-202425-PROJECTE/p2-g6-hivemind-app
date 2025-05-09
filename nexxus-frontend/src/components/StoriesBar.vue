@@ -9,7 +9,7 @@
     </div>
 
     <!-- Històries existents -->
-    <div class="story-item" v-for="(story, index) in stories" :key="index" @click="viewStory(story)">
+    <div class="story-item" v-for="(story, index) in sortedStories" :key="story.id" @click="viewStory(story)">
       <img :src="getProfilePhotoById(story.id_user)" alt="Story" class="story-image" />
       <p class="story-name">{{ getUserNameById(story.id_user) }}</p>
     </div>
@@ -32,7 +32,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn text @click="showStoryModal = false">Close</v-btn>
-          <v-btn color="red" text @click="deleteStory(selectedStory.id)">Delete</v-btn>
+          <v-btn color="red" text @click="deleteStory(selectedStory.id)" v-if="isStoryFromUser(selectedStory)">Delete</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import apiClient from "@/axios.js";
 import CreateStoryImage from './CreateStoryImage.vue';
 
@@ -68,16 +68,31 @@ const props = defineProps({
   }
 });
 
+// Computed property to sort stories by publish_date or created_at (newest first)
+const sortedStories = computed(() => {
+  return [...props.stories].sort((a, b) => {
+    const dateA = new Date(a.publish_date || a.created_at);
+    const dateB = new Date(b.publish_date || b.created_at);
+    return dateB - dateA; // Newest first
+  });
+});
+
 onMounted(async () => {
-  const usersResult = await apiClient.get('/api/users');
-  users.value = usersResult.data.data;
-  console.log(users.value);
+  try {
+    const usersResult = await apiClient.get('/api/users');
+    users.value = usersResult.data.data;
+    console.log('Users:', users.value);
 
-  const storiesResult = await apiClient.get('/api/stories');
-  story.value = storiesResult.data;
+    const storiesResult = await apiClient.get('/api/stories');
+    story.value = storiesResult.data;
+    console.log('Stories:', story.value);
 
-  const userResult = await apiClient.get('/api/user');
-  currentUser.value = userResult.data;
+    const userResult = await apiClient.get('/api/user');
+    currentUser.value = userResult.data;
+    console.log('Current User:', currentUser.value);
+  } catch (error) {
+    console.error('Error during onMounted:', error);
+  }
 });
 
 const viewStory = (story) => {
@@ -91,7 +106,7 @@ const isStoryFromUser = (story) => story?.id_user === currentUser.value.id;
 const getProfilePhotoById = (id) => {
   const position = users.value.findIndex(user => user.id === id);
   const user = users.value[position];
-  return user && user.profile_photo_path ? user.profile_photo_path : user.profile_photo_url;
+  return user && user.profile_photo_path ? user.profile_photo_path : user?.profile_photo_url || 'https://via.placeholder.com/150';
 };
 
 const getUserNameById = (id) => {
@@ -120,8 +135,13 @@ const getStoryImagePath = (path) => {
 };
 
 const fetchStories = async () => {
-  const response = await apiClient.get('/api/stories');
-  story.value = response.data;
+  try {
+    const response = await apiClient.get('/api/stories');
+    story.value = response.data;
+    console.log('Stories fetched:', story.value);
+  } catch (error) {
+    console.error('Error fetching stories:', error);
+  }
 };
 
 const deleteStory = async (id) => {
@@ -129,8 +149,9 @@ const deleteStory = async (id) => {
     await apiClient.delete(`/api/stories/${id}`);
     showSuccessPopup.value = true;
     await fetchStories();
-
+    showStoryModal.value = false;
     setTimeout(() => {
+      showSuccessPopup.value = false;
       window.location.reload();
     }, 500);
   } catch (error) {
@@ -147,6 +168,7 @@ const deleteStoryConfirmed = async () => {
     showSuccessPopup.value = true;
     await fetchStories();
     setTimeout(() => {
+      showSuccessPopup.value = false;
       window.location.reload();
     }, 1000);
   } catch (error) {
@@ -185,13 +207,29 @@ const submitNewStory = async () => {
 <style scoped>
 .stories-bar {
   display: flex;
-  gap: 2px; /* Reduced from 5px to 2px */
+  flex-direction: row;
+  gap: 2px;
   overflow-x: auto;
   padding: 10px;
   background: white;
   border-radius: 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: #007bff transparent;
+}
+
+.stories-bar::-webkit-scrollbar {
+  height: 8px;
+}
+
+.stories-bar::-webkit-scrollbar-thumb {
+  background-color: #007bff;
+  border-radius: 10px;
+}
+
+.stories-bar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .story-item {
@@ -199,7 +237,8 @@ const submitNewStory = async () => {
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-  width: 80px; /* Fixed width for each story item */
+  width: 80px;
+  flex-shrink: 0;
 }
 
 .story-image {
@@ -215,7 +254,8 @@ const submitNewStory = async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 80px; /* Match story item width */
+  width: 80px;
+  flex-shrink: 0;
 }
 
 .add-story-icon {
@@ -243,6 +283,13 @@ const submitNewStory = async () => {
 }
 
 .story-modal-image {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.story-modal-video {
   width: 100%;
   height: auto;
   border-radius: 10px;

@@ -109,12 +109,19 @@
                   <!-- Display Replies -->
                   <div v-if="areRepliesVisible(comment.id)" class="replies-list">
                     <div v-for="reply in comment.replies" :key="reply.id" class="reply">
-                      <strong :class="[
-                        getNameEffectClass(reply.equipped_name_effect_path),
-                        getProfileFontClass(reply.equipped_profile_font_path),
-                        reply.equipped_name_effect_path ? 'effect-active' : ''
-                      ]">{{ reply.user?.name || 'Unknown User' }}</strong>
-                      <p>{{ reply.content }}</p>
+                      <div class="reply-profile-link" @click="goToUserProfile(reply.user?.username)">
+                        <img :src="getCommentUserPhoto(reply.user)" class="reply-profile-pic" alt="User Profile" />
+                      </div>
+                      <div class="reply-content">
+                        <strong class="reply-username" :class="[
+                          getNameEffectClass(reply.equipped_name_effect_path),
+                          getProfileFontClass(reply.equipped_profile_font_path),
+                          reply.equipped_name_effect_path ? 'effect-active' : ''
+                        ]" @click="goToUserProfile(reply.user?.username)">
+                          {{ reply.user?.name || 'Unknown User' }}
+                        </strong>
+                        <p>{{ reply.content }}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -187,12 +194,19 @@
           </div>
           <div v-else class="replies-list">
             <div v-for="reply in selectedCommentReplies" :key="reply.id" class="reply">
-              <strong :class="[
-                getNameEffectClass(reply.equipped_name_effect_path),
-                getProfileFontClass(reply.equipped_profile_font_path),
-                reply.equipped_name_effect_path ? 'effect-active' : ''
-              ]">{{ reply.user?.name || 'Unknown User' }}</strong>
-              <p>{{ reply.content }}</p>
+              <div class="reply-profile-link" @click="goToUserProfile(reply.user?.username)">
+                <img :src="getCommentUserPhoto(reply.user)" class="reply-profile-pic" alt="User Profile" />
+              </div>
+              <div class="reply-content">
+                <strong class="reply-username" :class="[
+                  getNameEffectClass(reply.equipped_name_effect_path),
+                  getProfileFontClass(reply.equipped_profile_font_path),
+                  reply.equipped_name_effect_path ? 'effect-active' : ''
+                ]" @click="goToUserProfile(reply.user?.username)">
+                  {{ reply.user?.name || 'Unknown User' }}
+                </strong>
+                <p>{{ reply.content }}</p>
+              </div>
             </div>
           </div>
         </v-card-text>
@@ -1099,7 +1113,42 @@ h1 {
 }
 
 .reply {
-  margin-top: 10px;
+  display: flex;
+  align-items: flex-start;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.reply-profile-link {
+  cursor: pointer;
+}
+
+.reply-profile-pic {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 10px;
+  border: 2px solid #FEFCE8;
+}
+
+.reply-content {
+  flex: 1;
+}
+
+.reply-username {
+  font-size: 14px;
+  cursor: pointer;
+  color: #000000;
+}
+
+.reply-username:hover {
+  text-decoration: underline;
+}
+
+.reply-content p {
+  margin: 5px 0 0;
+  font-size: 13px;
+  color: #000000;
 }
 
 .reply-input {
