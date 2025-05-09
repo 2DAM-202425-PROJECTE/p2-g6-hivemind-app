@@ -74,9 +74,11 @@ const backgroundStyle = computed(() => {
       backgroundImage: `url(${user.value.equipped_background_path})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'fixed',
     }
-    : {};
+    : {
+      background: 'linear-gradient(to bottom right, #FEFCE8, #FDE68A)',
+    };
 });
 
 const bannerStyle = computed(() => {

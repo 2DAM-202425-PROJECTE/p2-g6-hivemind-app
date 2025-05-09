@@ -51,7 +51,8 @@
               ></video>
             </template>
           </div>
-          <p>{{ selectedStory?.description || 'No description' }}</p>
+          <!-- Only show description if it exists and is not empty -->
+          <p v-if="selectedStory?.description">{{ selectedStory.description }}</p>
           <!-- Display Story Count -->
           <p class="story-count">
             {{ currentStoryIndex + 1 }} of {{ currentUserStories.length }}
@@ -79,14 +80,14 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn text @click="showStoryModal = false">Close</v-btn>
-          `          <v-btn
-          color="red"
-          text
-          @click="deleteStory(selectedStory.id)"
-          v-if="isStoryFromUser(selectedStory)"
-        >
-          Delete
-        </v-btn>
+          <v-btn
+            color="red"
+            text
+            @click="deleteStory(selectedStory.id)"
+            v-if="isStoryFromUser(selectedStory)"
+          >
+            Delete
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -142,7 +143,7 @@ const groupedStories = computed(() => {
     .sort(([, aStories], [, bStories]) => {
       const aDate = new Date(aStories[0].publish_date || aStories[0].created_at);
       const bDate = new Date(bStories[0].publish_date || bStories[0].created_at);
-      return bDate - aDate; // Correct: Use aDate
+      return bDate - aDate;
     })
     .reduce((acc, [userId, stories]) => {
       acc[userId] = stories;
