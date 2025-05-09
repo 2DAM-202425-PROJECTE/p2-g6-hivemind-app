@@ -36,7 +36,7 @@
           </h2>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div v-for="item in trendingItems" :key="item.id" class="bg-amber-50 rounded-lg p-4" :class="{ 'opacity-60': isPurchased(item.id) }">
-              <div class="item-preview h-32 w-32 rounded-md overflow-hidden mb-3 mx-auto">
+              <div class="item-preview h-24 w-24 rounded-md overflow-hidden mb-3 mx-auto">
                 <img
                   :src="item.iconUrl || fallbackImage"
                   :alt="item.name"
@@ -161,7 +161,7 @@
                   <div
                     class="item-preview rounded-md overflow-hidden mb-2"
                     :class="{
-                      '/background-preview': item.type === 'background',
+                      'background-preview': item.type === 'background',
                       'banner-preview': item.type === 'custom_banner',
                       'name-effect-preview': item.type === 'name_effect',
                       'profile-icon-preview': item.type === 'profile_icon',
@@ -314,7 +314,9 @@ export default {
           price: tier.price === 0 ? 'Free' : `${tier.price}€/month`,
           freeItemsCount: this.getFreeItemsCount(tier.name),
           freeCredits: this.getFreeCreditsForTier(tier.name),
-          status: tier.status // Include status field from backend
+          status: tier
+
+            .status // Include status field from backend
         }));
         this.creditPacks = response.data.creditPacks
           .sort((a, b) => parseInt(a.name) - parseInt(b.name))
@@ -442,7 +444,7 @@ export default {
 
 .btn-primary:hover {
   @apply bg-gradient-to-r from-amber-600 to-amber-500;
-  box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 10px 15px -3px rgba(245 spectacles, 11, 0.3);
 }
 
 .btn-primary:disabled {
@@ -482,8 +484,8 @@ export default {
 /* Item preview styles for Trending Items */
 .trending-items .item-preview {
   background-color: #f3e8d3;
-  height: 128px;
-  width: 128px;
+  height: 96px;
+  width: 96px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -522,7 +524,9 @@ export default {
 .background-preview, .banner-preview {
   background-color: #f3e8d3;
   position: relative;
-  height: 128px;
+  height: 96px;
+  width: 96px;
+  margin: 0 auto;
 }
 
 .name-effect-preview, .profile-icon-preview, .profile-font-preview, .badge-preview {
@@ -599,8 +603,8 @@ export default {
   }
 
   .trending-items .item-preview {
-    height: 96px;
-    width: 96px;
+    height: 64px;
+    width: 64px;
   }
 
   .credit-preview {
@@ -609,7 +613,8 @@ export default {
   }
 
   .background-preview, .banner-preview {
-    height: 96px;
+    height: 64px;
+    width: 64px;
   }
 
   .name-effect-preview, .profile-icon-preview, .profile-font-preview, .badge-preview {
