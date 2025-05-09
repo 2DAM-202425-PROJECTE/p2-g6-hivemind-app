@@ -56,7 +56,7 @@
             </div>
             <div class="action-item" @click.stop="shareVideo(video)">
               <i class="mdi mdi-share-outline"></i>
-              <span>{{ video.shares || 0 }} Shares</span>
+              <span>Share</span>
             </div>
           </div>
         </div>
@@ -100,6 +100,27 @@
       </v-card>
     </v-dialog>
 
+    <!-- Share Popup -->
+    <v-dialog v-model="sharePopup" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Share Video</v-card-title>
+        <v-card-text>
+          <p>Copy the link below to share this video:</p>
+          <div class="share-url-container">
+            <input type="text" :value="shareUrl" readonly class="share-url-input" />
+            <button class="btn-white" @click="copyToClipboard">
+              <i class="mdi mdi-content-copy"></i> Copy
+            </button>
+          </div>
+          <p v-if="copySuccess" class="copy-success">Link copied to clipboard!</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn class="btn-white" @click="closeSharePopup">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <Footer />
   </div>
 </template>
@@ -124,6 +145,9 @@ const currentUser = ref({});
 const users = ref({});
 const deleteDialog = ref(false);
 const itemToDelete = ref(null);
+const sharePopup = ref(false);
+const shareUrl = ref('');
+const copySuccess = ref(false);
 
 const API_BASE_URL = 'http://localhost:8000';
 const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
@@ -413,13 +437,33 @@ const reportVideo = async (video) => {
 
 const shareVideo = (video) => {
   const username = getUsernameById(video.id_user);
-  const shareUrl = `${window.location.origin}/users/${username}/media?postId=${video.id}`;
-  navigator.clipboard.writeText(shareUrl)
+  shareUrl.value = `${window.location.origin}/users/${username}/media?postId=${video.id}`;
+  sharePopup.value = true;
+  copySuccess.value = false;
+};
+
+const copyToClipboard = () => {
+  navigator.clipboard.writeText(shareUrl.value)
     .then(() => {
-      video.shares = (video.shares || 0) + 1;
-      alert('Video URL copied to clipboard!');
+      copySuccess.value = true;
+      const video = videos.value.find(v => v.id === selectedVideo.value?.id || v.file_path === shareUrl.value.split('postId=')[1]);
+      if (video) {
+        video.shares = (video.shares || 0) + 1;
+      }
+      setTimeout(() => {
+        closeSharePopup();
+      }, 2000);
     })
-    .catch(err => console.error('Error copying URL:', err));
+    .catch(err => {
+      console.error('Error copying URL:', err);
+      alert('Failed to copy URL');
+    });
+};
+
+const closeSharePopup = () => {
+  sharePopup.value = false;
+  shareUrl.value = '';
+  copySuccess.value = false;
 };
 </script>
 
@@ -596,20 +640,61 @@ h1 {
   border-radius: 0.5rem;
   font-weight: 500;
   transition: all 0.3s ease;
-  background: linear-gradient(to right, #555555, #333333);
+  background: #ffffff;
   color: #000000;
+  border: 1px solid #555555;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(to right, #333333, #1a1a1a);
+  background: #f5f5f5;
   transform: translateY(-0.125rem);
-  box-shadow: 0 10px 15px -3px rgba(85, 85, 85, 0.3);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+
+.btn-white {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #555555;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-white:hover:not(:disabled) {
+  background: #f5f5f5;
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
 
 .effect-active {
   display: inline-block;
   padding: 0 0.25rem;
+}
+
+.share-url-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.share-url-input {
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px solid #555555;
+  border-radius: 5px;
+  font-size: 14px;
+  background: #FEFCE8;
+  color: #000000;
+}
+
+.copy-success {
+  color: #4caf50;
+  font-size: 14px;
+  margin-top: 10px;
 }
 
 .font-pixel-art { font-family: 'Press Start 2P', cursive; font-size: 16px; }

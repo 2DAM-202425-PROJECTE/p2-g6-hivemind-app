@@ -8,7 +8,7 @@
       <div class="post-input-container">
         <img :src="getProfilePhotoById(currentUser.id)" class="profile-pic" alt="Profile" />
         <div class="post-input-wrapper">
-          <textarea v-model="newPostContent" placeholder="What's happening?" class="post-input" rows="2"
+          <textarea v-model="newPostContent" :placeholder="placeholderText" class="post-input" rows="2"
                     @input="adjustTextareaHeight"></textarea>
 
           <!-- Preview for uploaded file -->
@@ -150,10 +150,31 @@
         </div>
         <div class="action-item" @click.stop="sharePost(post)">
           <i class="mdi mdi-share-outline"></i>
-          <span>{{ shares }} Shares</span>
+          <span>Share</span>
         </div>
       </div>
     </div>
+
+    <!-- Share Popup -->
+    <v-dialog v-model="sharePopup" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Share Post</v-card-title>
+        <v-card-text>
+          <p>Copy the link below to share this post:</p>
+          <div class="share-url-container">
+            <input type="text" :value="shareUrl" readonly class="share-url-input" />
+            <button class="btn-white" @click="copyToClipboard">
+              <i class="mdi mdi-content-copy"></i> Copy
+            </button>
+          </div>
+          <p v-if="copySuccess" class="copy-success">Link copied to clipboard!</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn class="btn-white" @click="closeSharePopup">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Loading indicator -->
     <div v-if="loading" class="loading-indicator">
@@ -176,7 +197,6 @@ import { useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import StoriesBar from '@/components/StoriesBar.vue';
-import axios from 'axios';
 import { generateAvatar } from '@/utils/avatar';
 import VEmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
@@ -200,12 +220,32 @@ const editPostDescription = ref('');
 const editPostLocation = ref(null);
 const editPostFile = ref(null);
 const stories = ref({ data: [] });
-const shares = ref(0);
 const newPostContent = ref('');
 const newPostFile = ref(null);
 const previewUrl = ref(null);
 const showEmojiPicker = ref(false);
 const selectedLocation = ref(null);
+const sharePopup = ref(false);
+const shareUrl = ref('');
+const copySuccess = ref(false);
+
+// Random placeholder messages
+const placeholderMessages = [
+  "What's happening?",
+  "How's it going?",
+  "What's on your mind?",
+  "Share something cool!",
+  "What's up?",
+  "Got any updates?",
+  "Tell us something new!",
+  "What's the vibe today?"
+];
+const placeholderText = ref('');
+
+// Select random placeholder on mount
+onMounted(() => {
+  placeholderText.value = placeholderMessages[Math.floor(Math.random() * placeholderMessages.length)];
+});
 
 const currentUser = ref({
   id: null,
@@ -268,10 +308,11 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
           ...post,
           equipped_name_effect_path: equippedItemsResult.data.equipped_name_effect_path,
           equipped_profile_font_path: equippedItemsResult.data.equipped_profile_font_path,
+          shares: post.shares || 0,
         };
       } catch (error) {
         console.error(`Error fetching equipped items for user ${post.id_user}:`, error);
-        return post;
+        return { ...post, shares: post.shares || 0 };
       }
     });
 
@@ -313,7 +354,6 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
 
 // Computed property for background style
 const equippedBackgroundStyle = computed(() => {
-  // Use the currentUser's equipped_background_path if available, otherwise fall back to cached value
   const bgPath = currentUser.value.equipped_background_path || cachedBackgroundPath.value;
   return bgPath
     ? { backgroundImage: `url(${bgPath})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
@@ -322,9 +362,7 @@ const equippedBackgroundStyle = computed(() => {
 
 // Mount and unmount lifecycle hooks
 onMounted(async () => {
-  // Fetch user data first to set the background immediately
   await fetchUserData();
-  // Then fetch posts and other data
   fetchPosts(1, true);
   window.addEventListener('scroll', handleScroll);
   window.addEventListener('click', handleClickOutside);
@@ -388,17 +426,16 @@ const handleClickOutside = (event) => {
 };
 
 const addEmoji = (emoji) => {
-  console.log('Selected emoji data:', emoji); // Debug the emitted data
   if (typeof emoji === 'string') {
-    newPostContent.value += emoji; // Direct string
+    newPostContent.value += emoji;
   } else if (emoji && emoji.i) {
-    newPostContent.value += emoji.i; // Likely property from vue3-emoji-picker
+    newPostContent.value += emoji.i;
   } else if (emoji && emoji.emoji) {
-    newPostContent.value += emoji.emoji; // Alternative property
+    newPostContent.value += emoji.emoji;
   } else if (emoji && emoji.code) {
-    newPostContent.value += emoji.code; // Another possible property
+    newPostContent.value += emoji.code;
   } else {
-    newPostContent.value += '❓'; // Fallback
+    newPostContent.value += '❓';
   }
   showEmojiPicker.value = false;
 };
@@ -442,13 +479,11 @@ const removeLocation = () => {
 const submitPost = async () => {
   try {
     const token = localStorage.getItem('token');
-
     if (!token) {
       console.error('No token available');
       return;
     }
 
-    // Check if currentUser is defined
     if (!currentUser.value || !currentUser.value.id) {
       console.error('Current user is not defined');
       alert('Error: User not found. Please log in again.');
@@ -666,7 +701,34 @@ const deletePost = async (postId) => {
 };
 
 const reportPost = (post) => alert(`Reported post with ID: ${post.id}`);
-const sharePost = (post) => {};
+
+const sharePost = (post) => {
+  const username = getUsernameById(post.id_user);
+  shareUrl.value = `${window.location.origin}/users/${username}/media?postId=${post.id}`;
+  sharePopup.value = true;
+  copySuccess.value = false;
+  post.shares = (post.shares || 0) + 1;
+};
+
+const copyToClipboard = () => {
+  navigator.clipboard.writeText(shareUrl.value)
+    .then(() => {
+      copySuccess.value = true;
+      setTimeout(() => {
+        closeSharePopup();
+      }, 2000);
+    })
+    .catch(err => {
+      console.error('Error copying URL:', err);
+      alert('Failed to copy URL');
+    });
+};
+
+const closeSharePopup = () => {
+  sharePopup.value = false;
+  shareUrl.value = '';
+  copySuccess.value = false;
+};
 
 const formatDate = (dateString) => {
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -775,7 +837,6 @@ h1 {
   padding: 10px;
   background: #FEFCE8;
   border-radius: 5px;
-  Århus: true;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -845,22 +906,41 @@ h1 {
   border-radius: 0.5rem;
   font-weight: 500;
   transition: all 0.3s ease;
-  background: linear-gradient(to right, #555555, #333333);
+  background: #ffffff;
   color: #000000;
+  border: 1px solid #555555;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(to right, #333333, #1a1a1a);
+  background: #f5f5f5;
   transform: translateY(-0.125rem);
-  box-shadow: 0 10px 15px -3px rgba(85, 85, 85, 0.3);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
 
 .btn-primary:disabled {
   background: #D1D5DB;
+  color: #999999;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+.btn-white {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #555555;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-white:hover:not(:disabled) {
+  background: #f5f5f5;
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
 
 .emoji-picker {
@@ -1073,6 +1153,29 @@ h1 {
   font-style: italic;
 }
 
+.share-url-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.share-url-input {
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px solid #555555;
+  border-radius: 5px;
+  font-size: 14px;
+  background: #FEFCE8;
+  color: #000000;
+}
+
+.copy-success {
+  color: #4caf50;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
 .effect-active {
   display: inline-block;
   padding: 0 0.25rem;
@@ -1092,6 +1195,6 @@ h1 {
 .font-chalkboard { font-family: 'Creepster', cursive; font-size: 16px; }
 .font-horror { font-family: 'Creepster', cursive; font-size: 16px; }
 .font-futuristic { font-family: 'Audiowide', cursive; font-size: 16px; }
-.font-handwritten { font-family: 'Caveat', cursive; font-size: 16px; }
+8.font-handwritten { font-family: 'Caveat', cursive; font-size: 16px; }
 .font-bold-script { font-family: 'Permanent Marker', cursive; font-size: 16px; }
 </style>

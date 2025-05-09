@@ -69,7 +69,7 @@
             </div>
             <div class="action-item" @click.stop="shareMedia(selectedMedia)">
               <i class="mdi mdi-share-outline"></i>
-              <span>{{ shares }} Shares</span>
+              <span>Share</span>
             </div>
           </div>
           <!-- Comment Section -->
@@ -77,7 +77,7 @@
             <h3>Comments</h3>
             <div class="comment-input">
               <input v-model="newComment" placeholder="Add a comment..." @keyup.enter="addComment" />
-              <button @click="addComment">Post</button>
+              <button class="btn-primary" @click="addComment">Post</button>
             </div>
             <div v-if="comments.length === 0" class="no-comments">
               <p>No comments yet</p>
@@ -104,7 +104,7 @@
                   </div>
                   <div v-if="replyInputVisible === comment.id" class="reply-input">
                     <input v-model="replies[comment.id]" placeholder="Write a reply..." @keyup.enter="addReply(comment.id)" />
-                    <button @click="addReply(comment.id)">Post Reply</button>
+                    <button class="btn-primary" @click="addReply(comment.id)">Post Reply</button>
                   </div>
                   <!-- Display Replies -->
                   <div v-if="areRepliesVisible(comment.id)" class="replies-list">
@@ -184,6 +184,27 @@
       </v-card>
     </v-dialog>
 
+    <!-- Share Popup -->
+    <v-dialog v-model="sharePopup" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Share {{ isVideo ? 'Video' : 'Post' }}</v-card-title>
+        <v-card-text>
+          <p>Copy the link below to share this {{ isVideo ? 'video' : 'post' }}:</p>
+          <div class="share-url-container">
+            <input type="text" :value="shareUrl" readonly class="share-url-input" />
+            <button class="btn-white" @click="copyToClipboard">
+              <i class="mdi mdi-content-copy"></i> Copy
+            </button>
+          </div>
+          <p v-if="copySuccess" class="copy-success">Link copied to clipboard!</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn class="btn-white" @click="closeSharePopup">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Replies Popup -->
     <v-dialog v-model="repliesPopupVisible" max-width="500">
       <v-card>
@@ -238,6 +259,7 @@ const comments = ref([]);
 const newComment = ref('');
 const replyInputVisible = ref(null);
 const replies = ref({});
+const visibleReplies = ref({});
 const repliesPopupVisible = ref(false);
 const selectedCommentReplies = ref([]);
 const isDeleting = ref(false);
@@ -253,8 +275,9 @@ const deleteDialog = ref(false);
 const deleteType = ref('');
 const itemToDelete = ref(null);
 const previousRoute = ref('');
-const visibleReplies = ref({});
-
+const sharePopup = ref(false);
+const shareUrl = ref('');
+const copySuccess = ref(false);
 const API_BASE_URL = 'http://localhost:8000';
 const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
 
@@ -712,13 +735,30 @@ const reportMedia = async (media) => {
 };
 
 const shareMedia = (media) => {
-  const shareUrl = `${window.location.origin}/users/${username}/media?postId=${media.id}`;
-  navigator.clipboard.writeText(shareUrl)
+  shareUrl.value = `${window.location.origin}/users/${username}/media?postId=${media.id}`;
+  sharePopup.value = true;
+  copySuccess.value = false;
+};
+
+const copyToClipboard = () => {
+  navigator.clipboard.writeText(shareUrl.value)
     .then(() => {
+      copySuccess.value = true;
       shares.value++;
-      alert(`${isVideo.value ? 'Video' : 'Post'} URL copied to clipboard!`);
+      setTimeout(() => {
+        closeSharePopup();
+      }, 2000);
     })
-    .catch(err => console.error('Error copying URL:', err));
+    .catch(err => {
+      console.error('Error copying URL:', err);
+      alert('Failed to copy URL');
+    });
+};
+
+const closeSharePopup = () => {
+  sharePopup.value = false;
+  shareUrl.value = '';
+  copySuccess.value = false;
 };
 
 const formatDate = (dateString) => {
@@ -917,15 +957,33 @@ h1 {
   border-radius: 0.5rem;
   font-weight: 500;
   transition: all 0.3s ease;
-  background: linear-gradient(to right, #555555, #333333);
+  background: #ffffff;
   color: #000000;
+  border: 1px solid #555555;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(to right, #333333, #1a1a1a);
+  background: #f5f5f5;
   transform: translateY(-0.125rem);
-  box-shadow: 0 10px 15px -3px rgba(85, 85, 85, 0.3);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+
+.btn-white {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #555555;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-white:hover:not(:disabled) {
+  background: #f5f5f5;
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
 
 .media-content {
@@ -1093,19 +1151,6 @@ h1 {
   color: #000000;
 }
 
-.comment-input button {
-  padding: 10px 20px;
-  background: linear-gradient(to right, #555555, #333333);
-  color: #000000;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.comment-input button:hover {
-  background: linear-gradient(to right, #333333, #1a1a1a);
-}
-
 .replies-list {
   margin-top: 10px;
   padding-left: 20px;
@@ -1165,19 +1210,6 @@ h1 {
   color: #000000;
 }
 
-.reply-input button {
-  padding: 5px 10px;
-  background: linear-gradient(to right, #555555, #333333);
-  color: #000000;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.reply-input button:hover {
-  background: linear-gradient(to right, #333333, #1a1a1a);
-}
-
 .no-replies {
   text-align: center;
   color: #000000;
@@ -1193,6 +1225,29 @@ h1 {
 .effect-active {
   display: inline-block;
   padding: 0 0.25rem;
+}
+
+.share-url-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.share-url-input {
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px solid #555555;
+  border-radius: 5px;
+  font-size: 14px;
+  background: #FEFCE8;
+  color: #000000;
+}
+
+.copy-success {
+  color: #4caf50;
+  font-size: 14px;
+  margin-top: 10px;
 }
 
 .font-pixel-art { font-family: 'Press Start 2P', cursive; font-size: 16px; }
