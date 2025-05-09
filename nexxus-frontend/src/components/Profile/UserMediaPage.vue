@@ -73,11 +73,17 @@
             </div>
           </div>
           <!-- Comment Section -->
-          <div class="comments-section">
+          <div class="comments-section" style="position: relative;">
             <h3>Comments</h3>
             <div class="comment-input">
+              <button class="action-btn" @click="toggleEmojiPicker" title="Add Emoji">
+                <i class="mdi mdi-emoticon-outline"></i>
+              </button>
               <input v-model="newComment" placeholder="Add a comment..." @keyup.enter="addComment" />
               <button class="btn-primary" @click="addComment">Post</button>
+            </div>
+            <div v-if="showEmojiPicker" class="emoji-picker-container">
+              <VEmojiPicker class="emoji-picker" @select="addEmojiToComment" />
             </div>
             <div v-if="comments.length === 0" class="no-comments">
               <p>No comments yet</p>
@@ -243,12 +249,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, computed } from 'vue';
+import { ref, onMounted, nextTick, computed, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import { generateAvatar } from '@/utils/avatar';
 import apiClient from "@/axios.js";
+import VEmojiPicker from 'vue3-emoji-picker';
+import 'vue3-emoji-picker/css';
 
 const route = useRoute();
 const router = useRouter();
@@ -280,6 +288,41 @@ const shareUrl = ref('');
 const copySuccess = ref(false);
 const API_BASE_URL = 'http://localhost:8000';
 const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
+const showEmojiPicker = ref(false);
+
+const toggleEmojiPicker = (event) => {
+  event.stopPropagation();
+  showEmojiPicker.value = !showEmojiPicker.value;
+};
+
+const addEmojiToComment = (emoji) => {
+  if (typeof emoji === 'string') {
+    newComment.value += emoji;
+  } else if (emoji && emoji.i) {
+    newComment.value += emoji.i;
+  } else if (emoji && emoji.emoji) {
+    newComment.value += emoji.emoji;
+  } else if (emoji && emoji.code) {
+    newComment.value += emoji.code;
+  } else {
+    newComment.value += '❓';
+  }
+  showEmojiPicker.value = false;
+};
+
+const handleClickOutside = (event) => {
+  if (showEmojiPicker.value && !event.target.closest('.emoji-picker') && !event.target.closest('.action-btn')) {
+    showEmojiPicker.value = false;
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('click', handleClickOutside);
+});
 
 // Load cached background path from localStorage (if available)
 const cachedBackgroundPath = ref(localStorage.getItem('equipped_background_path') || null);
@@ -1266,4 +1309,20 @@ h1 {
 .font-futuristic { font-family: 'Audiowide', cursive; font-size: 16px; }
 .font-handwritten { font-family: 'Caveat', cursive; font-size: 16px; }
 .font-bold-script { font-family: 'Permanent Marker', cursive; font-size: 16px; }
+
+.emoji-picker-container {
+  position: absolute;
+  z-index: 1000;
+  background: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  top: -350px; /* Adjusted to ensure visibility above the comments section */
+  left: 0; /* Align with the comment input */
+}
+
+.emoji-picker {
+  max-height: 300px;
+  overflow-y: auto;
+}
 </style>
