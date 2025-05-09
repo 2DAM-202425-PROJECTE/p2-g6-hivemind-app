@@ -1,6 +1,6 @@
 <template>
   <div class="stories-bar">
-    <!-- Botó per afegir històries -->
+    <!-- Add Story Button -->
     <div class="story-item add-story" @click="showCreateStoryModal = true">
       <div class="add-story-icon">
         <span class="plus-sign">+</span>
@@ -8,31 +8,85 @@
       <p class="story-name">Add Story</p>
     </div>
 
-    <!-- Històries existents -->
-    <div class="story-item" v-for="(story, index) in sortedStories" :key="story.id" @click="viewStory(story)">
-      <img :src="getProfilePhotoById(story.id_user)" alt="Story" class="story-image" />
-      <p class="story-name">{{ getUserNameById(story.id_user) }}</p>
+    <!-- Grouped Stories by User (Newest on Left) -->
+    <div
+      class="story-item"
+      v-for="(userStories, userId) in groupedStories"
+      :key="userId"
+      @click="viewUserStories(userId)"
+    >
+      <img
+        :src="getProfilePhotoById(parseInt(userId))"
+        alt="User Story"
+        class="story-image"
+      />
+      <p class="story-name">{{ getUserInitialsById(parseInt(userId)) }}</p>
     </div>
 
+    <!-- Create Story Modal -->
     <CreateStoryImage v-model="showCreateStoryModal" @storyCreated="fetchStories" />
 
-    <!-- Modal para mostrar la historia -->
+    <!-- Story View Modal -->
     <v-dialog v-model="showStoryModal" max-width="500">
       <v-card>
-        <v-card-title>{{ getUserNameById(selectedStory?.id_user) }}</v-card-title>
+        <v-card-title>
+          <span class="clickable-name" @click="goToUserProfile(selectedStory?.id_user)">
+            {{ getUserNameById(selectedStory?.id_user) }}
+          </span>
+        </v-card-title>
         <v-card-text>
-          <template v-if="isImage(selectedStory?.file_path)">
-            <img :src="getStoryImagePath(selectedStory.file_path)" alt="Story Image" class="story-modal-image" />
-          </template>
-          <template v-else>
-            <video :src="getStoryImagePath(selectedStory.file_path)" controls class="story-modal-video"></video>
-          </template>
-          <p>{{ selectedStory?.description }}</p>
+          <div class="story-media-container">
+            <template v-if="isImage(selectedStory?.file_path)">
+              <img
+                :src="getStoryImagePath(selectedStory?.file_path)"
+                alt="Story Image"
+                class="story-modal-image"
+              />
+            </template>
+            <template v-else>
+              <video
+                :src="getStoryImagePath(selectedStory?.file_path)"
+                controls
+                class="story-modal-video"
+              ></video>
+            </template>
+          </div>
+          <p>{{ selectedStory?.description || 'No description' }}</p>
+          <!-- Display Story Count -->
+          <p class="story-count">
+            {{ currentStoryIndex + 1 }} of {{ currentUserStories.length }}
+          </p>
+          <!-- Navigation Buttons -->
+          <div class="story-navigation">
+            <v-btn
+              icon
+              @click="navigateStory('prev')"
+              :disabled="currentStoryIndex === 0 && isFirstUser"
+              class="nav-btn"
+            >
+              <v-icon>mdi-chevron-left</v-icon>
+            </v-btn>
+            <v-btn
+              icon
+              @click="navigateStory('next')"
+              :disabled="currentStoryIndex === currentUserStories.length - 1 && isLastUser"
+              class="nav-btn"
+            >
+              <v-icon>mdi-chevron-right</v-icon>
+            </v-btn>
+          </div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn text @click="showStoryModal = false">Close</v-btn>
-          <v-btn color="red" text @click="deleteStory(selectedStory.id)" v-if="isStoryFromUser(selectedStory)">Delete</v-btn>
+          `          <v-btn
+          color="red"
+          text
+          @click="deleteStory(selectedStory.id)"
+          v-if="isStoryFromUser(selectedStory)"
+        >
+          Delete
+        </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -41,20 +95,18 @@
 
 <script setup>
 import { onMounted, ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import apiClient from "@/axios.js";
 import CreateStoryImage from './CreateStoryImage.vue';
 
+const router = useRouter();
 const users = ref([]);
 const showCreateStoryModal = ref(false);
 const showStoryModal = ref(false);
-const showDeleteConfirm = ref(false);
-const showSuccessPopup = ref(false);
-const showFailurePopup = ref(false);
 const selectedStory = ref(null);
-const story = ref([]);
-const storyIdToDelete = ref(null);
-const isImage = (filePath) => /\.(jpeg|jpg|png)$/i.test(filePath);
-
+const currentStoryIndex = ref(0);
+const lastViewedIndices = ref({}); // Store last viewed index for each user
+const stories = ref([]);
 const currentUser = ref({
   id: null,
   name: 'Current User',
@@ -64,77 +116,173 @@ const currentUser = ref({
 const props = defineProps({
   stories: {
     type: Array,
-    required: true
-  }
+    required: true,
+  },
 });
 
-// Computed property to sort stories by publish_date or created_at (newest first)
-const sortedStories = computed(() => {
-  return [...props.stories].sort((a, b) => {
-    const dateA = new Date(a.publish_date || a.created_at);
-    const dateB = new Date(b.publish_date || b.created_at);
-    return dateB - dateA; // Newest first
+const API_BASE_URL = 'http://localhost:8000';
+
+// Group stories by user ID and sort by newest first
+const groupedStories = computed(() => {
+  const grouped = {};
+  props.stories.forEach((story) => {
+    if (!grouped[story.id_user]) {
+      grouped[story.id_user] = [];
+    }
+    grouped[story.id_user].push(story);
   });
+  Object.keys(grouped).forEach((userId) => {
+    grouped[userId].sort((a, b) => {
+      const dateA = new Date(a.publish_date || a.created_at);
+      const dateB = new Date(b.publish_date || b.created_at);
+      return dateB - dateA;
+    });
+  });
+  return Object.entries(grouped)
+    .sort(([, aStories], [, bStories]) => {
+      const aDate = new Date(aStories[0].publish_date || aStories[0].created_at);
+      const bDate = new Date(bStories[0].publish_date || bStories[0].created_at);
+      return bDate - aDate; // Correct: Use aDate
+    })
+    .reduce((acc, [userId, stories]) => {
+      acc[userId] = stories;
+      return acc;
+    }, {});
 });
 
-onMounted(async () => {
-  try {
-    const usersResult = await apiClient.get('/api/users');
-    users.value = usersResult.data.data;
-    console.log('Users:', users.value);
-
-    const storiesResult = await apiClient.get('/api/stories');
-    story.value = storiesResult.data;
-    console.log('Stories:', story.value);
-
-    const userResult = await apiClient.get('/api/user');
-    currentUser.value = userResult.data;
-    console.log('Current User:', currentUser.value);
-  } catch (error) {
-    console.error('Error during onMounted:', error);
-  }
+const currentUserStories = computed(() => {
+  if (!selectedStory.value) return [];
+  return groupedStories.value[selectedStory.value.id_user] || [];
 });
 
-const viewStory = (story) => {
-  getStoryImagePath(story.file_path);
-  selectedStory.value = story;
-  showStoryModal.value = true;
-};
+// Check if the current user is the first or last in the groupedStories
+const isFirstUser = computed(() => {
+  if (!selectedStory.value) return true;
+  const userIds = Object.keys(groupedStories.value);
+  return userIds.indexOf(String(selectedStory.value.id_user)) === 0;
+});
+
+const isLastUser = computed(() => {
+  if (!selectedStory.value) return true;
+  const userIds = Object.keys(groupedStories.value);
+  return userIds.indexOf(String(selectedStory.value.id_user)) === userIds.length - 1;
+});
+
+const isImage = (filePath) => /\.(jpeg|jpg|png)$/i.test(filePath);
 
 const isStoryFromUser = (story) => story?.id_user === currentUser.value.id;
 
 const getProfilePhotoById = (id) => {
-  const position = users.value.findIndex(user => user.id === id);
-  const user = users.value[position];
-  return user && user.profile_photo_path ? user.profile_photo_path : user?.profile_photo_url || 'https://via.placeholder.com/150';
+  const user = users.value.find((user) => user.id === id);
+  return user && user.profile_photo_path
+    ? `${API_BASE_URL}/storage/${user.profile_photo_path}`
+    : user?.profile_photo_url || 'https://via.placeholder.com/150';
 };
 
 const getUserNameById = (id) => {
-  const position = users.value.findIndex(user => user.id === id);
-  const user = users.value[position];
-  if (!user || !user.name) return 'UN';
+  const user = users.value.find((user) => user.id === id);
+  return user?.name.trim() || 'Unknown';
+};
 
+const getUserInitialsById = (id) => {
+  const user = users.value.find((user) => user.id === id);
+  if (!user || !user.name) return 'UN';
   const name = user.name.trim();
-  const words = name.split(' ').filter(word => word.length > 0);
+  const words = name.split(' ').filter((word) => word.length > 0);
   if (words.length > 1) {
-    // Take first letter of first two words
-    return `${words[0][0]}.${words[1][0]}.`.toUpperCase();
+    const firstName = words[0];
+    const surname = words[words.length - 1];
+    return `${firstName[0]}.${surname[0]}`.toUpperCase();
   } else {
-    // Take first two letters of single word (or first letter if name is too short)
-    return name.length > 1 ? name.substring(0, 2).toUpperCase() : name.substring(0, 1).toUpperCase();
+    return words[0].substring(0, 2).toUpperCase();
+  }
+};
+
+const getUsernameById = (id) => {
+  const user = users.value.find((user) => user.id === id);
+  return user?.username || null;
+};
+
+const goToUserProfile = (userId) => {
+  const username = getUsernameById(userId);
+  if (username) {
+    router.push(`/profile/${username}`);
+  } else {
+    console.warn('No username found for userId:', userId);
   }
 };
 
 const getStoryImagePath = (path) => {
   if (!path) return 'https://via.placeholder.com/150';
-  return `http://localhost:8000/storage/${path}`;
+  return `${API_BASE_URL}/storage/${path}`;
+};
+
+const viewUserStories = (userId) => {
+  const userStories = groupedStories.value[userId];
+  if (userStories && userStories.length > 0) {
+    selectedStory.value = userStories[0];
+    currentStoryIndex.value = lastViewedIndices.value[userId] || 0;
+    if (currentStoryIndex.value >= userStories.length) {
+      currentStoryIndex.value = userStories.length - 1;
+    }
+    selectedStory.value = userStories[currentStoryIndex.value];
+    showStoryModal.value = true;
+  }
+};
+
+const navigateStory = (direction) => {
+  const currentUserId = String(selectedStory.value.id_user);
+  // Save current index before navigating
+  lastViewedIndices.value[currentUserId] = currentStoryIndex.value;
+
+  if (
+    direction === 'next' &&
+    currentStoryIndex.value < currentUserStories.value.length - 1
+  ) {
+    currentStoryIndex.value++;
+    selectedStory.value = currentUserStories.value[currentStoryIndex.value];
+  } else if (direction === 'prev' && currentStoryIndex.value > 0) {
+    currentStoryIndex.value--;
+    selectedStory.value = currentUserStories.value[currentStoryIndex.value];
+  } else if (direction === 'next' && !isLastUser.value) {
+    // Move to the next user's stories
+    const userIds = Object.keys(groupedStories.value);
+    const currentUserIndex = userIds.indexOf(currentUserId);
+    const nextUserIndex = currentUserIndex + 1;
+    const nextUserId = userIds[nextUserIndex];
+    const nextUserStories = groupedStories.value[nextUserId];
+    if (nextUserStories && nextUserStories.length > 0) {
+      selectedStory.value = nextUserStories[0];
+      currentStoryIndex.value = lastViewedIndices.value[nextUserId] || 0;
+      if (currentStoryIndex.value >= nextUserStories.length) {
+        currentStoryIndex.value = nextUserStories.length - 1;
+      }
+      selectedStory.value = nextUserStories[currentStoryIndex.value];
+    }
+  } else if (direction === 'prev' && !isFirstUser.value) {
+    // Move to the previous user's stories
+    const userIds = Object.keys(groupedStories.value);
+    const currentUserIndex = userIds.indexOf(currentUserId);
+    const prevUserIndex = currentUserIndex - 1;
+    const prevUserId = userIds[prevUserIndex];
+    const prevUserStories = groupedStories.value[prevUserId];
+    if (prevUserStories && prevUserStories.length > 0) {
+      selectedStory.value = prevUserStories[0];
+      currentStoryIndex.value = lastViewedIndices.value[prevUserId] || 0;
+      if (currentStoryIndex.value >= prevUserStories.length) {
+        currentStoryIndex.value = prevUserStories.length - 1;
+      }
+      selectedStory.value = prevUserStories[currentStoryIndex.value];
+    }
+  }
 };
 
 const fetchStories = async () => {
   try {
     const response = await apiClient.get('/api/stories');
-    story.value = response.data;
-    console.log('Stories fetched:', story.value);
+    stories.value = response.data;
+    // Reset indices if stories change
+    lastViewedIndices.value = {};
   } catch (error) {
     console.error('Error fetching stories:', error);
   }
@@ -143,61 +291,37 @@ const fetchStories = async () => {
 const deleteStory = async (id) => {
   try {
     await apiClient.delete(`/api/stories/${id}`);
-    showSuccessPopup.value = true;
+    const currentUserId = String(selectedStory.value.id_user);
     await fetchStories();
-    showStoryModal.value = false;
-    setTimeout(() => {
-      showSuccessPopup.value = false;
-      window.location.reload();
-    }, 500);
+    if (currentUserStories.value.length === 0) {
+      showStoryModal.value = false;
+    } else {
+      if (currentStoryIndex.value >= currentUserStories.value.length) {
+        currentStoryIndex.value = currentUserStories.value.length - 1;
+      }
+      selectedStory.value = currentUserStories.value[currentStoryIndex.value];
+      // Update last viewed index
+      lastViewedIndices.value[currentUserId] = currentStoryIndex.value;
+    }
   } catch (error) {
     console.error('Error deleting story:', error);
-    showFailurePopup.value = true;
   }
 };
 
-const deleteStoryConfirmed = async () => {
+onMounted(async () => {
   try {
-    await apiClient.delete(`/api/stories/${storyIdToDelete.value}`);
-    showStoryModal.value = false;
-    showDeleteConfirm.value = false;
-    showSuccessPopup.value = true;
-    await fetchStories();
-    setTimeout(() => {
-      showSuccessPopup.value = false;
-      window.location.reload();
-    }, 1000);
+    const usersResult = await apiClient.get('/api/users');
+    users.value = usersResult.data.data;
+
+    const storiesResult = await apiClient.get('/api/stories');
+    stories.value = storiesResult.data;
+
+    const userResult = await apiClient.get('/api/user');
+    currentUser.value = userResult.data;
   } catch (error) {
-    console.error('Error deleting story:', error);
-    showDeleteConfirm.value = false;
-    showFailurePopup.value = true;
+    console.error('Error during initialization:', error);
   }
-};
-
-const openCreateStoryModal = () => {
-  showCreateStoryModal.value = true;
-};
-
-const submitNewStory = async () => {
-  if (!newStoryFile.value && !newStoryDescription.value) {
-    alert('Please upload a file or add a description');
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append('description', newStoryDescription.value);
-  formData.append('id_user', currentUser.value.id);
-  formData.append('publish_date', new Date().toISOString());
-  if (newStoryFile.value) formData.append('file', newStoryFile.value);
-
-  try {
-    await apiClient.post('/api/stories', formData);
-    showCreateStoryModal.value = false;
-    await fetchStories();
-  } catch (error) {
-    console.error('Error creating story:', error);
-  }
-};
+});
 </script>
 
 <style scoped>
@@ -278,30 +402,50 @@ const submitNewStory = async () => {
   white-space: nowrap;
 }
 
-.story-modal-image {
+.story-media-container {
   width: 100%;
-  height: auto;
+  max-width: 450px;
+  height: 450px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
   border-radius: 10px;
+  overflow: hidden;
   margin-bottom: 10px;
 }
 
+.story-modal-image,
 .story-modal-video {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
   border-radius: 10px;
-  margin-bottom: 10px;
 }
 
-.headline {
-  font-size: 20px;
-  font-weight: bold;
+.story-navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
 }
 
-.headline.success {
-  color: #4caf50;
+.nav-btn {
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
 }
 
-.headline.error {
-  color: #f44336;
+.story-count {
+  font-size: 14px;
+  color: #666;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.clickable-name {
+  cursor: pointer;
+}
+
+.clickable-name:hover {
+  text-decoration: underline;
 }
 </style>

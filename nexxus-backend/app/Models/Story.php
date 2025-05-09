@@ -3,12 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Story extends Model
 {
-
     use HasFactory;
 
     protected $table = 'stories';
@@ -19,6 +17,7 @@ class Story extends Model
         'publish_date',
         'id_user',
         'file_path',
+        'role', // Add role field to store the role associated with the story
     ];
 
     public function user()
@@ -35,5 +34,10 @@ class Story extends Model
     {
         return $this->hasMany(Comment::class);
     }
-    
+
+    // Scope to filter stories by role
+    public function scopeByRole($query, $role)
+    {
+        return $query->where('role', $role);
+    }
 }
