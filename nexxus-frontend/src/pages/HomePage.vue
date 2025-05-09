@@ -1195,6 +1195,6 @@ h1 {
 .font-chalkboard { font-family: 'Creepster', cursive; font-size: 16px; }
 .font-horror { font-family: 'Creepster', cursive; font-size: 16px; }
 .font-futuristic { font-family: 'Audiowide', cursive; font-size: 16px; }
-8.font-handwritten { font-family: 'Caveat', cursive; font-size: 16px; }
+.font-handwritten { font-family: 'Caveat', cursive; font-size: 16px; }
 .font-bold-script { font-family: 'Permanent Marker', cursive; font-size: 16px; }
 </style>

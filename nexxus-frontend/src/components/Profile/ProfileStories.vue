@@ -75,7 +75,7 @@
             color="red"
             text
             @click="deleteStory(selectedStory.id)"
-            v-if="isStoryFromUser(selectedStory)"
+            v-if="isCurrentUser"
           >
             Delete
           </v-btn>
