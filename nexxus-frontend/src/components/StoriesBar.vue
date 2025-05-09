@@ -112,21 +112,17 @@ const getProfilePhotoById = (id) => {
 const getUserNameById = (id) => {
   const position = users.value.findIndex(user => user.id === id);
   const user = users.value[position];
-  if (!user || !user.name) return 'Unknown';
+  if (!user || !user.name) return 'UN';
 
   const name = user.name.trim();
-  // If name is longer than 10 characters, convert to initials
-  if (name.length > 10) {
-    const words = name.split(' ').filter(word => word.length > 0);
-    if (words.length > 1) {
-      // Take first letter of first two words
-      return `${words[0][0]}.${words[1][0]}.`.toUpperCase();
-    } else {
-      // Take first two letters of single word
-      return name.substring(0, 2).toUpperCase();
-    }
+  const words = name.split(' ').filter(word => word.length > 0);
+  if (words.length > 1) {
+    // Take first letter of first two words
+    return `${words[0][0]}.${words[1][0]}.`.toUpperCase();
+  } else {
+    // Take first two letters of single word (or first letter if name is too short)
+    return name.length > 1 ? name.substring(0, 2).toUpperCase() : name.substring(0, 1).toUpperCase();
   }
-  return name;
 };
 
 const getStoryImagePath = (path) => {

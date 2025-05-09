@@ -42,7 +42,7 @@
             </div>
           </div>
           <div class="video-description">
-            <h5>{{ video.description || 'No description' }}</h5>
+            <h5 v-if="video.description?.trim()">{{ video.description }}</h5>
           </div>
           <video :src="getImageUrl(video.file_path)" alt="Video" class="video-content" controls @click.stop />
           <div class="video-actions">
