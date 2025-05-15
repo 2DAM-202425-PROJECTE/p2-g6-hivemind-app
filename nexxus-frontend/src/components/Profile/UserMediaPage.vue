@@ -43,11 +43,12 @@
           </div>
           <div class="media-description">
             <h5 v-if="isVideo && selectedMedia.description">{{ selectedMedia.description }}</h5>
-            <div v-else-if="selectedMedia.description" class="post-description" v-html="renderPostDescription(selectedMedia.description)"></div>
+            <div v-else-if="selectedMedia.description" class="post-description"
+              v-html="renderPostDescription(selectedMedia.description)"></div>
             <div v-if="selectedMedia.location" class="post-location">
               <i class="mdi mdi-earth location-icon"></i>
               <a :href="`https://www.google.com/maps?q=${encodeURIComponent(selectedMedia.location)}`" target="_blank"
-                 class="location-link">
+                class="location-link">
                 {{ simplifyLocation(selectedMedia.location) }}
               </a>
             </div>
@@ -79,6 +80,10 @@
               <button class="action-btn" @click="toggleEmojiPicker" title="Add Emoji">
                 <i class="mdi mdi-emoticon-outline"></i>
               </button>
+              <label for="file-upload" class="action-btn" :class="{ 'file-selected': commentFile }" title="Upload Media">
+                <i class="mdi mdi-file-upload-outline"></i>
+              </label>
+              <input id="file-upload" type="file" @change="handleFileUpload" accept="image/*,video/*" style="display: none;" />
               <input v-model="newComment" placeholder="Add a comment..." @keyup.enter="addComment" />
               <button class="btn-primary" @click="addComment">Post</button>
             </div>
@@ -102,14 +107,25 @@
                     {{ comment.user?.name || 'Unknown User' }}
                   </strong>
                   <p>{{ comment.content }}</p>
+                  <div v-if="comment.media_path">
+                    <img v-if="isImage(comment.media_path)" :src="getImageUrl(comment.media_path)" alt="Comment Media"
+                      class="comment-media" />
+                    <video v-else controls>
+                      <source :src="getImageUrl(comment.media_path)" />
+                    </video>
+                  </div>
                   <div class="comment-actions">
                     <button @click="toggleReplyInput(comment.id)" class="reply-btn">Reply</button>
-                    <button v-if="comment.replies?.length" @click="toggleRepliesVisibility(comment.id)" class="view-replies-btn">
-                      {{ areRepliesVisible(comment.id) ? 'Hide' : `View ${comment.replies.length} ${comment.replies.length === 1 ? 'Reply' : 'Replies'}` }}
+                    <button v-if="comment.replies?.length" @click="toggleRepliesVisibility(comment.id)"
+                      class="view-replies-btn">
+                      {{ areRepliesVisible(comment.id) ? 'Hide' : `View ${comment.replies.length}
+                      ${comment.replies.length === 1 ?
+                      'Reply' : 'Replies'}` }}
                     </button>
                   </div>
                   <div v-if="replyInputVisible === comment.id" class="reply-input">
-                    <input v-model="replies[comment.id]" placeholder="Write a reply..." @keyup.enter="addReply(comment.id)" />
+                    <input v-model="replies[comment.id]" placeholder="Write a reply..."
+                      @keyup.enter="addReply(comment.id)" />
                     <button class="btn-primary" @click="addReply(comment.id)">Post Reply</button>
                   </div>
                   <!-- Display Replies -->
@@ -146,18 +162,18 @@
           <div v-if="selectedMedia && selectedMedia.file_path" class="current-media">
             <p>Current {{ isVideo ? 'Video' : 'Image' }}:</p>
             <img v-if="!isVideo" :src="getImageUrl(selectedMedia.file_path)" alt="Current media image"
-                 style="max-width: 100%; max-height: 200px; margin-bottom: 10px;" />
+              style="max-width: 100%; max-height: 200px; margin-bottom: 10px;" />
             <video v-else :src="getImageUrl(selectedMedia.file_path)" controls
-                   style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
+              style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
           </div>
           <v-file-input :label="`Replace ${isVideo ? 'Video (.mp4, .mov)' : 'Image/Video (.png, .jpg, .jpeg, .mp4)'}`"
-                        :accept="isVideo ? '.mp4, .mov' : '.png, .jpg, .jpeg, .mp4'" @update:modelValue="handleEditFileUpload"
-                        outlined></v-file-input>
+            :accept="isVideo ? '.mp4, .mov' : '.png, .jpg, .jpeg, .mp4'" @update:modelValue="handleEditFileUpload"
+            outlined></v-file-input>
           <v-text-field v-model="editMediaDescription" label="Description" outlined></v-text-field>
           <div v-if="editMediaLocation" class="location-preview">
             <i class="mdi mdi-map-marker"></i>
             <a :href="`https://www.google.com/maps?q=${editMediaLocation.lat},${editMediaLocation.lon}`" target="_blank"
-               class="location-btn">
+              class="location-btn">
               {{ editMediaLocation.name }}
             </a>
             <button class="remove-btn" @click="removeEditLocation">Remove</button>
@@ -265,6 +281,7 @@ const user = ref({});
 const selectedMedia = ref(null);
 const comments = ref([]);
 const newComment = ref('');
+const commentFile = ref(null);
 const replyInputVisible = ref(null);
 const replies = ref({});
 const visibleReplies = ref({});
@@ -314,6 +331,14 @@ const handleClickOutside = (event) => {
   if (showEmojiPicker.value && !event.target.closest('.emoji-picker') && !event.target.closest('.action-btn')) {
     showEmojiPicker.value = false;
   }
+};
+
+const handleFileUpload = (event) => {
+  commentFile.value = event.target.files[0];
+};
+
+const isImage = (mediaPath) => {
+  return /\.(jpg|jpeg|png)$/i.test(mediaPath);
 };
 
 onMounted(() => {
@@ -623,6 +648,34 @@ const toggleLike = async (media) => {
 
 const addComment = async () => {
   if (!newComment.value.trim()) return;
+
+  try {
+    const formData = new FormData();
+    formData.append('content', newComment.value);
+    if (commentFile.value) {
+      formData.append('media', commentFile.value);
+    }
+
+    const response = await apiClient.post(`/api/posts/${selectedMedia.value.id}/comments`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+    });
+
+    const equippedItems = await apiClient.get(`/api/user/${response.data.user.id}/equipped-items`);
+    comments.value.push({
+      ...response.data,
+      equipped_name_effect_path: equippedItems.data.equipped_name_effect_path,
+      equipped_profile_font_path: equippedItems.data.equipped_profile_font_path,
+    });
+
+    newComment.value = '';
+    commentFile.value = null;
+  } catch (error) {
+    console.error('Error adding comment:', error.response?.data || error.message);
+    alert('Error: ' + (error.response?.data?.message || error.message));
+  }
+
   try {
     const response = await apiClient.post(`/api/posts/${selectedMedia.value.id}/comments`, {
       content: newComment.value
@@ -1160,6 +1213,10 @@ h1 {
   margin-top: 5px;
 }
 
+.file-selected {
+  color: #4caf50; /* Green color */
+}
+
 .reply-btn,
 .view-replies-btn {
   background: none;
@@ -1192,6 +1249,14 @@ h1 {
   border: 1px solid #ddd;
   border-radius: 5px;
   color: #000000;
+}
+
+.comment-media {
+  max-width: 100%;
+  max-height: 200px;
+  margin-top: 10px;
+  border-radius: 8px;
+  object-fit: cover;
 }
 
 .replies-list {
@@ -1293,22 +1358,85 @@ h1 {
   margin-top: 10px;
 }
 
-.font-pixel-art { font-family: 'Press Start 2P', cursive; font-size: 16px; }
-.font-comic-sans { font-family: 'Comic Neue', cursive; font-size: 16px; }
-.font-gothic { font-family: 'Black Ops One', cursive; font-size: 16px; }
-.font-cursive { font-family: 'Dancing Script', cursive; font-size: 16px; }
-.font-typewriter { font-family: 'Courier Prime', monospace; font-size: 16px; }
-.font-bubble { font-family: 'Bungee', cursive; font-size: 16px; }
-.font-neon { font-family: 'Orbitron', sans-serif; font-size: 16px; }
-.font-graffiti { font-family: 'Wallpoet', cursive; font-size: 16px; }
-.font-retro { font-family: 'VT323', monospace; font-size: 16px; }
-.font-cyberpunk { font-family: 'Monoton', cursive; font-size: 16px; }
-.font-western { font-family: 'Special Elite', cursive; font-size: 16px; }
-.font-chalkboard { font-family: 'Creepster', cursive; font-size: 16px; }
-.font-horror { font-family: 'Creepster', cursive; font-size: 16px; }
-.font-futuristic { font-family: 'Audiowide', cursive; font-size: 16px; }
-.font-handwritten { font-family: 'Caveat', cursive; font-size: 16px; }
-.font-bold-script { font-family: 'Permanent Marker', cursive; font-size: 16px; }
+.font-pixel-art {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 16px;
+}
+
+.font-comic-sans {
+  font-family: 'Comic Neue', cursive;
+  font-size: 16px;
+}
+
+.font-gothic {
+  font-family: 'Black Ops One', cursive;
+  font-size: 16px;
+}
+
+.font-cursive {
+  font-family: 'Dancing Script', cursive;
+  font-size: 16px;
+}
+
+.font-typewriter {
+  font-family: 'Courier Prime', monospace;
+  font-size: 16px;
+}
+
+.font-bubble {
+  font-family: 'Bungee', cursive;
+  font-size: 16px;
+}
+
+.font-neon {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+}
+
+.font-graffiti {
+  font-family: 'Wallpoet', cursive;
+  font-size: 16px;
+}
+
+.font-retro {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+}
+
+.font-cyberpunk {
+  font-family: 'Monoton', cursive;
+  font-size: 16px;
+}
+
+.font-western {
+  font-family: 'Special Elite', cursive;
+  font-size: 16px;
+}
+
+.font-chalkboard {
+  font-family: 'Creepster', cursive;
+  font-size: 16px;
+}
+
+.font-horror {
+  font-family: 'Creepster', cursive;
+  font-size: 16px;
+}
+
+.font-futuristic {
+  font-family: 'Audiowide', cursive;
+  font-size: 16px;
+}
+
+.font-handwritten {
+  font-family: 'Caveat', cursive;
+  font-size: 16px;
+}
+
+.font-bold-script {
+  font-family: 'Permanent Marker', cursive;
+  font-size: 16px;
+}
 
 .emoji-picker-container {
   position: absolute;
@@ -1317,8 +1445,10 @@ h1 {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   padding: 10px;
-  top: -350px; /* Adjusted to ensure visibility above the comments section */
-  left: 0; /* Align with the comment input */
+  top: -350px;
+  /* Adjusted to ensure visibility above the comments section */
+  left: 0;
+  /* Align with the comment input */
 }
 
 .emoji-picker {

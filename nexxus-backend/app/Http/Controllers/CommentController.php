@@ -13,12 +13,21 @@ class CommentController extends Controller
     {
         $request->validate([
             'content' => 'required|string|max:255',
+            'media' => 'nullable|file|mimes:jpg,jpeg,png,gif,mp4,mov|max:10240', // Validate media_path if needed
             'parent_id' => 'nullable|exists:comments,id', // Ensure parent_id is validated
         ]);
+
+        $mediaPath = null;
+
+        if ($request->hasFile('media')) {
+            $mediaPath = $request->file('media')->store('uploads', 'public');
+        }
     
         $comment = $post->comments()->create([
             'content' => $request->content,
             'user_id' => auth()->id(),
+            'post_id' => $request->input('post_id'),
+            'media_path' => $mediaPath, // Save media_path if provided
             'parent_id' => $request->parent_id, // Save parent_id if provided
         ]);
     

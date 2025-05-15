@@ -15,7 +15,8 @@ class Comment extends Model
     protected $fillable = [
         'post_id', 
         'user_id', 
-        'content', 
+        'content',
+        'media_path',
         'parent_id' // Allow parent_id to be mass assigned
     ];
 
