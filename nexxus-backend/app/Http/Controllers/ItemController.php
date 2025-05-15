@@ -30,12 +30,26 @@ class ItemController extends Controller
         }
     }
 
-    public function categorizedItems()
+    public function categorizedItems(Request $request)
     {
         try {
+            $user = $request->user(); // Get the authenticated user
+            $subscriptionTier = $user->subscription_tier; // Get the user's subscription tier
+
             $subscriptions = Item::whereIn('id', range(1, 3))->get();
             $creditPacks = Item::whereIn('id', range(4, 11))->get();
             $cosmetics = Item::whereIn('id', range(12, 107))->get();
+
+            // Add 'status' field to subscriptions based on the user's tier
+            $subscriptions->each(function ($item) use ($subscriptionTier) {
+                if ($item->name === $subscriptionTier) {
+                    $item->status = 'Owned';
+                } elseif ($item->price < Item::where('name', $subscriptionTier)->value('price')) {
+                    $item->status = 'Downgrade';
+                } else {
+                    $item->status = 'Available';
+                }
+            });
 
             return response()->json([
                 'subscriptions' => $subscriptions,

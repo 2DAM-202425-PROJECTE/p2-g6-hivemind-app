@@ -13,7 +13,7 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn text @click="showCreateStoryModal = false">Cancel</v-btn>
+        <v-btn text @click="cancel">Cancel</v-btn>
         <v-btn color="primary" :disabled="isLoadingUser" @click="submitNewStory">Submit</v-btn>
       </v-card-actions>
     </v-card>
@@ -24,12 +24,24 @@
 import { ref, onMounted, computed } from 'vue';
 import apiClient from "@/axios.js";
 
-const showCreateStoryModal = ref(false);
+const emit = defineEmits(['update:modelValue', 'storyCreated']);
+const props = defineProps({
+  modelValue: Boolean
+});
+
+const showCreateStoryModal = computed({
+  get() {
+    return props.modelValue;
+  },
+  set(value) {
+    emit('update:modelValue', value);
+  }
+});
+
 const newStoryFile = ref(null);
 const newStoryDescription = ref('');
 const currentUser = ref({});
 const isLoadingUser = ref(true);
-
 
 onMounted(() => {
   fetchUser();
@@ -42,7 +54,7 @@ const fetchUser = async () => {
   } catch (error) {
     console.error('Error fetching user:', error);
   } finally {
-    isLoadingUser.value = false; // Marcar como cargado
+    isLoadingUser.value = false;
   }
 };
 
@@ -63,10 +75,9 @@ const submitNewStory = async () => {
     return;
   }
 
-  // Verificar si currentUser està definit
   if (!currentUser.value || !currentUser.value.id) {
     alert('User is not authenticated. Please log in again.');
-    console.error('currentUser is undefined or missing id.');
+    console.error('currentUser is undefined or missing baseline.');
     console.log(currentUser.value);
     console.log(currentUser.value.id);
     return;
@@ -85,6 +96,7 @@ const submitNewStory = async () => {
     showCreateStoryModal.value = false;
     newStoryFile.value = null;
     newStoryDescription.value = '';
+    emit('storyCreated');
 
     window.location.reload();
   } catch (error) {
@@ -93,5 +105,9 @@ const submitNewStory = async () => {
   }
 };
 
-onMounted(fetchUser);
+const cancel = () => {
+  showCreateStoryModal.value = false;
+  newStoryFile.value = null;
+  newStoryDescription.value = '';
+};
 </script>

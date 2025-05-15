@@ -161,6 +161,20 @@ const fallbackUrls = {
 
 const defaultFallback = 'https://api.iconify.design/lucide/image-off.svg';
 
+const handleImageError = (type) => {
+  console.warn(`Image failed to load for ${type}`);
+  // Set fallback image based on type
+  if (type === 'equipped_banner_photo_path' || type === 'banner_photo_path') {
+    props.user[type] = defaultFallback;
+  } else if (type === 'profile_photo_url') {
+    props.user.profile_photo_url = defaultFallback;
+  } else if (type === 'equipped_profile_icon_path') {
+    props.user.equipped_profile_icon_path = null; // Remove icon if it fails
+  } else if (type === 'equipped_badge_path') {
+    props.user.equipped_badge_path = null; // Remove badge if it fails
+  }
+};
+
 const equippedBackgroundClass = computed(() => {
   return props.user.equipped_background_path ? `bg-[url(${props.user.equipped_background_path})] bg-cover bg-center` : '';
 });
@@ -202,7 +216,7 @@ const getNameEffectClass = (nameEffectPath) => {
     'Cosmic Shine': 'cosmic-shine',
     'Neon Edge': 'neon-edge',
     'Frost Glow': 'frost-glow',
-    'Fire Flicker': 'fire-flicker',
+    'Fire Flicker': 'fire-ficker',
     'Emerald Sheen': 'emerald-sheen',
     'Phantom Haze': 'phantom-haze',
     'Electric Glow': 'electric-glow',

@@ -4,8 +4,15 @@
     <div class="max-w-7xl mx-auto px-6 py-12 animate-fade-in">
       <!-- Checkout Header -->
       <div class="bg-white rounded-xl shadow-lg p-8 mb-12 text-center">
-        <h1 class="text-4xl font-extrabold mb-4 gradient-text">
-          Checkout
+        <h1 class="text-5xl font-extrabold mb-4">
+          <span class="animate-letter gradient-text" style="--order: 1">C</span>
+          <span class="animate-letter gradient-text" style="--order: 2">h</span>
+          <span class="animate-letter gradient-text" style="--order: 3">e</span>
+          <span class="animate-letter gradient-text" style="--order: 4">c</span>
+          <span class="animate-letter gradient-text" style="--order: 5">k</span>
+          <span class="animate-letter gradient-text" style="--order: 6">o</span>
+          <span class="animate-letter gradient-text" style="--order: 7">u</span>
+          <span class="animate-letter gradient-text" style="--order: 8">t</span>
         </h1>
         <p class="text-lg text-amber-800">
           All purchases are final. No refunds will be issued once payment is processed. Please review your order carefully before completing the transaction. For support, contact us at <a href="mailto:hivemindnexxuscontact@gmail.com" class="text-amber-600 hover:text-amber-700">hivemindnexxuscontact@gmail.com</a> or at the contact page in the footer.
@@ -16,7 +23,7 @@
       <div class="bg-white rounded-xl shadow-lg p-8">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <!-- Item Details -->
-          <div v-if="item" class="bg-amber-50 rounded-lg p-6">
+          <div v-if="item" class="bg-amber-50 rounded-lg p-6 animate-fade-in">
             <div class="text-center">
               <div
                 class="item-preview rounded-md overflow-hidden mb-4 mx-auto"
@@ -26,18 +33,19 @@
                   'name-effect-preview': item.type === 'name_effect',
                   'profile-icon-preview': item.type === 'profile_icon',
                   'profile-font-preview': item.type === 'profile_font',
-                  'badge-preview': item.type === 'badge'
+                  'badge-preview': item.type === 'badge',
+                  'credit-preview': item.type === 'credit_pack'
                 }"
               >
                 <img
                   :src="item.iconUrl || fallbackImage"
                   :alt="item.name || 'Product Image'"
-                  class="w-full h-full object-cover"
+                  class="w-full h-full object-contain"
                   @error="handleImageError($event, item)"
                 />
               </div>
               <h2
-                class="text-2xl font-bold text-amber-900 mb-2"
+                class="text-2xl font-bold color-black mb-2"
                 :class="[
                   item.type === 'name_effect' ? getNameEffectClass(item.name) : '',
                   item.type === 'profile_font' ? getProfileFontClass(item.name) : '',
@@ -46,12 +54,12 @@
               >
                 {{ item.name || item.title || 'Unnamed Product' }}
               </h2>
-              <p v-if="categoryInfo" class="text-sm font-medium text-amber-700 mb-3">
+              <p v-if="categoryInfo" class="text-sm font-medium color-black mb-3">
                 {{ categoryInfo.title }} ({{ getOwnedCount(categoryInfo.items) }}/{{ categoryInfo.items.length }} owned)
               </p>
-              <p class="text-lg font-medium text-amber-700 mb-3">{{ formatPrice(item.price) }}</p>
-              <p v-if="item.description" class="text-amber-800 mb-3">{{ item.description }}</p>
-              <ul v-if="item.features" class="text-amber-800 mb-3 text-left">
+              <p class="text-lg font-medium color-black mb-3">{{ formatPrice(item.price) }}</p>
+              <p v-if="item.description" class="color-black mb-3">{{ item.description }}</p>
+              <ul v-if="item.features" class="color-black mb-3 text-left">
                 <li v-for="(feature, index) in item.features" :key="index" class="flex items-center">
                   <svg class="h-5 w-5 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -59,15 +67,15 @@
                   {{ feature }}
                 </li>
               </ul>
-              <p v-if="item.amount" class="text-amber-800">{{ item.amount }} Credits</p>
+              <p v-if="item.amount" class="color-black">{{ item.amount }} Credits</p>
             </div>
           </div>
-          <div v-else class="bg-amber-50 rounded-lg p-6 text-center">
-            <p class="text-amber-800">No item selected or item could not be loaded.</p>
+          <div v-else class="bg-amber-50 rounded-lg p-6 text-center animate-fade-in">
+            <p class="color-black">No item selected or item could not be loaded.</p>
           </div>
 
           <!-- Payment Section -->
-          <div v-if="item" class="bg-amber-50 rounded-lg p-6">
+          <div v-if="item" class="bg-amber-50 rounded-lg p-6 animate-fade-in">
             <h3 class="text-xl font-bold text-amber-900 mb-4 text-center">Choose Payment Method</h3>
             <div class="space-y-6">
               <!-- Payment Buttons -->
@@ -101,7 +109,7 @@
                   Google Pay
                 </button>
                 <button
-                  v-if="item.type !== 'credit_pack'"
+                  v-if="item.type !== 'credit_pack' && item.type !== 'subscription'"
                   @click="selectPaymentMethod('credits')"
                   :class="{ 'btn-primary': selectedPaymentMethod !== 'credits', 'btn-primary active': selectedPaymentMethod === 'credits' }"
                   class="w-full col-span-2"
@@ -112,7 +120,7 @@
 
               <!-- Payment Forms -->
               <transition name="fade">
-                <div v-if="selectedPaymentMethod" class="mt-4">
+                <div v-if="selectedPaymentMethod" class="mt-4 animate-fade-in">
                   <div v-if="selectedPaymentMethod === 'card'" class="payment-method">
                     <h4 class="text-lg font-medium text-amber-900 mb-3">Credit/Debit Card</h4>
                     <form @submit.prevent="handlePurchase('card')" class="space-y-3">
@@ -200,7 +208,7 @@
                       <button
                         type="submit"
                         class="btn-primary w-full"
-                        :disabled="userCredits < (item.price || 0) || item.type === 'credit_pack'"
+                        :disabled="userCredits < (item.price || 0) || item.type === 'credit_pack' || item.type === 'subscription'"
                       >
                         Pay with Credits
                       </button>
@@ -217,7 +225,7 @@
 
     <!-- Success Dialog -->
     <v-dialog v-model="showSuccessDialog" max-width="500">
-      <v-card class="bg-white rounded-xl p-6">
+      <v-card class="bg-white rounded-xl p-6 animate-fade-in">
         <v-card-title class="text-2xl font-bold text-amber-900 flex items-center">
           <svg class="h-8 w-8 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -228,6 +236,9 @@
           <p class="mb-3">Thank you for your purchase!</p>
           <p v-if="item && item.amount" class="mb-3">
             You've successfully added <strong class="text-amber-900">{{ item.amount }} credits</strong> to your account using <strong class="text-amber-900">{{ selectedPaymentMethod }}</strong>.
+          </p>
+          <p v-else-if="item && item.type === 'subscription'" class="mb-3">
+            You've successfully subscribed to <strong class="text-amber-900">{{ item.name }}</strong> using <strong class="text-amber-900">{{ selectedPaymentMethod }}</strong>.
           </p>
           <p v-else class="mb-3">
             You've successfully purchased <strong class="text-amber-900">{{ item.name || item.title }}</strong> using <strong class="text-amber-900">{{ selectedPaymentMethod }}</strong>.
@@ -243,7 +254,7 @@
 
     <!-- Error Dialog -->
     <v-dialog v-model="showErrorDialog" max-width="500">
-      <v-card class="bg-white rounded-xl p-6">
+      <v-card class="bg-white rounded-xl p-6 animate-fade-in">
         <v-card-title class="text-2xl font-bold text-amber-900 flex items-center">
           <svg class="h-8 w-8 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -252,6 +263,9 @@
         </v-card-title>
         <v-card-text class="text-amber-800">
           <p class="mb-3">{{ errorMessage }}</p>
+          <ul v-if="validationErrors.length" class="mb-3 list-disc list-inside">
+            <li v-for="(error, index) in validationErrors" :key="index">{{ error }}</li>
+          </ul>
           <p v-if="errorMessage === 'Insufficient credits to complete this purchase.'" class="mb-3">
             Please buy more credits in the shop to complete your purchase.
           </p>
@@ -259,7 +273,7 @@
             This item is already in your inventory. No need to purchase it again!
           </p>
           <p v-else class="mb-3">
-            Please try again or contact support at <a href="mailto:hivemindnexxuscontact@gmail.com" class="text-amber-600 hover:text-amber-700">hivemindnexxuscontact@gmail.com</a>.
+            Please try again or contact support at <a href="mailto:hivemindnexxuscontact@gmail.com" class="text-amber-600 hover:text-amber-700">hivemindnexxuscontact@gmail.com</a> or via the contact page in the footer.
           </p>
         </v-card-text>
         <v-card-actions>
@@ -307,6 +321,7 @@ export default {
       showErrorDialog: false,
       errorMessage: '',
       errorTitle: 'Purchase Failed!',
+      validationErrors: [],
       countryCodes: [
         { name: 'Spain', code: '+34', digits: 9, displayText: 'Spain (+34)' },
         { name: 'United States', code: '+1', digits: 10, displayText: 'United States (+1)' },
@@ -322,6 +337,7 @@ export default {
         { name: 'Mexico', code: '+52', digits: 10, displayText: 'Mexico (+52)' },
       ],
       user: { id: null },
+      currentSubscriptionTier: null,
       fallbackImage: 'https://api.iconify.design/lucide/image-off.svg',
     };
   },
@@ -394,6 +410,7 @@ export default {
         if (!token) throw new Error('No access token found. Please log in.');
         const response = await apiClient.get(`/api/shop/items/${id}`);
         this.item = response.data;
+        await this.fetchCategorizedItems();
       } catch (error) {
         console.error(`Failed to fetch item with ID ${id}:`, error);
         this.errorMessage = `Failed to fetch item: ${error.message}`;
@@ -407,6 +424,7 @@ export default {
         const response = await apiClient.get('/api/user');
         this.user = response.data;
         this.userCredits = response.data.credits || 1000;
+        this.currentSubscriptionTier = response.data.subscriptionTier || null;
         await this.fetchUserInventory();
       } catch (error) {
         console.error('Failed to fetch current user:', error);
@@ -477,8 +495,8 @@ export default {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
         const response = await apiClient.post('/api/user/process-credit-purchase', {
-          userId: this.user.id,
-          itemId: this.item.id,
+          userId: parseInt(this.user.id, 10),
+          itemId: parseInt(this.item.id, 10),
         });
         if (response.data.error) {
           throw new Error(response.data.error);
@@ -487,7 +505,7 @@ export default {
         this.$emit('credits-updated', this.userCredits);
         console.log('Purchase successful with credits');
       } catch (error) {
-        console.error('Raw error:', error);
+        console.error('Raw error (processCreditPurchase):', error);
         console.error('Response data:', error.response?.data);
         throw new Error(error.response?.data?.error || error.message || 'Failed to process credit purchase');
       }
@@ -497,8 +515,8 @@ export default {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
         const response = await apiClient.post('/api/user/process-real-money-purchase', {
-          userId: this.user.id,
-          itemId: this.item.id,
+          userId: parseInt(this.user.id, 10),
+          itemId: parseInt(this.item.id, 10),
         });
         if (response.data.error) {
           throw new Error(response.data.error);
@@ -507,7 +525,7 @@ export default {
         this.$emit('credits-updated', this.userCredits);
         console.log('Real-money purchase successful');
       } catch (error) {
-        console.error('Raw error:', error);
+        console.error('Raw error (processRealMoneyPurchase):', error);
         console.error('Response data:', error.response?.data);
         throw new Error(error.response?.data?.error || error.message || 'Failed to process real-money purchase');
       }
@@ -516,20 +534,144 @@ export default {
       try {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No access token found. Please log in.');
+        const userId = parseInt(this.user.id, 10);
+        const creditsAmount = parseInt(amount, 10);
+        if (isNaN(userId)) throw new Error('Invalid user ID');
+        if (isNaN(creditsAmount) || creditsAmount < 1) throw new Error('Amount must be a positive integer');
+        console.log('Sending updateCredits request with:', { userId, amount: creditsAmount });
         const response = await apiClient.post('/api/user/update-credits', {
-          userId: this.user.id,
-          amount: amount,
+          userId,
+          amount: creditsAmount,
+        }, {
+          headers: { 'Content-Type': 'application/json' },
         });
-        if (response.data.error) {
-          throw new Error(response.data.error);
-        }
+        if (response.data.error) throw new Error(response.data.error);
         this.userCredits = response.data.credits;
         this.$emit('credits-updated', this.userCredits);
         console.log('User credits updated:', this.userCredits);
       } catch (error) {
         console.error('Failed to update user credits:', error);
-        throw new Error(error.message || 'Failed to update user credits');
+        console.error('Response data:', error.response?.data);
+        throw new Error(error.response?.data?.message || error.message || 'Failed to update user credits');
       }
+    },
+    async updateSubscriptionTier(tierName) {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+        const userId = parseInt(this.user.id, 10);
+        if (isNaN(userId)) throw new Error('Invalid user ID');
+        const response = await apiClient.post('/api/user/update-subscription', {
+          userId,
+          subscriptionTier: tierName,
+        }, {
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (response.data.error) throw new Error(response.data.error);
+        this.currentSubscriptionTier = tierName;
+        console.log('Subscription tier updated:', tierName);
+      } catch (error) {
+        console.error('Failed to update subscription tier:', error);
+        console.error('Response data:', error.response?.data);
+        throw new Error(error.response?.data?.message || error.message || 'Failed to update subscription tier');
+      }
+    },
+    async addSubscriptionBenefits(tier) {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No access token found. Please log in.');
+        const userId = parseInt(this.user.id, 10);
+        if (isNaN(userId)) throw new Error('Invalid user ID');
+        const response = await apiClient.get('/api/shop/categorized-items');
+        const cosmetics = response.data.cosmetics;
+        const freeItems = this.getFreeItemsForTier(tier.name, cosmetics);
+        const freeCredits = this.getFreeCreditsForTier(tier.name);
+
+        // Check if there are items to add
+        if (freeItems.length === 0) {
+          console.warn(`No available items to add for ${tier.name} subscription.`);
+          this.errorTitle = 'No Items Available';
+          this.errorMessage = 'There are no new items available to add with this subscription. You may already own all available items.';
+          this.showErrorDialog = true;
+        }
+
+        // Add free items and track added items
+        const addedItems = [];
+        for (const itemId of freeItems) {
+          try {
+            const addItemResponse = await apiClient.post('/api/user/inventory', {
+              item_id: parseInt(itemId, 10),
+            }, {
+              headers: { 'Content-Type': 'application/json' },
+            });
+            if (addItemResponse.data.error) {
+              console.warn(`Failed to add item ${itemId}:`, addItemResponse.data.error);
+            } else {
+              addedItems.push(itemId);
+              console.log(`Successfully added item ${itemId} to user inventory`);
+            }
+          } catch (error) {
+            console.warn(`Error adding item ${itemId}:`, error.response?.data || error.message);
+          }
+        }
+
+        // Log the added items
+        if (addedItems.length > 0) {
+          console.log(`Added ${addedItems.length} items for ${tier.name} subscription:`, addedItems);
+        } else {
+          console.warn(`No items were added for ${tier.name} subscription.`);
+        }
+
+        // Update credits
+        if (freeCredits > 0) {
+          await this.updateUserCredits(freeCredits);
+        }
+
+        // Update subscription tier
+        await this.updateSubscriptionTier(tier.name);
+        await this.fetchUserInventory();
+        console.log(`Successfully added benefits for ${tier.name}`);
+      } catch (error) {
+        console.error('Failed to add subscription benefits:', error);
+        console.error('Response data:', error.response?.data);
+        this.errorTitle = 'Failed to Add Benefits';
+        this.errorMessage = error.response?.data?.message || error.message || 'An error occurred while adding subscription benefits.';
+        this.showErrorDialog = true;
+        throw error;
+      }
+    },
+    getFreeItemsForTier(tierName, cosmetics) {
+      const availableItems = cosmetics.filter(item => !this.userInventory.includes(item.id));
+      const profileIcons = availableItems.filter(item => item.type === 'profile_icon');
+      const badges = availableItems.filter(item => item.type === 'badge');
+      const otherItems = availableItems.filter(item => item.type !== 'profile_icon' && item.type !== 'badge');
+      const prioritizedItems = [...profileIcons, ...badges, ...otherItems];
+      const shuffledItems = this.shuffleArray(prioritizedItems);
+      switch (tierName) {
+        case 'Basic':
+          return shuffledItems.slice(0, 1).map(item => item.id);
+        case 'Premium':
+          return shuffledItems.slice(0, 3).map(item => item.id);
+        case 'Elite':
+          return shuffledItems.slice(0, 5).map(item => item.id);
+        default:
+          return [];
+      }
+    },
+    getFreeCreditsForTier(tierName) {
+      switch (tierName) {
+        case 'Basic': return 100;
+        case 'Premium': return 500;
+        case 'Elite': return 1000;
+        default: return 0;
+      }
+    },
+    shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
     },
     validatePaymentInputs() {
       if (this.selectedPaymentMethod === 'card') {
@@ -554,10 +696,18 @@ export default {
     },
     async handlePurchase(method) {
       try {
+        if (this.item.type === 'subscription' && this.currentSubscriptionTier === this.item.name) {
+          this.errorTitle = 'Already Subscribed!';
+          this.errorMessage = 'You are already subscribed to this tier.';
+          this.validationErrors = [];
+          this.showErrorDialog = true;
+          return;
+        }
         if (this.selectedPaymentMethod === 'credits') {
           if (this.item.type !== 'credit_pack' && this.userCredits < this.item.price) {
             this.errorTitle = 'Not Enough Credits!';
             this.errorMessage = 'Insufficient credits to complete this purchase.';
+            this.validationErrors = [];
             this.showErrorDialog = true;
             return;
           }
@@ -566,17 +716,25 @@ export default {
           if (!this.validatePaymentInputs()) {
             this.errorTitle = 'Invalid Input';
             this.errorMessage = 'Please fill in all required payment fields correctly.';
+            this.validationErrors = [];
             this.showErrorDialog = true;
             return;
           }
           console.log(`Simulating ${method || this.selectedPaymentMethod} payment for ${this.item.price}€`);
           await this.processRealMoneyPurchase();
         }
+        if (this.item.type === 'subscription') {
+          await this.addSubscriptionBenefits(this.item);
+        }
         this.showSuccessDialog = true;
       } catch (error) {
         console.error('Purchase failed:', error);
+        console.error('Response data:', error.response?.data);
         this.errorTitle = error.response?.data?.error === 'You already own this item' ? 'Item Already Owned!' : 'Purchase Failed!';
-        this.errorMessage = error.message || 'An error occurred during the purchase.';
+        this.errorMessage = error.response?.data?.message || error.message || 'An error occurred during the purchase.';
+        this.validationErrors = error.response?.data?.details
+          ? Object.values(error.response.data.details).flat()
+          : [];
         this.showErrorDialog = true;
       }
     },
@@ -586,6 +744,7 @@ export default {
     },
     closeErrorDialog() {
       this.showErrorDialog = false;
+      this.validationErrors = [];
       if (this.errorMessage === 'Insufficient credits to complete this purchase.') {
         this.$router.push('/shop#buy-credits');
       } else {
@@ -604,14 +763,26 @@ export default {
 @import '../styles/nameEffects.css';
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
 
-/* Animations from ShopPage */
+/* Animations */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes letter {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 .animate-fade-in {
   animation: fade-in 1s ease-out;
+}
+
+.animate-letter {
+  display: inline-block;
+  opacity: 0;
+  animation: letter 0.5s ease-out forwards;
+  animation-delay: calc(var(--order) * 0.1s);
 }
 
 .gradient-text {
@@ -621,46 +792,71 @@ export default {
   color: transparent;
 }
 
-/* Button styles from ShopPage */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter, .fade-leave-to {
+  opacity: 0;
+}
+
+/* Button styles */
 .btn-primary {
   @apply px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center;
-  @apply bg-gradient-to-r from-amber-500 to-amber-400 text-amber-900;
+  @apply bg-gradient-to-r from-amber-500 to-amber-400;
+  color: #000000;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:hover {
-  @apply bg-gradient-to-r from-amber-600 to-amber-500 transform -translate-y-0.5;
+  @apply bg-gradient-to-r from-amber-600 to-amber-500;
   box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);
 }
 
 .btn-primary.active {
   @apply bg-gradient-to-r from-amber-600 to-amber-500;
-  box-shadow: 0 6px 8px -2px rgba(245, 158, 11, 0.4);
 }
 
 .btn-primary:disabled {
-  @apply bg-gray-400 cursor-not-allowed transform-none;
+  @apply bg-gray-400 cursor-not-allowed;
   box-shadow: none;
 }
 
-/* Item preview styles from ShopPage */
+/* Item preview styles */
+.item-preview {
+  background-color: #f3e8d3;
+  height: 128px;
+  width: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.item-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  padding: 8px;
+}
+
 .background-preview, .banner-preview {
   background-color: #f3e8d3;
   position: relative;
   height: 128px;
-  width: 128px;
 }
 
-.name-effect-preview, .profile-icon-preview, .profile-font-preview, .badge-preview {
+.name-effect-preview, .profile-icon-preview, .profile-font-preview, .badge-preview, .credit-preview {
   background-color: #f3e8d3;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 96px;
   width: 96px;
+  margin: 0 auto;
 }
 
-.badge-preview img {
+.badge-preview img, .credit-preview img {
   object-fit: contain;
   padding: 8px;
 }
@@ -670,39 +866,25 @@ export default {
   padding: 4px;
 }
 
+/* Feature list for subscriptions */
+.feature-list {
+  list-style: none;
+  padding: 0;
+}
+
+.feature-list li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+/* Ensure name effects are active */
 .effect-active {
   display: inline-block;
   padding: 0 0.25rem;
 }
 
-/* Payment form styles */
-.v-text-field, .v-select {
-  border-radius: 6px;
-}
-
-.phone-input {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.country-code-select {
-  flex: 1;
-  min-width: 100px;
-  max-width: 250px;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* Profile Font Styles from ShopPage */
+/* Profile Font Styles */
 .font-pixel-art { font-family: 'Press Start 2P', cursive; font-size: 0.75rem; }
 .font-comic-sans { font-family: 'Comic Neue', cursive; font-size: 0.85rem; }
 .font-gothic { font-family: 'Black Ops One', cursive; font-size: 0.85rem; }
@@ -720,6 +902,10 @@ export default {
 .font-handwritten { font-family: 'Caveat', cursive; font-size: 0.85rem; }
 .font-bold-script { font-family: 'Permanent Marker', cursive; font-size: 0.85rem; }
 
+.color-black {
+  color: #000000;
+}
+
 @media (max-width: 768px) {
   .min-h-screen {
     padding: 1rem;
@@ -730,26 +916,21 @@ export default {
   }
 
   .grid-cols-2 {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .background-preview, .banner-preview {
+  .item-preview {
     height: 96px;
     width: 96px;
   }
 
-  .name-effect-preview, .profile-icon-preview, .profile-font-preview, .badge-preview {
+  .background-preview, .banner-preview {
+    height: 96px;
+  }
+
+  .name-effect-preview, .profile-icon-preview, .profile-font-preview, .badge-preview, .credit-preview {
     height: 64px;
     width: 64px;
-  }
-
-  .phone-input {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .country-code-select {
-    width: 100%;
   }
 }
 </style>

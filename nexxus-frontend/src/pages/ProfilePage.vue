@@ -16,7 +16,13 @@
           :open-inventory="openInventory"
           :banner-style="bannerStyle"
         />
-        <ProfileStories :visible-stories="visibleStories" :prev-story="prevStory" :next-story="nextStory" />
+        <!-- Pass isCurrentUser to ProfileStories -->
+        <ProfileStories
+          :stories="stories"
+          :profile-user-id="user?.id"
+          :role="user?.role"
+          :is-current-user="isCurrentUser"
+        />
         <ProfilePosts :user-posts="userPosts" :is-current-user="isCurrentUser" />
       </div>
 
@@ -50,6 +56,7 @@ import ProfileStories from '@/components/Profile/ProfileStories.vue';
 import ProfilePosts from '@/components/Profile/ProfilePosts.vue';
 import ProfileEditModal from '@/components/Profile/ProfileEditModal.vue';
 import InventoryModal from '@/components/Profile/InventoryModal.vue';
+import apiClient from '@/axios.js';
 
 const route = useRoute();
 const { user, userPosts, isCurrentUser, fetchUser, fetchUserProfileByUsername } = useProfile();
@@ -59,6 +66,7 @@ const isModalVisible = ref(false);
 const isInventoryModalVisible = ref(false);
 const shareUrl = ref('');
 const snackbar = ref(false);
+const stories = ref([]);
 
 const backgroundStyle = computed(() => {
   return user.value?.equipped_background_path
@@ -66,9 +74,11 @@ const backgroundStyle = computed(() => {
       backgroundImage: `url(${user.value.equipped_background_path})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'fixed',
     }
-    : {};
+    : {
+      background: 'linear-gradient(to bottom right, #FEFCE8, #FDE68A)',
+    };
 });
 
 const bannerStyle = computed(() => {
@@ -104,18 +114,36 @@ const shareProfile = () => {
   });
 };
 
+const fetchStories = async () => {
+  try {
+    // Fetch stories with profile_user_id and role as query parameters
+    const response = await apiClient.get('/api/stories', {
+      params: {
+        profile_user_id: user.value?.id,
+        role: user.value?.role,
+      },
+    });
+    stories.value = response.data.data || [];
+  } catch (error) {
+    console.error('Error fetching stories:', error.response?.data || error.message);
+  }
+};
+
 onMounted(async () => {
   console.log('Iniciando carga de datos en Profile.vue');
   await fetchUser();
   await fetchUserProfileByUsername(route.params.username);
+  await fetchStories();
   console.log('Profile loaded, isCurrentUser:', isCurrentUser.value);
   console.log('userPosts en Profile.vue:', userPosts.value);
   console.log('Equipped items:', user.value);
+  console.log('Stories:', stories.value);
 });
 
 watch(() => route.params.username, (newUsername, oldUsername) => {
   if (newUsername !== oldUsername) {
     fetchUserProfileByUsername(newUsername);
+    fetchStories();
   }
 });
 </script>

@@ -14,7 +14,11 @@
                 <img :src="getProfilePhotoById(video.id_user)" class="profile-pic" alt="Profile" />
               </div>
               <div class="video-info">
-                <strong class="video-username" @click.stop="goToUserProfile(getUsernameById(video.id_user))">
+                <strong class="video-username" :class="[
+                  getNameEffectClass(video.equipped_name_effect_path),
+                  getProfileFontClass(video.equipped_profile_font_path),
+                  video.equipped_name_effect_path ? 'effect-active' : ''
+                ]" @click.stop="goToUserProfile(getUsernameById(video.id_user))">
                   {{ getUserNameById(video.id_user) }}
                 </strong>
                 <span class="username-handle">{{ getUsernameById(video.id_user) }}</span>
@@ -38,7 +42,7 @@
             </div>
           </div>
           <div class="video-description">
-            <h5>{{ video.description || 'No description' }}</h5>
+            <h5 v-if="video.description?.trim()">{{ video.description }}</h5>
           </div>
           <video :src="getImageUrl(video.file_path)" alt="Video" class="video-content" controls @click.stop />
           <div class="video-actions">
@@ -52,7 +56,7 @@
             </div>
             <div class="action-item" @click.stop="shareVideo(video)">
               <i class="mdi mdi-share-outline"></i>
-              <span>{{ video.shares || 0 }} Shares</span>
+              <span>Share</span>
             </div>
           </div>
         </div>
@@ -76,7 +80,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn text @click="cancelEditVideo">Cancel</v-btn>
-          <v-btn color="primary" @click="saveEditVideo">Update Video</v-btn>
+          <v-btn class="btn-primary" @click="saveEditVideo">Update Video</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -91,7 +95,28 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn text @click="cancelDelete">Cancel</v-btn>
-          <v-btn color="error" @click="confirmDelete">Delete</v-btn>
+          <v-btn class="btn-primary" @click="confirmDelete">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Share Popup -->
+    <v-dialog v-model="sharePopup" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Share Video</v-card-title>
+        <v-card-text>
+          <p>Copy the link below to share this video:</p>
+          <div class="share-url-container">
+            <input type="text" :value="shareUrl" readonly class="share-url-input" />
+            <button class="btn-white" @click="copyToClipboard">
+              <i class="mdi mdi-content-copy"></i> Copy
+            </button>
+          </div>
+          <p v-if="copySuccess" class="copy-success">Link copied to clipboard!</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn class="btn-white" @click="closeSharePopup">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -120,6 +145,9 @@ const currentUser = ref({});
 const users = ref({});
 const deleteDialog = ref(false);
 const itemToDelete = ref(null);
+const sharePopup = ref(false);
+const shareUrl = ref('');
+const copySuccess = ref(false);
 
 const API_BASE_URL = 'http://localhost:8000';
 const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
@@ -132,7 +160,7 @@ const equippedBackgroundStyle = computed(() => {
   const bgPath = currentUser.value.equipped_background_path || cachedBackgroundPath.value;
   return bgPath
     ? { backgroundImage: `url(${bgPath})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
-    : { backgroundColor: '#f0f2f5' };
+    : { background: 'linear-gradient(to bottom right, #FEFCE8, #FDE68A)' };
 });
 
 // Fetch user data including equipped background
@@ -187,7 +215,13 @@ const fetchVideos = async () => {
         console.log(`Comments_count missing for post ${post.id}, fetching comments...`);
         commentsCount = await fetchCommentCountFallback(post.id);
       }
-      return { ...post, comments_count: commentsCount };
+      const equippedItemsResult = await apiClient.get(`/api/user/${post.id_user}/equipped-items`);
+      return {
+        ...post,
+        comments_count: commentsCount,
+        equipped_name_effect_path: equippedItemsResult.data.equipped_name_effect_path,
+        equipped_profile_font_path: equippedItemsResult.data.equipped_profile_font_path,
+      };
     }));
 
     videos.value = videosWithComments.sort(() => Math.random() - 0.5);
@@ -219,6 +253,52 @@ const getProfilePhotoById = (id) => {
 const getUserNameById = (id) => users.value[id]?.name || 'Unknown User';
 const getUsernameById = (id) => users.value[id]?.username || null;
 const isVideoFromUser = (video) => video.id_user === currentUser.value.id;
+
+const getNameEffectClass = (nameEffectPath) => {
+  if (!nameEffectPath) return '';
+  const effectMap = {
+    'Gradient Fade': 'gradient-fade',
+    'Golden Outline': 'gradient-fade',
+    'Dark Pulse': 'dark-pulse',
+    'Cosmic Shine': 'cosmic-shine',
+    'Neon Edge': 'neon-edge',
+    'Frost Glow': 'frost-glow',
+    'Fire Flicker': 'fire-flicker',
+    'Emerald Sheen': 'emerald-sheen',
+    'Phantom Haze': 'phantom-haze',
+    'Electric Glow': 'electric-glow',
+    'Solar Flare': 'solar-flare',
+    'Wave Shimmer': 'wave-shimmer',
+    'Crystal Pulse': 'crystal-pulse',
+    'Mystic Aura': 'mystic-aura',
+    'Shadow Veil': 'shadow-veil',
+    'Digital Pulse': 'digital-pulse',
+  };
+  return effectMap[nameEffectPath] || '';
+};
+
+const getProfileFontClass = (fontPath) => {
+  if (!fontPath) return '';
+  switch (fontPath) {
+    case 'Pixel Art': return 'font-pixel-art';
+    case 'Comic Sans': return 'font-comic-sans';
+    case 'Gothic': return 'font-gothic';
+    case 'Cursive': return 'font-cursive';
+    case 'Typewriter': return 'font-typewriter';
+    case 'Bubble': return 'font-bubble';
+    case 'Neon': return 'font-neon';
+    case 'Graffiti': return 'font-graffiti';
+    case 'Retro': return 'font-retro';
+    case 'Cyberpunk': return 'font-cyberpunk';
+    case 'Western': return 'font-western';
+    case 'Chalkboard': return 'font-chalkboard';
+    case 'Horror': return 'font-horror';
+    case 'Futuristic': return 'font-futuristic';
+    case 'Handwritten': return 'font-handwritten';
+    case 'Bold Script': return 'font-bold-script';
+    default: return '';
+  }
+};
 
 const goToUserProfile = (username) => {
   if (username) router.push(`/profile/${username}`);
@@ -301,9 +381,13 @@ const saveEditVideo = async () => {
     if (editVideoFile.value) formData.append('file', editVideoFile.value);
 
     const response = await apiClient.post(`/api/posts/${selectedVideo.value.id}`, formData);
-
     const updatedVideo = response.data.post || response.data.data;
     updatedVideo.comments_count = updatedVideo.comments_count ?? await fetchCommentCountFallback(updatedVideo.id);
+
+    const equippedItemsResult = await apiClient.get(`/api/user/${updatedVideo.id_user}/equipped-items`);
+    updatedVideo.equipped_name_effect_path = equippedItemsResult.data.equipped_name_effect_path;
+    updatedVideo.equipped_profile_font_path = equippedItemsResult.data.equipped_profile_font_path;
+
     const index = videos.value.findIndex(v => v.id === selectedVideo.value.id);
     if (index !== -1) videos.value[index] = updatedVideo;
     editVideoPopup.value = false;
@@ -353,24 +437,48 @@ const reportVideo = async (video) => {
 
 const shareVideo = (video) => {
   const username = getUsernameById(video.id_user);
-  const shareUrl = `${window.location.origin}/users/${username}/media?postId=${video.id}`;
-  navigator.clipboard.writeText(shareUrl)
+  shareUrl.value = `${window.location.origin}/users/${username}/media?postId=${video.id}`;
+  sharePopup.value = true;
+  copySuccess.value = false;
+};
+
+const copyToClipboard = () => {
+  navigator.clipboard.writeText(shareUrl.value)
     .then(() => {
-      video.shares = (video.shares || 0) + 1;
-      alert('Video URL copied to clipboard!');
+      copySuccess.value = true;
+      const video = videos.value.find(v => v.id === selectedVideo.value?.id || v.file_path === shareUrl.value.split('postId=')[1]);
+      if (video) {
+        video.shares = (video.shares || 0) + 1;
+      }
+      setTimeout(() => {
+        closeSharePopup();
+      }, 2000);
     })
-    .catch(err => console.error('Error copying URL:', err));
+    .catch(err => {
+      console.error('Error copying URL:', err);
+      alert('Failed to copy URL');
+    });
+};
+
+const closeSharePopup = () => {
+  sharePopup.value = false;
+  shareUrl.value = '';
+  copySuccess.value = false;
 };
 </script>
 
 <style scoped>
+@import '../styles/nameEffects.css';
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
+
 .videos-page-container {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
   padding-bottom: 80px;
+  background: linear-gradient(to bottom right, #FEFCE8, #FDE68A);
   min-height: 100vh;
-  color: black;
+  color: #000000;
 }
 
 h1 {
@@ -392,15 +500,11 @@ h1 {
 
 .video-card {
   background: #ffffff;
-  border: 1px solid #ffffff;
-  border-radius: 24px;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   padding: 20px;
   width: 100%;
   cursor: pointer;
-}
-
-.video-card:hover {
-  background: #f9f9f9;
 }
 
 .video-header {
@@ -424,6 +528,7 @@ h1 {
   width: 40px;
   height: 40px;
   border-radius: 50%;
+  border: 2px solid #FEFCE8;
 }
 
 .video-info {
@@ -435,6 +540,7 @@ h1 {
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
+  color: #000000;
 }
 
 .video-username:hover {
@@ -443,11 +549,15 @@ h1 {
 
 .username-handle {
   font-size: 14px;
-  color: #666;
+  color: #000000;
 }
 
 .video-description {
   margin-bottom: 15px;
+}
+
+.video-description h5 {
+  color: #000000;
 }
 
 .video-content {
@@ -455,6 +565,7 @@ h1 {
   max-height: 400px;
   border-radius: 20px;
   margin-bottom: 15px;
+  object-fit: contain;
 }
 
 .video-menu {
@@ -465,14 +576,15 @@ h1 {
   background: none;
   border: none;
   cursor: pointer;
+  color: #000000;
 }
 
 .dropdown-menu {
   position: absolute;
   top: 100%;
   right: 0;
-  background: white;
-  border: 1px solid #d3d3d3;
+  background: #FEFCE8;
+  border: 1px solid #555555;
   border-radius: 5px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   z-index: 1000;
@@ -487,16 +599,18 @@ h1 {
 .dropdown-menu li {
   padding: 10px;
   cursor: pointer;
+  color: #000000;
 }
 
 .dropdown-menu li:hover {
-  background: #f0f0f0;
+  background: #FDE68A;
 }
 
 .video-actions {
   display: flex;
   justify-content: space-between;
   font-size: 14px;
+  color: #000000;
 }
 
 .action-item {
@@ -508,7 +622,7 @@ h1 {
 
 .action-item i {
   font-size: 18px;
-  color: #333;
+  color: #000000;
 }
 
 .action-item span {
@@ -517,7 +631,86 @@ h1 {
 
 .no-videos {
   text-align: center;
-  color: #666;
+  color: #000000;
   padding: 20px;
 }
+
+.btn-primary {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #555555;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #f5f5f5;
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+
+.btn-white {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #555555;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-white:hover:not(:disabled) {
+  background: #f5f5f5;
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+
+.effect-active {
+  display: inline-block;
+  padding: 0 0.25rem;
+}
+
+.share-url-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.share-url-input {
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px solid #555555;
+  border-radius: 5px;
+  font-size: 14px;
+  background: #FEFCE8;
+  color: #000000;
+}
+
+.copy-success {
+  color: #4caf50;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.font-pixel-art { font-family: 'Press Start 2P', cursive; font-size: 16px; }
+.font-comic-sans { font-family: 'Comic Neue', cursive; font-size: 16px; }
+.font-gothic { font-family: 'Black Ops One', cursive; font-size: 16px; }
+.font-cursive { font-family: 'Dancing Script', cursive; font-size: 16px; }
+.font-typewriter { font-family: 'Courier Prime', monospace; font-size: 16px; }
+.font-bubble { font-family: 'Bungee', cursive; font-size: 16px; }
+.font-neon { font-family: 'Orbitron', sans-serif; font-size: 16px; }
+.font-graffiti { font-family: 'Wallpoet', cursive; font-size: 16px; }
+.font-retro { font-family: 'VT323', monospace; font-size: 16px; }
+.font-cyberpunk { font-family: 'Monoton', cursive; font-size: 16px; }
+.font-western { font-family: 'Special Elite', cursive; font-size: 16px; }
+.font-chalkboard { font-family: 'Creepster', cursive; font-size: 16px; }
+.font-horror { font-family: 'Creepster', cursive; font-size: 16px; }
+.font-futuristic { font-family: 'Audiowide', cursive; font-size: 16px; }
+.font-handwritten { font-family: 'Caveat', cursive; font-size: 16px; }
+.font-bold-script { font-family: 'Permanent Marker', cursive; font-size: 16px; }
 </style>

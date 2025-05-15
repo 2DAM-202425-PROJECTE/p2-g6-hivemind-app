@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notification;
 use App\Models\Post;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -44,14 +46,56 @@ class PostController extends Controller
         ]);
 
         if ($request->hasFile('file')) {
+            // Store the uploaded file and get its path
             $filePath = $request->file('file')->store('uploads', 'public');
-            $validatedData['file_path'] = $filePath; // Agregar el campo manualmente
+            $validatedData['file_path'] = $filePath;
+
+            // Generate thumbnail if the file is a video
+            if ($request->file('file')->getClientOriginalExtension() === 'mp4') {
+                $thumbnailPath = 'uploads/thumbnails/' . pathinfo($filePath, PATHINFO_FILENAME) . '.jpg';
+                $videoFullPath = storage_path('app/public/' . $filePath);
+                $thumbnailFullPath = storage_path('app/public/' . $thumbnailPath);
+
+                $thumbnailsDir = storage_path('app/public/uploads/thumbnails');
+                if (!file_exists($thumbnailsDir)) {
+                    mkdir($thumbnailsDir, 0755, true);
+                }
+            
+                // Log paths for debugging
+                Log::info('Video full path:', ['path' => $videoFullPath]);
+                Log::info('Thumbnail full path:', ['path' => $thumbnailFullPath]);
+            
+                // Generate thumbnail using FFmpeg
+                $command = "/usr/bin/ffmpeg -i $videoFullPath -ss 00:00:01 -vframes 1 -update 1 $thumbnailFullPath";
+                Log::info('Executing FFmpeg command:', ['command' => $command]);
+                exec($command, $output, $returnVar);
+                Log::info('FFmpeg output:', ['output' => $output, 'returnVar' => $returnVar]);
+            
+                if ($returnVar === 0) {
+                    $validatedData['thumbnail_path'] = $thumbnailPath;
+                } else {
+                    Log::error('FFmpeg failed to generate thumbnail', ['output' => $output, 'returnVar' => $returnVar]);
+                }
+            }
         }
 
-        // Asegurar que el modelo tenga el campo 'file_path'
+        // Create the post
         $post = Post::create(array_merge($validatedData, [
-            'file_path' => $validatedData['file_path'] ?? null // Agregarlo si no existe
+            'file_path' => $validatedData['file_path'] ?? null,
+            'thumbnail_path' => $validatedData['thumbnail_path'] ?? null,
         ]));
+
+        // Notify other users
+        $users = User::all();
+        foreach ($users as $user) {
+            if ($user->id !== auth()->id()) {
+                Notification::create([
+                    'user_id' => $user->id,
+                    'post_id' => $post->id,
+                    'message' => auth()->user()->name . ' ha publicado un nuevo post',
+                ]);
+            }
+        }
 
         return response()->json([
             'message' => 'Post created successfully',
@@ -138,7 +182,6 @@ class PostController extends Controller
             'message' => 'Post retrieved successfully',
             'data' => $post,
         ], 200);
-
     }
     public function destroy($id)
     {

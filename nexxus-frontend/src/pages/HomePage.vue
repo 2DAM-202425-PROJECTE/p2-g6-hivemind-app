@@ -8,7 +8,7 @@
       <div class="post-input-container">
         <img :src="getProfilePhotoById(currentUser.id)" class="profile-pic" alt="Profile" />
         <div class="post-input-wrapper">
-          <textarea v-model="newPostContent" placeholder="What's happening?" class="post-input" rows="2"
+          <textarea v-model="newPostContent" :placeholder="placeholderText" class="post-input" rows="2"
                     @input="adjustTextareaHeight"></textarea>
 
           <!-- Preview for uploaded file -->
@@ -45,7 +45,7 @@
                 <i class="mdi mdi-map-marker-outline"></i>
               </button>
             </div>
-            <button class="post-btn" :disabled="!newPostContent && !newPostFile && !selectedLocation"
+            <button class="btn-primary" :disabled="!newPostContent && !newPostFile && !selectedLocation"
                     @click="submitPost">
               Post
             </button>
@@ -66,7 +66,11 @@
         <div class="post-info">
           <ul>
             <li>
-              <strong class="post-username" @click.stop="goToUserProfile(post.id_user)">
+              <strong class="post-username" :class="[
+                getNameEffectClass(post.equipped_name_effect_path),
+                getProfileFontClass(post.equipped_profile_font_path),
+                post.equipped_name_effect_path ? 'effect-active' : ''
+              ]" @click.stop="goToUserProfile(post.id_user)">
                 {{ getUserNameById(post.id_user) }}
               </strong>
               <p class="post-date">{{ formatDate(post.created_at) }}</p>
@@ -103,10 +107,10 @@
 
       <div v-if="editPostPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
            @click="cancelEditPost">
-        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md" @click.stop>
+        <div class="bg-white rounded-lg p-6 w-full max-w-md" @click.stop>
           <h3 class="text-lg font-bold mb-4">Edit Post</h3>
           <div v-if="selectedPost && selectedPost.file_path" class="mb-4">
-            <p class="text-sm text-gray-600 dark:text-gray-300">Current File:</p>
+            <p class="text-sm">Current File:</p>
             <img v-if="!selectedPost.file_path.includes('.mp4')" :src="getImageUrl(selectedPost.file_path)"
                  alt="Current post image" class="max-w-full h-auto max-h-48 mb-2" />
             <video v-else :src="getImageUrl(selectedPost.file_path)" controls
@@ -114,21 +118,21 @@
           </div>
           <label class="block mb-4">
             <span class="sr-only">Choose file</span>
-            <input type="file" accept=".png, .jpg, .jpeg, .mp4" @change="handleEditFileUpload" @click.stop class="block w-full text-sm text-gray-500
+            <input type="file" accept=".png, .jpg, .jpeg, .mp4" @change="handleEditFileUpload" @click.stop class="block w-full text-sm
           file:mr-4 file:py-2 file:px-4
           file:rounded file:border-0
           file:text-sm file:font-semibold
-          file:bg-blue-500 file:text-white
-          hover:file:bg-blue-600" />
+          file:bg-gray-500 file:text-white
+          hover:file:bg-gray-600" />
           </label>
           <input v-model="editPostDescription" type="text" placeholder="Description"
-                 class="w-full p-2 border rounded mb-4 dark:bg-gray-700 dark:text-white" />
+                 class="w-full p-2 border rounded mb-4" />
           <div class="flex justify-end gap-2">
             <button @click="cancelEditPost"
-                    class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white">
+                    class="px-4 py-2 hover:text-gray-800">
               Cancel
             </button>
-            <button @click="saveEditPost" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+            <button @click="saveEditPost" class="btn-primary">
               Update Post
             </button>
           </div>
@@ -146,10 +150,31 @@
         </div>
         <div class="action-item" @click.stop="sharePost(post)">
           <i class="mdi mdi-share-outline"></i>
-          <span>{{ shares }} Shares</span>
+          <span>Share</span>
         </div>
       </div>
     </div>
+
+    <!-- Share Popup -->
+    <v-dialog v-model="sharePopup" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Share Post</v-card-title>
+        <v-card-text>
+          <p>Copy the link below to share this post:</p>
+          <div class="share-url-container">
+            <input type="text" :value="shareUrl" readonly class="share-url-input" />
+            <button class="btn-white" @click="copyToClipboard">
+              <i class="mdi mdi-content-copy"></i> Copy
+            </button>
+          </div>
+          <p v-if="copySuccess" class="copy-success">Link copied to clipboard!</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn class="btn-white" @click="closeSharePopup">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Loading indicator -->
     <div v-if="loading" class="loading-indicator">
@@ -172,7 +197,6 @@ import { useRouter } from 'vue-router';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 import StoriesBar from '@/components/StoriesBar.vue';
-import axios from 'axios';
 import { generateAvatar } from '@/utils/avatar';
 import VEmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
@@ -196,12 +220,32 @@ const editPostDescription = ref('');
 const editPostLocation = ref(null);
 const editPostFile = ref(null);
 const stories = ref({ data: [] });
-const shares = ref(0);
 const newPostContent = ref('');
 const newPostFile = ref(null);
 const previewUrl = ref(null);
 const showEmojiPicker = ref(false);
 const selectedLocation = ref(null);
+const sharePopup = ref(false);
+const shareUrl = ref('');
+const copySuccess = ref(false);
+
+// Random placeholder messages
+const placeholderMessages = [
+  "What's happening?",
+  "How's it going?",
+  "What's on your mind?",
+  "Share something cool!",
+  "What's up?",
+  "Got any updates?",
+  "Tell us something new!",
+  "What's the vibe today?"
+];
+const placeholderText = ref('');
+
+// Select random placeholder on mount
+onMounted(() => {
+  placeholderText.value = placeholderMessages[Math.floor(Math.random() * placeholderMessages.length)];
+});
 
 const currentUser = ref({
   id: null,
@@ -257,10 +301,27 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
 
     const result = await apiClient.get(`/api/posts?page=${page}`);
 
+    const postsData = result.data.data.map(async (post) => {
+      try {
+        const equippedItemsResult = await apiClient.get(`/api/user/${post.id_user}/equipped-items`);
+        return {
+          ...post,
+          equipped_name_effect_path: equippedItemsResult.data.equipped_name_effect_path,
+          equipped_profile_font_path: equippedItemsResult.data.equipped_profile_font_path,
+          shares: post.shares || 0,
+        };
+      } catch (error) {
+        console.error(`Error fetching equipped items for user ${post.id_user}:`, error);
+        return { ...post, shares: post.shares || 0 };
+      }
+    });
+
+    const resolvedPosts = await Promise.all(postsData);
+
     if (initialLoad) {
-      posts.value = result.data.data;
+      posts.value = resolvedPosts;
     } else {
-      posts.value = [...posts.value, ...result.data.data];
+      posts.value = [...posts.value, ...resolvedPosts];
     }
 
     currentPage.value = result.data.current_page;
@@ -293,7 +354,6 @@ const fetchPosts = async (page = 1, initialLoad = false) => {
 
 // Computed property for background style
 const equippedBackgroundStyle = computed(() => {
-  // Use the currentUser's equipped_background_path if available, otherwise fall back to cached value
   const bgPath = currentUser.value.equipped_background_path || cachedBackgroundPath.value;
   return bgPath
     ? { backgroundImage: `url(${bgPath})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
@@ -302,9 +362,7 @@ const equippedBackgroundStyle = computed(() => {
 
 // Mount and unmount lifecycle hooks
 onMounted(async () => {
-  // Fetch user data first to set the background immediately
   await fetchUserData();
-  // Then fetch posts and other data
   fetchPosts(1, true);
   window.addEventListener('scroll', handleScroll);
   window.addEventListener('click', handleClickOutside);
@@ -368,17 +426,16 @@ const handleClickOutside = (event) => {
 };
 
 const addEmoji = (emoji) => {
-  console.log('Selected emoji data:', emoji); // Debug the emitted data
   if (typeof emoji === 'string') {
-    newPostContent.value += emoji; // Direct string
+    newPostContent.value += emoji;
   } else if (emoji && emoji.i) {
-    newPostContent.value += emoji.i; // Likely property from vue3-emoji-picker
+    newPostContent.value += emoji.i;
   } else if (emoji && emoji.emoji) {
-    newPostContent.value += emoji.emoji; // Alternative property
+    newPostContent.value += emoji.emoji;
   } else if (emoji && emoji.code) {
-    newPostContent.value += emoji.code; // Another possible property
+    newPostContent.value += emoji.code;
   } else {
-    newPostContent.value += '❓'; // Fallback
+    newPostContent.value += '❓';
   }
   showEmojiPicker.value = false;
 };
@@ -419,52 +476,14 @@ const removeLocation = () => {
   selectedLocation.value = null;
 };
 
-const getEditLocation = () => {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
-          const data = await response.json();
-          editPostLocation.value = {
-            name: data.display_name || `Lat: ${latitude}, Lon: ${longitude}`,
-            lat: latitude,
-            lon: longitude,
-          };
-        } catch (error) {
-          console.error('Error fetching location name:', error);
-          editPostLocation.value = {
-            name: `Lat: ${latitude}, Lon: ${longitude}`,
-            lat: latitude,
-            lon: longitude,
-          };
-        }
-      },
-      (error) => {
-        console.error('Error getting location:', error);
-        alert('Unable to get location. Please allow location access.');
-      }
-    );
-  } else {
-    alert('Geolocation is not supported by your browser.');
-  }
-};
-
-const removeEditLocation = () => {
-  editPostLocation.value = null;
-};
-
 const submitPost = async () => {
   try {
     const token = localStorage.getItem('token');
-
     if (!token) {
       console.error('No token available');
       return;
     }
 
-    // Check if currentUser is defined
     if (!currentUser.value || !currentUser.value.id) {
       console.error('Current user is not defined');
       alert('Error: User not found. Please log in again.');
@@ -536,6 +555,52 @@ const getProfilePhotoById = (id) => {
 const getUserNameById = (id) => users.value[id]?.name || 'Usuario desconocido';
 const getUsernameById = (id) => users.value[id]?.username || null;
 
+const getNameEffectClass = (nameEffectPath) => {
+  if (!nameEffectPath) return '';
+  const effectMap = {
+    'Gradient Fade': 'gradient-fade',
+    'Golden Outline': 'gradient-fade',
+    'Dark Pulse': 'dark-pulse',
+    'Cosmic Shine': 'cosmic-shine',
+    'Neon Edge': 'neon-edge',
+    'Frost Glow': 'frost-glow',
+    'Fire Flicker': 'fire-flicker',
+    'Emerald Sheen': 'emerald-sheen',
+    'Phantom Haze': 'phantom-haze',
+    'Electric Glow': 'electric-glow',
+    'Solar Flare': 'solar-flare',
+    'Wave Shimmer': 'wave-shimmer',
+    'Crystal Pulse': 'crystal-pulse',
+    'Mystic Aura': 'mystic-aura',
+    'Shadow Veil': 'shadow-veil',
+    'Digital Pulse': 'digital-pulse',
+  };
+  return effectMap[nameEffectPath] || '';
+};
+
+const getProfileFontClass = (fontPath) => {
+  if (!fontPath) return '';
+  switch (fontPath) {
+    case 'Pixel Art': return 'font-pixel-art';
+    case 'Comic Sans': return 'font-comic-sans';
+    case 'Gothic': return 'font-gothic';
+    case 'Cursive': return 'font-cursive';
+    case 'Typewriter': return 'font-typewriter';
+    case 'Bubble': return 'font-bubble';
+    case 'Neon': return 'font-neon';
+    case 'Graffiti': return 'font-graffiti';
+    case 'Retro': return 'font-retro';
+    case 'Cyberpunk': return 'font-cyberpunk';
+    case 'Western': return 'font-western';
+    case 'Chalkboard': return 'font-chalkboard';
+    case 'Horror': return 'font-horror';
+    case 'Futuristic': return 'font-futuristic';
+    case 'Handwritten': return 'font-handwritten';
+    case 'Bold Script': return 'font-bold-script';
+    default: return '';
+  }
+};
+
 const goToUserProfile = (userId) => {
   const username = getUsernameById(userId);
   if (username) router.push(`/profile/${username}`);
@@ -603,10 +668,6 @@ const saveEditPost = async () => {
       formData.append('file', editPostFile.value);
     }
 
-    for (let pair of formData.entries()) {
-      console.log(pair[0] + ': ' + pair[1]);
-    }
-
     await apiClient.post(`/api/posts/${selectedPost.value.id}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -640,7 +701,34 @@ const deletePost = async (postId) => {
 };
 
 const reportPost = (post) => alert(`Reported post with ID: ${post.id}`);
-const sharePost = (post) => {};
+
+const sharePost = (post) => {
+  const username = getUsernameById(post.id_user);
+  shareUrl.value = `${window.location.origin}/users/${username}/media?postId=${post.id}`;
+  sharePopup.value = true;
+  copySuccess.value = false;
+  post.shares = (post.shares || 0) + 1;
+};
+
+const copyToClipboard = () => {
+  navigator.clipboard.writeText(shareUrl.value)
+    .then(() => {
+      copySuccess.value = true;
+      setTimeout(() => {
+        closeSharePopup();
+      }, 2000);
+    })
+    .catch(err => {
+      console.error('Error copying URL:', err);
+      alert('Failed to copy URL');
+    });
+};
+
+const closeSharePopup = () => {
+  sharePopup.value = false;
+  shareUrl.value = '';
+  copySuccess.value = false;
+};
 
 const formatDate = (dateString) => {
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -649,13 +737,16 @@ const formatDate = (dateString) => {
 </script>
 
 <style scoped>
+@import '../styles/nameEffects.css';
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
+
 .home-container {
   font-family: Arial, sans-serif;
   padding: 20px;
   padding-top: 90px;
-  background-color: #f0f2f5; /* Fallback background color */
+  background: linear-gradient(to bottom right, #FEFCE8, #FDE68A);
   min-height: 100vh;
-  color: black;
+  color: #000000;
   width: 100%;
   position: relative;
 }
@@ -669,8 +760,8 @@ h1 {
   max-width: 800px;
   margin: 0 auto 20px auto;
   background: #ffffff;
-  border: 1px solid #d3d3d3;
-  border-radius: 10px;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   padding: 15px;
 }
 
@@ -698,10 +789,11 @@ h1 {
   padding: 5px;
   line-height: 1.5;
   background: transparent;
+  color: #000000;
 }
 
 .post-input::placeholder {
-  color: #666;
+  color: #555555;
 }
 
 .file-preview {
@@ -713,7 +805,7 @@ h1 {
   display: inline-block;
 }
 
-.previewぞmedia {
+.preview-media {
   max-width: 100%;
   max-height: 200px;
   border-radius: 10px;
@@ -743,7 +835,7 @@ h1 {
 .location-preview {
   margin-top: 10px;
   padding: 10px;
-  background: #e6f3ff;
+  background: #FEFCE8;
   border-radius: 5px;
   display: flex;
   align-items: center;
@@ -751,21 +843,21 @@ h1 {
 }
 
 .location-preview i {
-  color: #1da1f2;
+  color: #000000;
 }
 
 .location-btn {
   display: inline-block;
   padding: 5px 10px;
-  background-color: #1da1f2;
-  color: white;
+  background-color: #555555;
+  color: #000000;
   text-decoration: none;
   border-radius: 5px;
   font-size: 14px;
 }
 
 .location-btn:hover {
-  background-color: #0d91e2;
+  background-color: #333333;
 }
 
 .remove-btn {
@@ -798,7 +890,7 @@ h1 {
   border: none;
   cursor: pointer;
   padding: 5px;
-  color: #1da1f2;
+  color: #000000;
 }
 
 .action-btn i {
@@ -806,26 +898,49 @@ h1 {
 }
 
 .action-btn:hover {
-  color: #0d91e2;
+  color: #333333;
 }
 
-.post-btn {
-  background-color: #1da1f2;
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 5px 15px;
-  font-size: 14px;
-  cursor: pointer;
+.btn-primary {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #555555;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.post-btn:disabled {
-  background-color: #a1d2f7;
+.btn-primary:hover:not(:disabled) {
+  background: #f5f5f5;
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary:disabled {
+  background: #D1D5DB;
+  color: #999999;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-.post-btn:hover:not(:disabled) {
-  background-color: #0d91e2;
+.btn-white {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #555555;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-white:hover:not(:disabled) {
+  background: #f5f5f5;
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
 
 .emoji-picker {
@@ -838,6 +953,7 @@ h1 {
 
 .post-description {
   font-size: 16px;
+  color: #000000;
 }
 
 .post-location {
@@ -848,12 +964,12 @@ h1 {
 }
 
 .location-icon {
-  color: #1da1f2;
+  color: #000000;
   font-size: 16px;
 }
 
 .location-link {
-  color: #1da1f2;
+  color: #000000;
   text-decoration: none;
   font-size: 14px;
 }
@@ -864,8 +980,8 @@ h1 {
 
 .post-card {
   background: #ffffff;
-  border: 1px solid #ffffff;
-  border-radius: 24px;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   padding: 20px;
   max-width: 800px;
   margin: 0 auto;
@@ -875,7 +991,8 @@ h1 {
 }
 
 .post-card:hover {
-  background: #f9f9f9;
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
 
 .post-header {
@@ -898,6 +1015,7 @@ h1 {
   min-height: 50px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid #FEFCE8;
 }
 
 .post-info {
@@ -918,6 +1036,7 @@ h1 {
 .post-username {
   font-size: 16px;
   cursor: pointer;
+  color: #000000;
 }
 
 .post-username:hover {
@@ -926,7 +1045,7 @@ h1 {
 
 .post-date {
   font-size: 12px;
-  color: #666;
+  color: #000000;
 }
 
 .post-menu {
@@ -939,14 +1058,15 @@ h1 {
   border: none;
   cursor: pointer;
   padding: 5px;
+  color: #000000;
 }
 
 .dropdown-menu {
   position: absolute;
   top: calc(100% + 5px);
   right: 0;
-  background: white;
-  border: 1px solid #d3d3d3;
+  background: #FEFCE8;
+  border: 1px solid #555555;
   border-radius: 5px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   z-index: 1000;
@@ -962,16 +1082,18 @@ h1 {
   padding: 10px 15px;
   cursor: pointer;
   white-space: nowrap;
+  color: #000000;
 }
 
 .dropdown-menu li:hover {
-  background: #f0f0f0;
+  background: #FDE68A;
 }
 
 .post-actions {
   display: flex;
   justify-content: space-between;
   font-size: 14px;
+  color: #000000;
 }
 
 .action-item {
@@ -983,7 +1105,7 @@ h1 {
 
 .action-item i {
   font-size: 18px;
-  color: #333;
+  color: #000000;
 }
 
 .action-item span {
@@ -1006,13 +1128,13 @@ h1 {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  color: #666;
+  color: #000000;
 }
 
 .spinner {
   border: 3px solid rgba(0, 0, 0, 0.1);
   border-radius: 50%;
-  border-top: 3px solid #3498db;
+  border-top: 3px solid #555555;
   width: 20px;
   height: 20px;
   animation: spin 1s linear infinite;
@@ -1027,7 +1149,52 @@ h1 {
 .end-message {
   text-align: center;
   padding: 20px;
-  color: #999;
+  color: #000000;
   font-style: italic;
 }
+
+.share-url-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.share-url-input {
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px solid #555555;
+  border-radius: 5px;
+  font-size: 14px;
+  background: #FEFCE8;
+  color: #000000;
+}
+
+.copy-success {
+  color: #4caf50;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.effect-active {
+  display: inline-block;
+  padding: 0 0.25rem;
+}
+
+.font-pixel-art { font-family: 'Press Start 2P', cursive; font-size: 16px; }
+.font-comic-sans { font-family: 'Comic Neue', cursive; font-size: 16px; }
+.font-gothic { font-family: 'Black Ops One', cursive; font-size: 16px; }
+.font-cursive { font-family: 'Dancing Script', cursive; font-size: 16px; }
+.font-typewriter { font-family: 'Courier Prime', monospace; font-size: 16px; }
+.font-bubble { font-family: 'Bungee', cursive; font-size: 16px; }
+.font-neon { font-family: 'Orbitron', sans-serif; font-size: 16px; }
+.font-graffiti { font-family: 'Wallpoet', cursive; font-size: 16px; }
+.font-retro { font-family: 'VT323', monospace; font-size: 16px; }
+.font-cyberpunk { font-family: 'Monoton', cursive; font-size: 16px; }
+.font-western { font-family: 'Special Elite', cursive; font-size: 16px; }
+.font-chalkboard { font-family: 'Creepster', cursive; font-size: 16px; }
+.font-horror { font-family: 'Creepster', cursive; font-size: 16px; }
+.font-futuristic { font-family: 'Audiowide', cursive; font-size: 16px; }
+.font-handwritten { font-family: 'Caveat', cursive; font-size: 16px; }
+.font-bold-script { font-family: 'Permanent Marker', cursive; font-size: 16px; }
 </style>

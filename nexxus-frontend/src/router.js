@@ -10,7 +10,6 @@ import VerifyEmail from "./pages/Auth/VerifyEmail.vue";
 import ForgotPassword from "./pages/Auth/ForgotPassword.vue";
 import ResetPassword from "./pages/Auth/ResetPassword.vue";
 import CheckEmail from "@/pages/Auth/CheckEmail.vue";
-
 import HomePage from "./pages/HomePage.vue";
 import ProfilePage from "./pages/ProfilePage.vue";
 import About from "./pages/Footer/About.vue";
