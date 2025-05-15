@@ -45,6 +45,15 @@ class ChatController extends Controller
             'chat' => [
                 'id' => $chat->id,
                 'name' => $chat->name, // Aquí retorna el nom correcte del xat
+                // user data
+                'users' => $chat->users->map(function ($user) {
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'username' => $user->username,
+                        'profile_photo_url' => $user->profile_photo_url,
+                    ];
+                }),
             ]
         ]);
     }
