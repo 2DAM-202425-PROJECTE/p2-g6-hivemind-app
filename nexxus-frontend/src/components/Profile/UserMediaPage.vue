@@ -80,7 +80,7 @@
               <button class="action-btn" @click="toggleEmojiPicker" title="Add Emoji">
                 <i class="mdi mdi-emoticon-outline"></i>
               </button>
-              <label for="file-upload" class="action-btn" title="Upload Media">
+              <label for="file-upload" class="action-btn" :class="{ 'file-selected': commentFile }" title="Upload Media">
                 <i class="mdi mdi-file-upload-outline"></i>
               </label>
               <input id="file-upload" type="file" @change="handleFileUpload" accept="image/*,video/*" style="display: none;" />
@@ -1211,6 +1211,10 @@ h1 {
   display: flex;
   gap: 10px;
   margin-top: 5px;
+}
+
+.file-selected {
+  color: #4caf50; /* Green color */
 }
 
 .reply-btn,
