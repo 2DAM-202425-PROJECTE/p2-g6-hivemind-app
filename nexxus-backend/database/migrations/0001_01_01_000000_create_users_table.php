@@ -23,6 +23,7 @@ return new class extends Migration
             $table->foreignId('current_team_id')->nullable();
             $table->string('profile_photo_path', 255)->nullable()->index();
             $table->string('banner_photo_path', 255)->nullable()->index();
+            $table->boolean('is_profile_completed')->default(false);
             $table->timestamps();
         });
 
