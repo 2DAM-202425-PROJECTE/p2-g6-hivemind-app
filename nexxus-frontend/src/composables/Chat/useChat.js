@@ -24,11 +24,16 @@ export function useChat() {
 
   const fetchCsrfToken = async () => {
     try {
-      await axios.get('http://localhost:8000/sanctum/csrf-cookie', {
+      const response = await axios.get('http://localhost:8000/sanctum/csrf-cookie', {
         withCredentials: true,
       });
+      console.log('CSRF token fetched:', response);
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+      console.log('CSRF token in meta:', csrfToken);
+      return csrfToken;
     } catch (error) {
       console.error('Error fetching CSRF token:', error);
+      throw error;
     }
   };
 
@@ -70,7 +75,7 @@ export function useChat() {
     }
 
     await fetchCsrfToken();
-    console.log('Subscribing to channel:', chatName); // Depurar nombre del canal
+    console.log('Subscribing to channel:', chatName);
 
     window.Pusher = Pusher;
     echo = new Echo({
@@ -91,16 +96,21 @@ export function useChat() {
 
     echo.channel(chatName)
       .subscribed(() => {
-        console.log('Subscribed to channel:', chatName); // Confirmar suscripción
+        console.log('Subscribed to channel:', chatName);
       })
       .listen('MessageSentEvent', (message) => {
-        console.log('Received MessageSentEvent:', message); // Depurar evento recibido
+        console.log('Received MessageSentEvent:', message);
+        // Evitar añadir mensajes duplicados o propios
+        if (message.user_id === userId.value || selectedChat.value.messages.some(msg => msg.id === message.id)) {
+          console.log('Mensaje ignorado (propio o duplicado):', message.id);
+          return;
+        }
         selectedChat.value.messages.push({
           id: message.id,
           text: message.content,
           isMine: message.user_id === userId.value,
           user: {
-            id: message.user.id, // Cambiado de user_id a user.id
+            id: message.user.id,
             name: message.user?.name || 'Unknown',
             profile_photo_url: message.user?.profile_photo_url || '',
           },
@@ -141,22 +151,29 @@ export function useChat() {
         withCredentials: true,
       });
 
+      // Asegurarse de que messages esté inicializado
       if (!selectedChat.value.messages) {
         selectedChat.value.messages = [];
       }
 
-      const user = response.data.message.user || {};
-      selectedChat.value.messages.push({
-        id: response.data.message.id,
-        text: response.data.message.content,
-        isMine: true,
-        user: {
-          id: user.id || userId.value,
-          name: user.name || 'Unknown',
-          profile_photo_url: user.profile_photo_url || '',
-        },
-        timestamp: new Date(response.data.message.created_at).toLocaleString(),
-      });
+      // Agregar el mensaje localmente con los datos de la respuesta
+      const message = response.data.message;
+      const user = message.user || {};
+      // Verificar si el mensaje ya existe para evitar duplicados
+      if (!selectedChat.value.messages.some(msg => msg.id === message.id)) {
+        selectedChat.value.messages.push({
+          id: message.id,
+          text: message.content,
+          isMine: message.user_id === userId.value,
+          user: {
+            id: user.id || userId.value,
+            name: user.name || 'Unknown',
+            profile_photo_url: user.profile_photo_url || '',
+          },
+          timestamp: new Date(message.created_at).toLocaleString(),
+          is_edited: false,
+        });
+      }
 
       newMessage.value = '';
     } catch (error) {
@@ -181,7 +198,6 @@ export function useChat() {
 
       console.log('Selected chat data:', findChat.data);
 
-      // Asignar todos los datos del chat
       selectedChat.value = findChat.data;
 
       const chatName = selectedChat.value.chat?.name;
@@ -189,8 +205,6 @@ export function useChat() {
         console.error('El nombre del chat es undefined');
         return;
       }
-
-      initializeWebSocket(chatName);
 
       const messagesResponse = await apiClient.get(`/api/chats/${chatName}/messages`, {
         withCredentials: true,
@@ -207,6 +221,9 @@ export function useChat() {
         timestamp: new Date(msg.created_at).toLocaleString(),
         is_edited: msg.is_edited,
       }));
+
+      initializeWebSocket(chatName);
+
     } catch (error) {
       console.error('Error al obtener o crear el chat:', error.response?.data || error.message);
     }
@@ -280,7 +297,7 @@ export function useChat() {
   onBeforeUnmount(() => {
     window.removeEventListener('click', handleClickOutside);
     if (echo && selectedChat.value?.chat?.name) {
-      echo.leaveChannel(`private-${selectedChat.value.chat.name}`);
+      echo.leaveChannel(`${selectedChat.value.chat.name}`);
     }
   });
 
