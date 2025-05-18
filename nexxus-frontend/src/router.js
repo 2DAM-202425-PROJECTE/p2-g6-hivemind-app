@@ -22,7 +22,7 @@ import ShopPage from "./pages/ShopPage.vue";
 import PurchasePage from "./pages/PurchasePage.vue";
 import AppSettingsPage from "./pages/AppSettingsPage.vue";
 import AccountSettingsPage from "./pages/AccountSettingsPage.vue";
-import CompleteProfilePage from "./pages/CompleteProfilePage.vue";
+import CompleteProfilePage from "./components/Profile/CompleteProfilePage.vue";
 import UserMediaPage from "./components/Profile/UserMediaPage.vue";
 import VideosPage from "./pages/VideosPage.vue";
 import LiveStreamsPage from "./pages/LiveStreamsPage.vue";
@@ -84,8 +84,13 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
+  // Rutas públicas que no requieren autenticación
   const publicRoutes = ['Login', 'Register', 'CheckEmail', 'VerifyEmail', 'ForgotPassword', 'ResetPassword'];
 
+  // Rutas que requieren autenticación pero no validación de is_profile_completed
+  const authOnlyRoutes = ['PrivacyPolicy', 'TermsOfService', 'CompleteProfile'];
+
+  // Si la ruta es pública, permitir acceso sin verificación
   if (publicRoutes.includes(to.name)) {
     return next();
   }
@@ -93,7 +98,22 @@ router.beforeEach(async (to, from, next) => {
   try {
     const response = await apiClient.get('/api/check-auth');
     console.log('Authentication check:', response.data);
-    return next();
+
+    if (response.data.authenticated) {
+      // Si la ruta está en authOnlyRoutes, permitir acceso sin verificar is_profile_completed
+      if (authOnlyRoutes.includes(to.name)) {
+        return next();
+      }
+
+      // Verificar is_profile_completed para otras rutas
+      if (!response.data.user || !response.data.user.is_profile_completed) {
+        if (to.name !== 'CompleteProfile') {
+          return next('/complete-profile');
+        }
+      }
+      return next();
+    }
+    return next('/auth/login');
   } catch (error) {
     console.warn('Authentication failed:', error.response?.status);
     console.log('Error details:', error.response?.data);

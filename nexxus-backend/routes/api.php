@@ -24,24 +24,29 @@ Route::post('/register/pending', [AuthController::class, 'registerPending']);
 Route::get('/verify-email/{token}', [AuthController::class, 'verifyEmail']);
 Route::get('/check-verification', [AuthController::class, 'checkVerification']);
 Route::post('/resend-verification', [AuthController::class, 'resendVerification']);
+Route::post('/user/complete-profile', [UserController::class, 'completeProfile']);
 
+// Route to check if the user is authenticated
 Route::middleware(['auth:sanctum', 'verified'])->group(function ()
 {
-    // Check if the user is authenticated and log the user ID
     Route::get('/check-auth', function (Request $request) {
         return response()->json([
             'authenticated' => true,
             'message' => 'User is authenticated',
+            'user' => $request->user(),
         ]);
     });
-
-    // Logout
-    Route::post('/logout', [AuthController::class, 'logout']);
 
     // User data
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+});
+
+Route::middleware(['auth:sanctum', 'verified', 'profile.completed'])->group(function ()
+{
+    // Logout
+    Route::post('/logout', [AuthController::class, 'logout']);
 
     // Profile routes
     Route::get('/user/{username}', [UserController::class, 'getUserByUsername']);
@@ -49,6 +54,13 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function ()
 
     // Return all users
     Route::get('/users', [UserController::class, 'index']);
+    
+    // Follow and unfollow routes
+    Route::post('/follow/{user}', [FollowController::class, 'follow']);
+    Route::post('/unfollow/{user}', [FollowController::class, 'unfollow']);
+    Route::get('/users/{user}/followers', [FollowController::class, 'followers']);
+    Route::get('/users/{user}/following', [FollowController::class, 'following']);
+    Route::get('/is-following/{user}', [FollowController::class, 'isFollowing']);
 
     // Return all notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
