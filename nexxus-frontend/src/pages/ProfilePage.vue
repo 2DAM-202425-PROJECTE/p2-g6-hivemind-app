@@ -1,3 +1,4 @@
+<!-- src/pages/ProfilePage.vue -->
 <template>
   <div class="profile-wrapper">
     <div
@@ -11,12 +12,13 @@
         <ProfileHeader
           :user="user"
           :is-current-user="isCurrentUser"
+          :is-following="isFollowing"
+          :is-loading-follow="isLoadingFollow"
           :edit-profile="editProfile"
           :share-profile="shareProfile"
-          :open-inventory="openInventory"
-          :banner-style="bannerStyle"
+          :toggle-follow="wrappedToggleFollow"
+          :open-follow-modal="openFollowModal"
         />
-        <!-- Pass isCurrentUser to ProfileStories -->
         <ProfileStories
           :stories="stories"
           :profile-user-id="user?.id"
@@ -26,9 +28,30 @@
         <ProfilePosts :user-posts="userPosts" :is-current-user="isCurrentUser" />
       </div>
 
-      <ProfileEditModal :is-open="isEditModalVisible" :user="user" @close="isEditModalVisible = false" @save="updateUserProfile" />
+      <ProfileEditModal
+        :is-open="isEditModalVisible"
+        :user="user"
+        @close="isEditModalVisible = false"
+        @save="updateUserProfile"
+      />
       <ShareModal v-if="isModalVisible" :share-url="shareUrl" @close="isModalVisible = false" />
-      <InventoryModal v-if="isInventoryModalVisible" :user="user" @close="isInventoryModalVisible = false" @update-user="updateUserProfile" />
+      <InventoryModal
+        v-if="isInventoryModalVisible"
+        :user="user"
+        @close="isInventoryModalVisible = false"
+        @update-user="updateUserProfile"
+      />
+      <FollowListModal
+        :is-open="isFollowModalOpen"
+        :is-followers="isFollowersModal"
+        :list="isFollowersModal ? followers : following"
+        :has-more="isFollowersModal ? followersHasMore : followingHasMore"
+        :total-count="isFollowersModal ? user.followers_count : user.following_count"
+        :search-query="searchQuery"
+        :fetch-list="isFollowersModal ? fetchFollowers : fetchFollowing"
+        @update:isOpen="isFollowModalOpen = $event"
+        @update:searchQuery="searchQuery = $event; resetSearch()"
+      />
       <Footer />
 
       <v-snackbar
@@ -36,9 +59,18 @@
         :timeout="2000"
         color="green darken-2"
         bottom
-        class="d-flex justify-end"
+        class="flex justify-end"
       >
         Profile URL copied to clipboard!
+      </v-snackbar>
+      <v-snackbar
+        v-model="followSnackbar.show"
+        :timeout="3000"
+        :color="followSnackbar.color"
+        bottom
+        class="flex justify-end"
+      >
+        {{ followSnackbar.message }}
       </v-snackbar>
     </div>
   </div>
@@ -56,16 +88,37 @@ import ProfileStories from '@/components/Profile/ProfileStories.vue';
 import ProfilePosts from '@/components/Profile/ProfilePosts.vue';
 import ProfileEditModal from '@/components/Profile/ProfileEditModal.vue';
 import InventoryModal from '@/components/Profile/InventoryModal.vue';
+import FollowListModal from '@/components/Profile/FollowListModal.vue';
 import apiClient from '@/axios.js';
 
 const route = useRoute();
-const { user, userPosts, isCurrentUser, fetchUser, fetchUserProfileByUsername } = useProfile();
+const {
+  user,
+  userPosts,
+  isCurrentUser,
+  isFollowing,
+  isLoadingFollow,
+  followers,
+  following,
+  followersHasMore,
+  followingHasMore,
+  searchQuery,
+  fetchUser,
+  fetchUserProfileByUsername,
+  toggleFollow,
+  fetchFollowers,
+  fetchFollowing,
+  resetSearch,
+} = useProfile();
 
 const isEditModalVisible = ref(false);
 const isModalVisible = ref(false);
 const isInventoryModalVisible = ref(false);
+const isFollowModalOpen = ref(false);
+const isFollowersModal = ref(true);
 const shareUrl = ref('');
 const snackbar = ref(false);
+const followSnackbar = ref({ show: false, message: '', color: 'green darken-2' });
 const stories = ref([]);
 
 const backgroundStyle = computed(() => {
@@ -81,23 +134,8 @@ const backgroundStyle = computed(() => {
     };
 });
 
-const bannerStyle = computed(() => {
-  return user.value?.equipped_banner_photo_path
-    ? {
-      backgroundImage: `url(${user.value.equipped_banner_photo_path})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      animation: 'bannerPulse 5s infinite ease-in-out',
-    }
-    : {};
-});
-
 const editProfile = () => {
   isEditModalVisible.value = true;
-};
-
-const openInventory = () => {
-  isInventoryModalVisible.value = true;
 };
 
 const updateUserProfile = (updatedUser) => {
@@ -114,9 +152,24 @@ const shareProfile = () => {
   });
 };
 
+const openFollowModal = (isFollowers) => {
+  console.log('Opening modal for', isFollowers ? 'followers' : 'following');
+  isFollowersModal.value = isFollowers;
+  isFollowModalOpen.value = true;
+  resetSearch();
+};
+
+const wrappedToggleFollow = async () => {
+  const result = await toggleFollow();
+  followSnackbar.value = {
+    show: true,
+    message: result.message,
+    color: result.success ? 'green darken-2' : 'red darken-2',
+  };
+};
+
 const fetchStories = async () => {
   try {
-    // Fetch stories with profile_user_id and role as query parameters
     const response = await apiClient.get('/api/stories', {
       params: {
         profile_user_id: user.value?.id,

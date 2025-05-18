@@ -54,12 +54,12 @@ Route::middleware(['auth:sanctum', 'verified', 'profile.completed'])->group(func
 
     // Return all users
     Route::get('/users', [UserController::class, 'index']);
-    
+
     // Follow and unfollow routes
+    Route::get('/users/{user:username}/followers', [FollowController::class, 'followers']);
+    Route::get('/users/{user:username}/following', [FollowController::class, 'following']);
     Route::post('/follow/{user}', [FollowController::class, 'follow']);
     Route::post('/unfollow/{user}', [FollowController::class, 'unfollow']);
-    Route::get('/users/{user}/followers', [FollowController::class, 'followers']);
-    Route::get('/users/{user}/following', [FollowController::class, 'following']);
     Route::get('/is-following/{user}', [FollowController::class, 'isFollowing']);
 
     // Return all notifications
