@@ -16,6 +16,7 @@
     "@heroicons/vue": "^2.2.0",
     "@mdi/font": "7.4.47",
     "axios": "^1.7.9",
+    "lodash": "^4.17.21",
     "lucide-vue-next": "^0.473.0",
     "roboto-fontface": "*",
     "vue": "^3.4.31",

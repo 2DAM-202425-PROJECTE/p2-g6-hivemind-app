@@ -1,3 +1,4 @@
+<!-- src/components/Profile/ProfileHeader.vue -->
 <template>
   <div :class="['rounded-lg shadow-lg overflow-hidden max-w-5xl mx-auto mb-5', profileThemeClass, equippedBackgroundClass]">
     <!-- Banner -->
@@ -74,12 +75,28 @@
           </div>
           <div class="flex gap-6 mt-3 text-sm text-gray-600 dark:text-gray-400">
             <span>{{ user.posts?.length || 0 }} posts</span>
-            <span>{{ user.followers || 0 }} followers</span>
-            <span>{{ user.following || 0 }} following</span>
+            <button @click="openFollowModal(true)" class="hover:underline">
+              {{ user.followers_count || 0 }} followers
+            </button>
+            <button @click="openFollowModal(false)" class="hover:underline">
+              {{ user.following_count || 0 }} following
+            </button>
           </div>
         </div>
 
         <div class="absolute right-6 top-4 flex flex-col space-y-2">
+          <button
+            v-if="!isCurrentUser"
+            @click="toggleFollow"
+            :disabled="isLoadingFollow"
+            :class="[
+              'px-4 py-2 rounded-lg text-sm font-medium transition duration-200 transform hover:scale-105',
+              isFollowing ? 'bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-500' : 'bg-amber-500 text-black hover:bg-amber-600',
+              isLoadingFollow ? 'opacity-50 cursor-not-allowed' : ''
+            ]"
+          >
+            {{ isLoadingFollow ? 'Processing...' : isFollowing ? 'Unfollow' : 'Follow' }}
+          </button>
           <button
             v-if="isCurrentUser"
             @click="editProfile"
@@ -132,9 +149,13 @@ import InventoryModal from './InventoryModal.vue';
 const props = defineProps({
   user: { type: Object, required: true },
   isCurrentUser: { type: Boolean, required: true },
+  isFollowing: { type: Boolean, required: true },
+  isLoadingFollow: { type: Boolean, required: true },
   editProfile: { type: Function, required: true },
   connectSocial: { type: Function, default: () => console.log('Connect Social clicked') },
   shareProfile: { type: Function, required: true },
+  toggleFollow: { type: Function, required: true },
+  openFollowModal: { type: Function, required: true },
 });
 
 const showInventory = ref(false);
@@ -163,15 +184,14 @@ const defaultFallback = 'https://api.iconify.design/lucide/image-off.svg';
 
 const handleImageError = (type) => {
   console.warn(`Image failed to load for ${type}`);
-  // Set fallback image based on type
   if (type === 'equipped_banner_photo_path' || type === 'banner_photo_path') {
     props.user[type] = defaultFallback;
   } else if (type === 'profile_photo_url') {
     props.user.profile_photo_url = defaultFallback;
   } else if (type === 'equipped_profile_icon_path') {
-    props.user.equipped_profile_icon_path = null; // Remove icon if it fails
+    props.user.equipped_profile_icon_path = null;
   } else if (type === 'equipped_badge_path') {
-    props.user.equipped_badge_path = null; // Remove badge if it fails
+    props.user.equipped_badge_path = null;
   }
 };
 
@@ -237,7 +257,6 @@ const loadEquippedState = async () => {
     if (!token) throw new Error('No authentication token found.');
     const response = await apiClient.get(`/api/user/${props.user.id}/equipped-items`);
     console.log('Equipped items response:', response.data);
-    // Only update non-banner fields to avoid overwriting banner state
     Object.assign(props.user, {
       equipped_profile_icon_path: response.data.equipped_profile_icon_path,
       equipped_profile_theme: response.data.equipped_profile_theme || 'bg-white dark:bg-gray-800',
@@ -245,7 +264,6 @@ const loadEquippedState = async () => {
       equipped_name_effect_path: response.data.equipped_name_effect_path,
       equipped_profile_font_path: response.data.equipped_profile_font_path,
       equipped_badge_path: response.data.equipped_badge_path,
-      // Do not update equipped_banner_photo_path here
     });
     console.log('Loaded equipped state (excluding banner):', props.user);
   } catch (error) {
@@ -261,10 +279,9 @@ const updateUser = (updatedFields) => {
 
 const updateUserAndRefresh = async (updatedFields) => {
   updateUser(updatedFields);
-  await loadEquippedState(); // Refresh other equipped items, excluding banner
+  await loadEquippedState();
 };
 
-// Watch for changes to user prop to confirm updates
 watch(() => props.user, (newUser) => {
   console.log('User prop updated in ProfileHeader:', newUser);
   console.log('Banner state - equipped_banner_photo_path:', newUser.equipped_banner_photo_path);

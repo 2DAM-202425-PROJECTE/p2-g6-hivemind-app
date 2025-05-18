@@ -27,6 +27,8 @@ import UserMediaPage from "./components/Profile/UserMediaPage.vue";
 import VideosPage from "./pages/VideosPage.vue";
 import LiveStreamsPage from "./pages/LiveStreamsPage.vue";
 import NotFoundPage from "./pages/errors/NotFoundPage.vue";
+import FollowersPage from './components/Profile/FollowersPage.vue';
+import FollowingPage from './components/Profile/FollowingPage.vue';
 
 export const routes = [
   {
@@ -65,6 +67,8 @@ export const routes = [
   { path: "/settings", name: "Settings", component: AppSettingsPage },
   { path: "/account-settings", name: "AccountSettings", component: AccountSettingsPage },
   { path: "/complete-profile", name: "CompleteProfile", component: CompleteProfilePage },
+  { path: '/profile/:username/followers', name: 'Followers', component: FollowersPage, props: true },
+  { path: '/profile/:username/following', name: 'Following', component: FollowingPage, props: true },
   {
     path: "/users/:username/media",
     name: "UserMediaPage",
