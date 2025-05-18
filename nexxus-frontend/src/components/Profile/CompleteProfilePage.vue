@@ -141,17 +141,17 @@
             <button
               type="button"
               @click="handleSkip"
-              :disabled="!acceptedTerms || !acceptedPrivacy"
+              :disabled="!acceptedTerms || !acceptedPrivacy || isLoading"
               class="px-6 py-2 text-gray-800 border border-amber-300 rounded-lg hover:bg-amber-100 transition duration-300 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
             >
-              Skip
+              {{ isLoading ? 'Skipping...' : 'Skip' }}
             </button>
             <button
               type="submit"
-              :disabled="!acceptedTerms || !acceptedPrivacy"
+              :disabled="!acceptedTerms || !acceptedPrivacy || isLoading"
               class="btn-primary"
             >
-              Save
+              {{ isLoading ? 'Saving...' : 'Save' }}
             </button>
           </div>
         </form>
@@ -163,10 +163,12 @@
       v-model="showSuccessSnackbar"
       :timeout="3000"
       color="black"
-      class="white--text custom-snackbar"
+      bottom
+      right
+      class="text-white z-[10000] max-w-[calc(100%-2rem)] sm:max-w-md"
     >
       <v-icon color="green" class="mr-2">mdi-check-circle</v-icon>
-      Profile updated successfully!
+      {{ successMessage }}
     </v-snackbar>
 
     <!-- Error Snackbar -->
@@ -174,11 +176,14 @@
       v-model="showErrorSnackbar"
       :timeout="3000"
       color="black"
-      class="white--text custom-snackbar"
+      bottom
+      right
+      class="text-white z-[10000] max-w-[calc(100%-2rem)] sm:max-w-md"
     >
       <v-icon color="red" class="mr-2">mdi-alert-circle</v-icon>
       {{ errorMessage }}
     </v-snackbar>
+
 
     <Footer />
   </div>
@@ -187,7 +192,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import apiClient from '@/axios';
+import apiClient from '@/axios.js';
 import Navbar from '@/components/NavBar.vue';
 import Footer from '@/components/AppFooter.vue';
 
@@ -204,10 +209,12 @@ const bannerPhoto = ref(null);
 const profilePreview = ref(null);
 const bannerPreview = ref(null);
 const errorMessage = ref('');
+const successMessage = ref('');
 const showErrorSnackbar = ref(false);
 const showSuccessSnackbar = ref(false);
 const acceptedTerms = ref(false);
 const acceptedPrivacy = ref(false);
+const isLoading = ref(false);
 
 const getImageUrl = (filePath) => {
   const baseUrl = 'http://localhost:8000';
@@ -217,17 +224,27 @@ const getImageUrl = (filePath) => {
 
 const uploadBanner = (event) => {
   const file = event.target.files[0];
-  if (file) {
+  const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+  if (file && validTypes.includes(file.type)) {
     bannerPhoto.value = file;
     bannerPreview.value = URL.createObjectURL(file);
+  } else {
+    errorMessage.value = 'Please select a valid image file (JPEG, PNG, JPG).';
+    showErrorSnackbar.value = true;
+    setTimeout(() => showErrorSnackbar.value = false, 3000);
   }
 };
 
 const uploadProfilePic = (event) => {
   const file = event.target.files[0];
-  if (file) {
+  const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+  if (file && validTypes.includes(file.type)) {
     profilePhoto.value = file;
     profilePreview.value = URL.createObjectURL(file);
+  } else {
+    errorMessage.value = 'Please select a valid image file (JPEG, PNG, JPG).';
+    showErrorSnackbar.value = true;
+    setTimeout(() => showErrorSnackbar.value = false, 3000);
   }
 };
 
@@ -239,9 +256,7 @@ const fetchUser = async () => {
     console.error('Error fetching user:', error);
     errorMessage.value = 'Failed to load user data.';
     showErrorSnackbar.value = true;
-    setTimeout(() => {
-      showErrorSnackbar.value = false;
-    }, 3000);
+    setTimeout(() => showErrorSnackbar.value = false, 3000);
   }
 };
 
@@ -255,52 +270,74 @@ const acceptPrivacy = () => {
   window.open('/privacy-policy', '_blank');
 };
 
-const handleSkip = () => {
+const handleSkip = async () => {
   if (!acceptedTerms.value || !acceptedPrivacy.value) {
     errorMessage.value = 'Please review and accept the Terms of Service and Privacy Policy to proceed.';
     showErrorSnackbar.value = true;
-    setTimeout(() => {
-      showErrorSnackbar.value = false;
-    }, 3000);
+    setTimeout(() => showErrorSnackbar.value = false, 3000);
     return;
   }
-  router.push('/home');
+
+  isLoading.value = true;
+  try {
+    const response = await apiClient.post('/api/user/complete-profile', { skip: true });
+    user.value = response.data.user;
+    successMessage.value = response.data.message || 'Profile completion skipped successfully!';
+    showSuccessSnackbar.value = true;
+    setTimeout(() => {
+      showSuccessSnackbar.value = false;
+      router.push('/home');
+    }, 3000);
+  } catch (error) {
+    errorMessage.value = error.response?.data?.message || 'Error skipping profile';
+    showErrorSnackbar.value = true;
+    console.error('Error skipping profile:', error.response?.data);
+    setTimeout(() => showErrorSnackbar.value = false, 3000);
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 const saveProfile = async () => {
   if (!acceptedTerms.value || !acceptedPrivacy.value) {
     errorMessage.value = 'Please review and accept the Terms of Service and Privacy Policy to proceed.';
     showErrorSnackbar.value = true;
-    setTimeout(() => {
-      showErrorSnackbar.value = false;
-    }, 3000);
+    setTimeout(() => showErrorSnackbar.value = false, 3000);
     return;
   }
 
+  isLoading.value = true;
   const formData = new FormData();
   formData.append('name', user.value.name || '');
   formData.append('description', user.value.description || '');
-  if (profilePhoto.value) formData.append('profile_photo', profilePhoto.value);
-  if (bannerPhoto.value) formData.append('banner_photo', bannerPhoto.value);
+  if (profilePhoto.value) {
+    formData.append('profile_photo', profilePhoto.value);
+    console.log('Appending profile_photo:', profilePhoto.value.name);
+  }
+  if (bannerPhoto.value) {
+    formData.append('banner_photo', bannerPhoto.value);
+    console.log('Appending banner_photo:', bannerPhoto.value.name);
+  }
 
   try {
-    const response = await apiClient.post('/api/user/profile/update', formData);
+    const response = await apiClient.post('/api/user/complete-profile', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     user.value = response.data.user;
+    successMessage.value = response.data.message || 'Profile updated successfully!';
     showSuccessSnackbar.value = true;
-    errorMessage.value = '';
-
     setTimeout(() => {
       showSuccessSnackbar.value = false;
       router.push(`/profile/${user.value.username}`);
     }, 3000);
   } catch (error) {
-    errorMessage.value = error.response?.data?.message || 'Error updating profile';
+    const errors = error.response?.data?.errors || {};
+    errorMessage.value = Object.values(errors).flat().join(' ') || error.response?.data?.message || 'Error completing profile';
     showErrorSnackbar.value = true;
-    showSuccessSnackbar.value = false;
-    console.error('Error updating profile:', error);
-    setTimeout(() => {
-      showErrorSnackbar.value = false;
-    }, 3000);
+    console.error('Error completing profile:', error.response?.data);
+    setTimeout(() => showErrorSnackbar.value = false, 3000);
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -364,22 +401,6 @@ onMounted(() => {
 .btn-primary:disabled {
   @apply bg-gray-400 text-gray-600 cursor-not-allowed;
   box-shadow: none;
-}
-
-.custom-snackbar {
-  z-index: 10000;
-  margin-bottom: 64px; /* Adjusted to avoid overlap with footer */
-  margin-right: 16px;
-  position: fixed;
-  bottom: 0;
-  right: 0;
-  left: auto;
-  transform: none;
-  max-width: calc(100% - 32px);
-}
-
-.white--text {
-  color: white !important;
 }
 
 @media (max-width: 768px) {
