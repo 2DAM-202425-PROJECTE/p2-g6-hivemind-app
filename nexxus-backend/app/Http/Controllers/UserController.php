@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CompleteProfileRequest;
 use App\Models\Item;
 use App\Models\UserInventory;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
@@ -404,7 +407,7 @@ class UserController extends Controller
         return response()->json($this->appendEquippedItems($user), 200);
     }
 
-    public function updateProfile(Request $request)
+    public function updateProfile(Request $request): JsonResponse
     {
         $user = $request->user();
 
@@ -448,6 +451,45 @@ class UserController extends Controller
         $user->save();
 
         return response()->json(['message' => 'Profile updated successfully', 'user' => $this->appendEquippedItems($user)], 200);
+    }
+
+    public function completeProfile(CompleteProfileRequest $request): JsonResponse
+    {
+        $user = Auth::user();
+        $data = $request->validated();
+
+        // Si se envía skip=true, solo marcar is_profile_completed
+        if (isset($data['skip']) && $data['skip'] === true) {
+            $user->is_profile_completed = true;
+            $user->save();
+
+            return response()->json([
+                'user' => $user,
+                'message' => 'Profile completion skipped successfully',
+            ], 200);
+        }
+
+        // Caso normal: actualizar datos del perfil
+        if ($request->hasFile('profile_photo')) {
+            $path = $request->file('profile_photo')->store('profile_photos', 'public');
+            $data['profile_photo_path'] = $path;
+        }
+
+        if ($request->hasFile('banner_photo')) {
+            $path = $request->file('banner_photo')->store('banner_photos', 'public');
+            $data['banner_photo_path'] = $path;
+        }
+
+        // Actualizar solo los campos proporcionados
+        $user->update(array_filter($data, fn($value) => !is_null($value) && $value !== ''));
+
+        $user->is_profile_completed = true;
+        $user->save();
+
+        return response()->json([
+            'user' => $user,
+            'message' => 'Profile completed successfully',
+        ], 200);
     }
 
     private function appendEquippedItems($user)

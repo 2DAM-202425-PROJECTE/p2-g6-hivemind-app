@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AuthenticateWithCookie;
+use App\Http\Middleware\CheckProfileCompleted;
 use App\Http\Middleware\EnsureEmailIsVerified;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'verified' => EnsureEmailIsVerified::class,
+            'profile.completed' => CheckProfileCompleted::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
