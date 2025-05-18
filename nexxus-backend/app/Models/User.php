@@ -23,7 +23,7 @@ class User extends Authenticatable
     use TwoFactorAuthenticatable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'username', 'profile_photo_path', 'banner_photo_path', 'description', 'email_verified_at',
+        'name', 'email', 'password', 'username', 'profile_photo_path', 'banner_photo_path', 'description', 'email_verified_at', 'followers_count', 'following_count', 'is_profile_completed',
         'credits', 'equipped_profile_icon_path', 'equipped_custom_banner', 'equipped_background_path',
         'equipped_name_effect_path', 'equipped_badge_path', 'equipped_profile_font_path','equipped_profile_icon_color',
     ];
@@ -55,6 +55,26 @@ class User extends Authenticatable
     public function posts()
     {
         return $this->hasMany(Post::class, 'id_user');
+    }
+
+    // Usuarios que este usuario sigue (seguidos)
+    public function following()
+    {
+        return $this->belongsToMany(User::class, 'follows', 'follower_id', 'followed_id')
+            ->withTimestamps();
+    }
+
+    // Usuarios que siguen a este usuario (seguidores)
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'follows', 'followed_id', 'follower_id')
+            ->withTimestamps();
+    }
+
+    // Verificar si el usuario sigue a otro
+    public function isFollowing(User $user)
+    {
+        return $this->following()->where('followed_id', $user->id)->exists();
     }
 
     protected function defaultProfilePhotoUrl()
