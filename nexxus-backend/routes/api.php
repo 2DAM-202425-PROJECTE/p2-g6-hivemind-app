@@ -100,13 +100,13 @@ Route::middleware(['auth:sanctum', 'verified', 'profile.completed'])->group(func
     Route::post('/stories', [StoryController::class, 'store']);
     Route::delete('/stories/{id}', [StoryController::class, 'destroy'])->middleware('auth:sanctum');
 
-    // Chats routes
+    // Private messages routes
+    Route::get('/chats', [ChatController::class, 'index']);
     Route::get('/chats/private', [ChatController::class, 'getPrivateChat']);
-
-    // Messages routes
     Route::post('/chats/{chatName}/messages', [MessageController::class, 'postMessages']);
     Route::get('/chats/{chatName}/messages', [MessageController::class, 'getMessages']);
     Route::patch('/messages/{message}', [MessageController::class, 'updateMessages']);
+    Route::post('/chats/{chatName}/messages/{messageId}/read', [MessageController::class, 'markMessageAsRead']);
     Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
 
     // Contact route

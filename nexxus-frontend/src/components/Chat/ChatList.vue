@@ -8,12 +8,11 @@
         </svg>
         <span>Hive Conversations</span>
       </h2>
-
       <div class="relative">
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search in your hive..."
+          :placeholder="isMobile ? 'Search...' : 'Search in your hive...'"
           class="w-full pl-10 pr-4 py-2 border border-amber-200 rounded-lg bg-amber-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-300 transition-all"
           @input="handleSearch"
         >
@@ -22,21 +21,15 @@
         </svg>
       </div>
     </div>
-
     <!-- Lista de chats con scroll personalizado -->
-    <div
-      class="flex-1 overflow-y-auto hover-scroll-container"
-      @mouseenter="showScroll = true"
-      @mouseleave="showScroll = false"
-    >
+    <div class="flex-1 overflow-y-auto hover-scroll-container" @mouseenter="showScroll = true" @mouseleave="showScroll = false">
       <div v-if="filteredChats.length === 0" class="p-4 text-center text-gray-500">
-        No chats found in your hive
+        {{ searchQuery ? 'No chats found' : 'No conversations yet' }}
       </div>
-
       <div v-else class="divide-y divide-amber-100">
         <div
           v-for="(chat, index) in filteredChats"
-          :key="index"
+          :key="chat.id"
           @click="$emit('select-chat', chat)"
           class="flex items-center gap-3 p-4 hover:bg-amber-50 cursor-pointer transition-colors group"
           :class="{ 'bg-amber-50': isChatActive(chat) }"
@@ -47,6 +40,7 @@
               :src="chat.profile_photo_url"
               alt="Avatar"
               class="w-12 h-12 rounded-full border-2 border-amber-300 object-cover"
+              @error="handleImageError($event, chat, index)"
             >
             <span
               v-if="chat.unread_count"
@@ -55,7 +49,6 @@
               {{ chat.unread_count }}
             </span>
           </div>
-
           <!-- Contenido del chat -->
           <div class="flex-1 min-w-0">
             <div class="flex justify-between items-baseline">
@@ -63,7 +56,6 @@
               <span class="text-xs text-gray-500 ml-2 whitespace-nowrap">{{ formatTime(chat.last_message_time) }}</span>
             </div>
             <p class="text-xs text-gray-500 truncate">@{{ chat.username }}</p>
-
             <!-- Último mensaje -->
             <div class="flex items-center gap-1 mt-1">
               <p
@@ -72,10 +64,7 @@
               >
                 {{ getLastMessagePreview(chat) }}
               </p>
-              <span
-                v-if="chat.last_message?.is_edited"
-                class="text-xs text-gray-400"
-              >
+              <span v-if="chat.last_message?.is_edited" class="text-xs text-gray-400">
                 (edited)
               </span>
             </div>
@@ -87,61 +76,78 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
   chats: Array,
-  selectedChat: Object
+  selectedChat: Object,
 });
 
 const emit = defineEmits(['select-chat']);
 
 const searchQuery = ref('');
 const showScroll = ref(false);
+const isMobile = ref(false);
+const defaultFallback = 'https://api.iconify.design/lucide/image-off.svg';
 
-// Filtrar chats basado en la búsqueda
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 640;
+};
+
+onMounted(() => {
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkMobile);
+});
+
+const handleImageError = (event, chat, index) => {
+  console.warn(`Image failed to load for user ${chat.username} at index ${index}`);
+  // eslint-disable-next-line vue/no-mutating-props
+  props.chats[index].profile_photo_url = defaultFallback;
+  event.target.src = defaultFallback;
+};
+
 const filteredChats = computed(() => {
   if (!searchQuery.value) return props.chats;
 
   const query = searchQuery.value.toLowerCase();
-  return props.chats.filter(chat =>
-    chat.name.toLowerCase().includes(query) ||
-    chat.username.toLowerCase().includes(query) ||
-    (chat.last_message?.text?.toLowerCase().includes(query))
+  return props.chats.filter(
+    chat =>
+      chat.name.toLowerCase().includes(query) ||
+      chat.username.toLowerCase().includes(query) ||
+      (chat.last_message?.text?.toLowerCase().includes(query)),
   );
 });
 
-// Manejar búsqueda
-const handleSearch = () => {
-  // La computed property filteredChats se actualiza automáticamente
-};
+const handleSearch = () => {};
 
-// Formatear hora del último mensaje
 const formatTime = (timestamp) => {
   if (!timestamp) return '';
   const date = new Date(timestamp);
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  return isToday
+    ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 };
 
-// Obtener vista previa del último mensaje
 const getLastMessagePreview = (chat) => {
   if (!chat.last_message) return 'No messages yet';
 
   const maxLength = 30;
   const text = chat.last_message.text || '';
-  return text.length > maxLength
-    ? `${text.substring(0, maxLength)}...`
-    : text;
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
-// Verificar si el chat está activo
 const isChatActive = (chat) => {
-  return props.selectedChat && props.selectedChat.id === chat.id;
+  return props.selectedChat && props.selectedChat.chat?.users.some(u => u.id === chat.id);
 };
 </script>
 
 <style scoped>
-/* Animación para mensajes no leídos */
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.1); }
@@ -151,7 +157,6 @@ const isChatActive = (chat) => {
   animation: pulse 1.5s infinite;
 }
 
-/* Scrollbar personalizada que aparece solo al hacer hover */
 .hover-scroll-container {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
@@ -182,8 +187,15 @@ const isChatActive = (chat) => {
   background-color: #f59e0b;
 }
 
-/* Transiciones suaves */
 .transition-colors {
   transition: background-color 0.2s ease;
+}
+
+@media (max-width: 640px) {
+  .p-4 { padding: 0.75rem; }
+  .text-xl { font-size: 1.125rem; }
+  .text-sm { font-size: 0.875rem; }
+  .text-xs { font-size: 0.75rem; }
+  .w-12 { width: 2.5rem; height: 2.5rem; }
 }
 </style>

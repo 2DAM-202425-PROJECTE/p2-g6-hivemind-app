@@ -98,6 +98,32 @@
             {{ isLoadingFollow ? 'Processing...' : isFollowing ? 'Unfollow' : 'Follow' }}
           </button>
           <button
+            v-if="!isCurrentUser"
+            @click="startChat"
+            :disabled="isLoadingChat"
+            :class="[
+              'px-4 py-2 rounded-lg text-sm font-medium transition duration-200 transform hover:scale-105 flex items-center gap-2',
+              'bg-amber-500 text-black hover:bg-amber-600',
+              isLoadingChat ? 'opacity-50 cursor-not-allowed' : ''
+            ]"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+            {{ isLoadingChat ? 'Starting...' : 'Start Chat' }}
+          </button>
+          <button
             v-if="isCurrentUser"
             @click="editProfile"
             class="p-2 text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition duration-200 transform hover:scale-110"
@@ -143,7 +169,9 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import apiClient from '@/axios.js';
+import axios from 'axios';
 import InventoryModal from './InventoryModal.vue';
 
 const props = defineProps({
@@ -159,6 +187,8 @@ const props = defineProps({
 });
 
 const showInventory = ref(false);
+const isLoadingChat = ref(false);
+const router = useRouter();
 
 const fallbackUrls = {
   'Cosmic Vortex': 'https://media.tenor.com/5o2qbr5P5mUAAAAC/space-vortex.gif',
@@ -248,6 +278,43 @@ const getNameEffectClass = (nameEffectPath) => {
     'Digital Pulse': 'digital-pulse',
   };
   return effectMap[nameEffectPath] || '';
+};
+
+const fetchCsrfToken = async () => {
+  try {
+    await axios.get('http://localhost:8000/sanctum/csrf-cookie', {
+      withCredentials: true,
+    });
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (!csrfToken || csrfToken.includes('{{')) {
+      console.warn('CSRF token invalid, retrying...');
+      await axios.get('http://localhost:8000/sanctum/csrf-cookie', { withCredentials: true });
+      return document.querySelector('meta[name="csrf-token"]')?.content || '';
+    }
+    return csrfToken;
+  } catch (error) {
+    console.error('Error fetching CSRF token:', error);
+    throw error;
+  }
+};
+
+const startChat = async () => {
+  isLoadingChat.value = true;
+  try {
+    await fetchCsrfToken();
+    const response = await apiClient.get('/api/chats/private', {
+      params: { recipient_id: props.user.id },
+      withCredentials: true,
+    });
+    console.log('Chat created:', response.data);
+    const chatId = response.data.chat.id;
+    router.push({ path: '/chat', query: { chatId } });
+  } catch (error) {
+    console.error('Error starting chat:', error.response?.data || error.message);
+    alert('Failed to start chat: ' + (error.response?.data?.error || 'Unknown error'));
+  } finally {
+    isLoadingChat.value = false;
+  }
 };
 
 const loadEquippedState = async () => {

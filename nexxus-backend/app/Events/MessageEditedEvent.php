@@ -22,7 +22,7 @@ class MessageEditedEvent implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return new Channel("{$this->message->chat->name}");
+        return new Channel("channel-{$this->message->chat->name}");
     }
 
     public function broadcastWith()

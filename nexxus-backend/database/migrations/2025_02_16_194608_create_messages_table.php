@@ -19,6 +19,7 @@ return new class extends Migration
             $table->boolean('is_edited')->default(false); // Indica si el mensaje fue editado
             $table->timestamp('deleted_at')->nullable(); // Soft delete para mensajes eliminados
             $table->timestamp('read_at')->nullable(); // Fecha de lectura
+            $table->boolean('is_read')->default(false)->after('is_edited');
             $table->timestamps();
         });
 
