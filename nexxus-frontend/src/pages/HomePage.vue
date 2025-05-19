@@ -176,6 +176,20 @@
       </v-card>
     </v-dialog>
 
+    <!-- Report Popup -->
+    <v-dialog v-model="reportPopup" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Post Reported</v-card-title>
+        <v-card-text>
+          <p>{{ reportMessage }}</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn class="btn-white" @click="closeReportPopup">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Loading indicator -->
     <div v-if="loading" class="loading-indicator">
       <div class="spinner"></div>
@@ -228,6 +242,8 @@ const selectedLocation = ref(null);
 const sharePopup = ref(false);
 const shareUrl = ref('');
 const copySuccess = ref(false);
+const reportPopup = ref(false); // New ref for report popup
+const reportedPost = ref(null); // New ref for reported post
 
 // Random placeholder messages
 const placeholderMessages = [
@@ -358,6 +374,13 @@ const equippedBackgroundStyle = computed(() => {
   return bgPath
     ? { backgroundImage: `url(${bgPath})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
     : {};
+});
+
+// Computed property for report message
+const reportMessage = computed(() => {
+  if (!reportedPost.value) return '';
+  const username = getUserNameById(reportedPost.value.id_user);
+  return `${username}'s post has been reported to HiveMind's admins.`;
 });
 
 // Mount and unmount lifecycle hooks
@@ -700,7 +723,15 @@ const deletePost = async (postId) => {
   }
 };
 
-const reportPost = (post) => alert(`Reported post with ID: ${post.id}`);
+const reportPost = (post) => {
+  reportedPost.value = post;
+  reportPopup.value = true;
+};
+
+const closeReportPopup = () => {
+  reportPopup.value = false;
+  reportedPost.value = null;
+};
 
 const sharePost = (post) => {
   const username = getUsernameById(post.id_user);

@@ -1,3 +1,4 @@
+```vue
 <template>
   <div class="user-media-container" :style="equippedBackgroundStyle">
     <Navbar />
@@ -44,11 +45,11 @@
           <div class="media-description">
             <h5 v-if="isVideo && selectedMedia.description">{{ selectedMedia.description }}</h5>
             <div v-else-if="selectedMedia.description" class="post-description"
-              v-html="renderPostDescription(selectedMedia.description)"></div>
+                 v-html="renderPostDescription(selectedMedia.description)"></div>
             <div v-if="selectedMedia.location" class="post-location">
               <i class="mdi mdi-earth location-icon"></i>
               <a :href="`https://www.google.com/maps?q=${encodeURIComponent(selectedMedia.location)}`" target="_blank"
-                class="location-link">
+                 class="location-link">
                 {{ simplifyLocation(selectedMedia.location) }}
               </a>
             </div>
@@ -109,7 +110,7 @@
                   <p>{{ comment.content }}</p>
                   <div v-if="comment.media_path">
                     <img v-if="isImage(comment.media_path)" :src="getImageUrl(comment.media_path)" alt="Comment Media"
-                      class="comment-media" />
+                         class="comment-media" />
                     <video v-else controls>
                       <source :src="getImageUrl(comment.media_path)" />
                     </video>
@@ -117,7 +118,7 @@
                   <div class="comment-actions">
                     <button @click="toggleReplyInput(comment.id)" class="reply-btn">Reply</button>
                     <button v-if="comment.replies?.length" @click="toggleRepliesVisibility(comment.id)"
-                      class="view-replies-btn">
+                            class="view-replies-btn">
                       {{ areRepliesVisible(comment.id) ? 'Hide' : `View ${comment.replies.length}
                       ${comment.replies.length === 1 ?
                       'Reply' : 'Replies'}` }}
@@ -125,7 +126,7 @@
                   </div>
                   <div v-if="replyInputVisible === comment.id" class="reply-input">
                     <input v-model="replies[comment.id]" placeholder="Write a reply..."
-                      @keyup.enter="addReply(comment.id)" />
+                           @keyup.enter="addReply(comment.id)" />
                     <button class="btn-primary" @click="addReply(comment.id)">Post Reply</button>
                   </div>
                   <!-- Display Replies -->
@@ -162,18 +163,18 @@
           <div v-if="selectedMedia && selectedMedia.file_path" class="current-media">
             <p>Current {{ isVideo ? 'Video' : 'Image' }}:</p>
             <img v-if="!isVideo" :src="getImageUrl(selectedMedia.file_path)" alt="Current media image"
-              style="max-width: 100%; max-height: 200px; margin-bottom: 10px;" />
+                 style="max-width: 100%; max-height: 200px; margin-bottom: 10px;" />
             <video v-else :src="getImageUrl(selectedMedia.file_path)" controls
-              style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
+                   style="max-width: 100%; max-height: 200px; margin-bottom: 10px;"></video>
           </div>
           <v-file-input :label="`Replace ${isVideo ? 'Video (.mp4, .mov)' : 'Image/Video (.png, .jpg, .jpeg, .mp4)'}`"
-            :accept="isVideo ? '.mp4, .mov' : '.png, .jpg, .jpeg, .mp4'" @update:modelValue="handleEditFileUpload"
-            outlined></v-file-input>
+                        :accept="isVideo ? '.mp4, .mov' : '.png, .jpg, .jpeg, .mp4'" @update:modelValue="handleEditFileUpload"
+                        outlined></v-file-input>
           <v-text-field v-model="editMediaDescription" label="Description" outlined></v-text-field>
           <div v-if="editMediaLocation" class="location-preview">
             <i class="mdi mdi-map-marker"></i>
             <a :href="`https://www.google.com/maps?q=${editMediaLocation.lat},${editMediaLocation.lon}`" target="_blank"
-              class="location-btn">
+               class="location-btn">
               {{ editMediaLocation.name }}
             </a>
             <button class="remove-btn" @click="removeEditLocation">Remove</button>
@@ -223,6 +224,20 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn class="btn-white" @click="closeSharePopup">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Report Popup -->
+    <v-dialog v-model="reportPopup" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Media Reported</v-card-title>
+        <v-card-text>
+          <p>{{ reportMessage }}</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn class="btn-white" @click="closeReportPopup">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -303,9 +318,18 @@ const previousRoute = ref('');
 const sharePopup = ref(false);
 const shareUrl = ref('');
 const copySuccess = ref(false);
+const reportPopup = ref(false); // New ref for report popup
+const reportedMedia = ref(null); // New ref for reported media
 const API_BASE_URL = 'http://localhost:8000';
 const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
 const showEmojiPicker = ref(false);
+
+// Computed property for report message
+const reportMessage = computed(() => {
+  if (!reportedMedia.value) return '';
+  const username = getUserNameById(reportedMedia.value.id_user);
+  return `${username}'s ${isVideo.value ? 'video' : 'post'} has been reported to HiveMind's admins.`;
+});
 
 const toggleEmojiPicker = (event) => {
   event.stopPropagation();
@@ -675,21 +699,6 @@ const addComment = async () => {
     console.error('Error adding comment:', error.response?.data || error.message);
     alert('Error: ' + (error.response?.data?.message || error.message));
   }
-
-  try {
-    const response = await apiClient.post(`/api/posts/${selectedMedia.value.id}/comments`, {
-      content: newComment.value
-    });
-    const equippedItems = await apiClient.get(`/api/user/${response.data.user.id}/equipped-items`);
-    comments.value.push({
-      ...response.data,
-      equipped_name_effect_path: equippedItems.data.equipped_name_effect_path,
-      equipped_profile_font_path: equippedItems.data.equipped_profile_font_path,
-    });
-    newComment.value = '';
-  } catch (error) {
-    console.error('Error adding comment:', error);
-  }
 };
 
 const openDeleteCommentDialog = (commentId) => {
@@ -818,16 +827,15 @@ const saveEditMedia = async () => {
   }
 };
 
-const reportMedia = async (media) => {
-  try {
-    await apiClient.post(`/api/posts/${media.id}/report`, {
-      reason: prompt('Please enter reason for reporting:')
-    });
-    alert(`${isVideo.value ? 'Video' : 'Post'} reported successfully`);
-    mediaMenuVisible.value = null;
-  } catch (error) {
-    console.error('Error reporting media:', error);
-  }
+const reportMedia = (media) => {
+  reportedMedia.value = media;
+  reportPopup.value = true;
+  mediaMenuVisible.value = null;
+};
+
+const closeReportPopup = () => {
+  reportPopup.value = false;
+  reportedMedia.value = null;
 };
 
 const shareMedia = (media) => {
@@ -1456,3 +1464,4 @@ h1 {
   overflow-y: auto;
 }
 </style>
+```

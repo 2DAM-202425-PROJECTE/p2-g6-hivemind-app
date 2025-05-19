@@ -121,6 +121,20 @@
       </v-card>
     </v-dialog>
 
+    <!-- Report Popup -->
+    <v-dialog v-model="reportPopup" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Video Reported</v-card-title>
+        <v-card-text>
+          <p>{{ reportMessage }}</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn class="btn-white" @click="closeReportPopup">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <Footer />
   </div>
 </template>
@@ -148,12 +162,21 @@ const itemToDelete = ref(null);
 const sharePopup = ref(false);
 const shareUrl = ref('');
 const copySuccess = ref(false);
+const reportPopup = ref(false); // New ref for report popup
+const reportedVideo = ref(null); // New ref for reported video
 
 const API_BASE_URL = 'http://localhost:8000';
 const VIDEO_EXTENSIONS = ['.mp4', '.mov'];
 
 // Load cached background path from localStorage (if available)
 const cachedBackgroundPath = ref(localStorage.getItem('equipped_background_path') || null);
+
+// Computed property for report message
+const reportMessage = computed(() => {
+  if (!reportedVideo.value) return '';
+  const username = getUserNameById(reportedVideo.value.id_user);
+  return `${username}'s video has been reported to HiveMind's admins.`;
+});
 
 // Computed property for background style
 const equippedBackgroundStyle = computed(() => {
@@ -422,17 +445,15 @@ const confirmDelete = async () => {
   }
 };
 
-const reportVideo = async (video) => {
-  try {
-    await apiClient.post(`/api/posts/${video.id}/report`, {
-      reason: prompt('Please enter reason for reporting:')
-    });
-    alert('Video reported successfully');
-    videoMenuVisible.value = null;
-    video.comments_count = await fetchCommentCountFallback(video.id);
-  } catch (error) {
-    console.error('Error reporting video:', error);
-  }
+const reportVideo = (video) => {
+  reportedVideo.value = video;
+  reportPopup.value = true;
+  videoMenuVisible.value = null;
+};
+
+const closeReportPopup = () => {
+  reportPopup.value = false;
+  reportedVideo.value = null;
 };
 
 const shareVideo = (video) => {
@@ -547,7 +568,7 @@ h1 {
   text-decoration: underline;
 }
 
-.username-handle {
+.username_handle {
   font-size: 14px;
   color: #000000;
 }
@@ -704,7 +725,7 @@ h1 {
 .font-typewriter { font-family: 'Courier Prime', monospace; font-size: 16px; }
 .font-bubble { font-family: 'Bungee', cursive; font-size: 16px; }
 .font-neon { font-family: 'Orbitron', sans-serif; font-size: 16px; }
-.font-graffiti { font-family: 'Wallpoet', cursive; font-size: 16px; }
+.font-graffiti { font-family: 'Wallpoet', cursive SOUND; font-size: 16px; }
 .font-retro { font-family: 'VT323', monospace; font-size: 16px; }
 .font-cyberpunk { font-family: 'Monoton', cursive; font-size: 16px; }
 .font-western { font-family: 'Special Elite', cursive; font-size: 16px; }
