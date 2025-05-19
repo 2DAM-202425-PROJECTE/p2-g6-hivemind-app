@@ -185,10 +185,7 @@ export function useChat() {
                 is_edited: event.message.is_edited,
               });
 
-              // Ordenar mensajes por timestamp para asegurar que el más reciente sea el último
               selectedChat.value.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-
-              // Actualizar last_message con el mensaje más reciente
               const latestMessage = selectedChat.value.messages[selectedChat.value.messages.length - 1];
               chat.last_message = {
                 text: latestMessage.text,
@@ -210,17 +207,44 @@ export function useChat() {
         })
         .listen('MessageEditedEvent', (event) => {
           console.log('Received MessageEditedEvent:', JSON.stringify(event, null, 2));
-          const message = selectedChat.value.messages?.find(msg => msg.id === event.message.id);
-          if (message) {
-            message.text = event.message.content;
-            message.is_edited = true;
+          if (selectedChat.value?.chat?.name && event.message) {
+            const messageIndex = selectedChat.value.messages.findIndex(msg => msg.id === event.message.id);
+            if (messageIndex !== -1) {
+              selectedChat.value.messages[messageIndex].text = event.message.content;
+              selectedChat.value.messages[messageIndex].is_edited = event.message.is_edited || true; // Asegurar que is_edited se actualice
+            }
+            // Actualizar last_message si este mensaje es el más reciente
+            const chat = chats.value.find(c => c.chat.name === selectedChat.value.chat.name);
+            if (chat && selectedChat.value.messages.length > 0) {
+              const latestMessage = selectedChat.value.messages[selectedChat.value.messages.length - 1];
+              chat.last_message = {
+                text: latestMessage.text,
+                is_edited: latestMessage.is_edited,
+              };
+              chat.last_message_time = latestMessage.timestamp;
+            }
           }
         })
         .listen('MessageDeletedEvent', (event) => {
           console.log('Received MessageDeletedEvent:', JSON.stringify(event, null, 2));
-          const index = selectedChat.value.messages?.findIndex(msg => msg.id === event.message_id);
-          if (index !== -1) {
-            selectedChat.value.messages.splice(index, 1);
+          if (selectedChat.value?.chat?.name && event.message_id) {
+            const messageIndex = selectedChat.value.messages.findIndex(msg => msg.id === event.message_id);
+            if (messageIndex !== -1) {
+              selectedChat.value.messages.splice(messageIndex, 1);
+            }
+            // Actualizar last_message si se eliminó el último mensaje
+            const chat = chats.value.find(c => c.chat.name === selectedChat.value.chat.name);
+            if (chat && selectedChat.value.messages.length > 0) {
+              const latestMessage = selectedChat.value.messages[selectedChat.value.messages.length - 1];
+              chat.last_message = {
+                text: latestMessage.text,
+                is_edited: latestMessage.is_edited,
+              };
+              chat.last_message_time = latestMessage.timestamp;
+            } else if (chat) {
+              chat.last_message = null;
+              chat.last_message_time = null;
+            }
           }
         });
     } catch (error) {

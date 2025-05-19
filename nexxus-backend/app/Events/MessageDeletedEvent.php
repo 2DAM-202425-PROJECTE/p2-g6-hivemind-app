@@ -23,13 +23,14 @@ class MessageDeletedEvent implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return new Channel("channel-{$this->chat->name}");
+        return new Channel("{$this->chat->name}"); // Cambiar a {$this->chat->name} sin prefijo
     }
 
     public function broadcastWith()
     {
         return [
-            'message_id' => $this->messageId
+            'message_id' => $this->messageId,
+            'chat_name' => $this->chat->name, // Añadir para depuración y consistencia
         ];
     }
 }
