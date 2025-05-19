@@ -9,16 +9,18 @@
           <span class="animate-letter gradient-text" style="--order: 2">h</span>
           <span class="animate-letter gradient-text" style="--order: 3">o</span>
           <span class="animate-letter gradient-text" style="--order: 4">p</span>
-          <span class="animate-letter gradient-text" style="--order: 5"> </span>
+          <span class="animate-letter gradient-text" style="--order: 5">&nbsp;</span>
           <span class="animate-letter gradient-text" style="--order: 6">t</span>
           <span class="animate-letter gradient-text" style="--order: 7">h</span>
           <span class="animate-letter gradient-text" style="--order: 8">e</span>
-          <span class="animate-letter gradient-text" style="--order: 9"> </span>
+          <span class="animate-letter gradient-text" style="--order: 9">&nbsp;</span>
           <span class="animate-letter gradient-text" style="--order: 10">H</span>
           <span class="animate-letter gradient-text" style="--order: 11">i</span>
           <span class="animate-letter gradient-text" style="--order: 12">v</span>
           <span class="animate-letter gradient-text" style="--order: 13">e</span>
         </h1>
+
+
         <p class="text-lg text-amber-800">
           Browse our selection of premium items to enhance your experience. Worker bees work hard to bring you these products!
         </p>

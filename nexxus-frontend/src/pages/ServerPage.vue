@@ -88,10 +88,10 @@
                 <span class="animate-letter gradient-text" style="--order: 6">m</span>
                 <span class="animate-letter gradient-text" style="--order: 7">e</span>
                 <span class="animate-letter gradient-text" style="--order: 8"> </span>
-                <span class="animate-letter gradient-text" style="--order: 9">t</span>
+                <span class="animate-letter gradient-text" style="--order: 9">&nbsp;</span>
                 <span class="animate-letter gradient-text" style="--order: 10">t</span>
                 <span class="animate-letter gradient-text" style="--order: 11">o</span>
-                <span class="animate-letter gradient-text" style="--order: 12"> </span>
+                <span class="animate-letter gradient-text" style="--order: 12">&nbsp;</span>
                 <span class="animate-letter gradient-text" style="--order: 13">N</span>
                 <span class="animate-letter gradient-text" style="--order: 14">e</span>
                 <span class="animate-letter gradient-text" style="--order: 15">x</span>
