@@ -144,7 +144,7 @@
           <i class="mdi" :class="post.liked_by_user ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"></i>
           <span>{{ post.likes_count }} Likes</span>
         </div>
-        <div class="action-item" @click.stop="navigateToPost(post)">
+        <div class="action-item" @click.stop="navigateToPost(post, $event)">
           <i class="mdi mdi-comment-outline"></i>
           <span>{{ post.comments ? post.comments.length : 0 }} Comments</span>
         </div>

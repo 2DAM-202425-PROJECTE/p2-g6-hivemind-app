@@ -13,12 +13,12 @@
           <span class="animate-letter gradient-text" style="--order: 6">e</span>
           <span class="animate-letter gradient-text" style="--order: 7">t</span>
           <span class="animate-letter gradient-text" style="--order: 8">e</span>
-          <span class="animate-letter gradient-text" style="--order: 9"> </span>
+          <span class="animate-letter gradient-text" style="--order: 9">&nbsp;</span>
           <span class="animate-letter gradient-text" style="--order: 10">Y</span>
           <span class="animate-letter gradient-text" style="--order: 11">o</span>
           <span class="animate-letter gradient-text" style="--order: 12">u</span>
           <span class="animate-letter gradient-text" style="--order: 13">r</span>
-          <span class="animate-letter gradient-text" style="--order: 14"> </span>
+          <span class="animate-letter gradient-text" style="--order: 14">&nbsp;</span>
           <span class="animate-letter gradient-text" style="--order: 15">P</span>
           <span class="animate-letter gradient-text" style="--order: 16">r</span>
           <span class="animate-letter gradient-text" style="--order: 17">o</span>

@@ -11,7 +11,7 @@
     <!-- Grouped Stories by User (Newest on Left) -->
     <div
       class="story-item"
-      v-for="(userStories, userId) in groupedStories"
+      v-for="([userId, userStories], index) in groupedStories"
       :key="userId"
       @click="viewUserStories(userId)"
     >
@@ -70,7 +70,6 @@
             <v-btn
               icon
               @click="navigateStory('next')"
-              :disabled="currentStoryIndex === currentUserStories.length - 1 && isLastUser"
               class="nav-btn"
             >
               <v-icon>mdi-chevron-right</v-icon>
@@ -132,6 +131,8 @@ const groupedStories = computed(() => {
     }
     grouped[story.id_user].push(story);
   });
+
+  // Sort stories for each user by newest first
   Object.keys(grouped).forEach((userId) => {
     grouped[userId].sort((a, b) => {
       const dateA = new Date(a.publish_date || a.created_at);
@@ -139,33 +140,31 @@ const groupedStories = computed(() => {
       return dateB - dateA;
     });
   });
+
+  // Sort users by the newest story's date
   return Object.entries(grouped)
     .sort(([, aStories], [, bStories]) => {
       const aDate = new Date(aStories[0].publish_date || aStories[0].created_at);
       const bDate = new Date(bStories[0].publish_date || bStories[0].created_at);
       return bDate - aDate;
-    })
-    .reduce((acc, [userId, stories]) => {
-      acc[userId] = stories;
-      return acc;
-    }, {});
+    });
 });
 
 const currentUserStories = computed(() => {
   if (!selectedStory.value) return [];
-  return groupedStories.value[selectedStory.value.id_user] || [];
+  return groupedStories.value.find(([userId]) => userId === String(selectedStory.value.id_user))?.[1] || [];
 });
 
 // Check if the current user is the first or last in the groupedStories
 const isFirstUser = computed(() => {
   if (!selectedStory.value) return true;
-  const userIds = Object.keys(groupedStories.value);
+  const userIds = groupedStories.value.map(([userId]) => userId);
   return userIds.indexOf(String(selectedStory.value.id_user)) === 0;
 });
 
 const isLastUser = computed(() => {
   if (!selectedStory.value) return true;
-  const userIds = Object.keys(groupedStories.value);
+  const userIds = groupedStories.value.map(([userId]) => userId);
   return userIds.indexOf(String(selectedStory.value.id_user)) === userIds.length - 1;
 });
 
@@ -219,7 +218,7 @@ const getStoryImagePath = (path) => {
 };
 
 const viewUserStories = (userId) => {
-  const userStories = groupedStories.value[userId];
+  const userStories = groupedStories.value.find(([id]) => id === userId)?.[1];
   if (userStories && userStories.length > 0) {
     selectedStory.value = userStories[0];
     currentStoryIndex.value = lastViewedIndices.value[userId] || 0;
@@ -245,28 +244,33 @@ const navigateStory = (direction) => {
   } else if (direction === 'prev' && currentStoryIndex.value > 0) {
     currentStoryIndex.value--;
     selectedStory.value = currentUserStories.value[currentStoryIndex.value];
-  } else if (direction === 'next' && !isLastUser.value) {
-    // Move to the next user's stories
-    const userIds = Object.keys(groupedStories.value);
-    const currentUserIndex = userIds.indexOf(currentUserId);
-    const nextUserIndex = currentUserIndex + 1;
-    const nextUserId = userIds[nextUserIndex];
-    const nextUserStories = groupedStories.value[nextUserId];
-    if (nextUserStories && nextUserStories.length > 0) {
-      selectedStory.value = nextUserStories[0];
-      currentStoryIndex.value = lastViewedIndices.value[nextUserId] || 0;
-      if (currentStoryIndex.value >= nextUserStories.length) {
-        currentStoryIndex.value = nextUserStories.length - 1;
+  } else if (direction === 'next') {
+    if (isLastUser.value && currentStoryIndex.value === currentUserStories.value.length - 1) {
+      // Close modal if at the last story of the last user
+      showStoryModal.value = false;
+    } else {
+      // Move to the next user's stories
+      const userIds = groupedStories.value.map(([userId]) => userId);
+      const currentUserIndex = userIds.indexOf(currentUserId);
+      const nextUserIndex = currentUserIndex + 1;
+      const nextUserId = userIds[nextUserIndex];
+      const nextUserStories = groupedStories.value[nextUserIndex][1];
+      if (nextUserStories && nextUserStories.length > 0) {
+        selectedStory.value = nextUserStories[0];
+        currentStoryIndex.value = lastViewedIndices.value[nextUserId] || 0;
+        if (currentStoryIndex.value >= nextUserStories.length) {
+          currentStoryIndex.value = nextUserStories.length - 1;
+        }
+        selectedStory.value = nextUserStories[currentStoryIndex.value];
       }
-      selectedStory.value = nextUserStories[currentStoryIndex.value];
     }
   } else if (direction === 'prev' && !isFirstUser.value) {
     // Move to the previous user's stories
-    const userIds = Object.keys(groupedStories.value);
+    const userIds = groupedStories.value.map(([userId]) => userId);
     const currentUserIndex = userIds.indexOf(currentUserId);
     const prevUserIndex = currentUserIndex - 1;
     const prevUserId = userIds[prevUserIndex];
-    const prevUserStories = groupedStories.value[prevUserId];
+    const prevUserStories = groupedStories.value[prevUserIndex][1];
     if (prevUserStories && prevUserStories.length > 0) {
       selectedStory.value = prevUserStories[0];
       currentStoryIndex.value = lastViewedIndices.value[prevUserId] || 0;

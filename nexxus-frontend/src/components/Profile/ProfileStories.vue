@@ -61,7 +61,6 @@
             <v-btn
               icon
               @click="navigateStory('next')"
-              :disabled="currentStoryIndex === userStories.length - 1"
               class="nav-btn"
             >
               <v-icon>mdi-chevron-right</v-icon>
@@ -145,9 +144,14 @@ const viewStory = (story) => {
 };
 
 const navigateStory = (direction) => {
-  if (direction === 'next' && currentStoryIndex.value < userStories.value.length - 1) {
-    currentStoryIndex.value++;
-    selectedStory.value = userStories.value[currentStoryIndex.value];
+  if (direction === 'next') {
+    if (currentStoryIndex.value < userStories.value.length - 1) {
+      currentStoryIndex.value++;
+      selectedStory.value = userStories.value[currentStoryIndex.value];
+    } else {
+      // Close modal if at the last story
+      showStoryModal.value = false;
+    }
   } else if (direction === 'prev' && currentStoryIndex.value > 0) {
     currentStoryIndex.value--;
     selectedStory.value = userStories.value[currentStoryIndex.value];
