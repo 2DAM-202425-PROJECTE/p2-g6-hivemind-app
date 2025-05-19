@@ -1,28 +1,43 @@
 <template>
   <div class="flex-1 bg-white rounded-lg shadow-md p-5 flex flex-col overflow-hidden">
-    <div class="flex items-center gap-3 border-b pb-3 border-gray-300 flex-shrink-0">
-      <img :src="chat.profile_photo_url || 'https://placehold.co/48x48'" alt="Avatar" class="w-12 h-12 rounded-full">
+    <router-link
+      :to="`/profile/${chat.username}`"
+      class="flex items-center gap-3 border-b pb-3 border-gray-300 flex-shrink-0 hover:bg-amber-50 transition-colors"
+    >
+      <img
+        :src="chat.profile_photo_url || 'https://placehold.co/48x48'"
+        alt="Avatar"
+        class="w-12 h-12 rounded-full"
+      >
       <div>
         <h3 class="text-lg font-semibold text-black">{{ chat.name || 'Unknown User' }}</h3>
         <p class="text-sm text-gray-500">{{ chat.username ? '@' + chat.username : 'No username' }}</p>
       </div>
-    </div>
+    </router-link>
     <div ref="chatMessages" class="flex-1 overflow-y-auto my-3 space-y-2 break-words" @scroll="handleScroll">
-      <ChatMessage v-for="(message, index) in chat.messages"
-                   :key="index"
-                   :message="message"
-                   :user-id="userId"
-                   @edit="(msg) => $emit('edit-message', msg)"
-                   @delete="(msg) => displayDeleteModal(msg)"
-                   @report="(msg) => $emit('report-message', msg)" />
+      <ChatMessage
+        v-for="(message, index) in chat.messages"
+        :key="index"
+        :message="message"
+        :user-id="userId"
+        @edit="(msg) => $emit('edit-message', msg)"
+        @delete="(msg) => displayDeleteModal(msg)"
+        @report="(msg) => $emit('report-message', msg)"
+      />
     </div>
     <ChatInput @send="sendMessage" />
-    <DeleteMessageModal v-if="showDeleteModal" :message="messageToDelete" @confirm="confirmDeleteMessage" @cancel="cancelDeleteMessage" />
+    <DeleteMessageModal
+      v-if="showDeleteModal"
+      :message="messageToDelete"
+      @confirm="confirmDeleteMessage"
+      @cancel="cancelDeleteMessage"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { RouterLink } from 'vue-router'; // Import RouterLink
 import ChatMessage from './ChatMessage.vue';
 import ChatInput from './ChatInput.vue';
 import DeleteMessageModal from './DeleteMessageModal.vue';
@@ -31,7 +46,7 @@ const emit = defineEmits(['send-message', 'edit-message', 'delete-message', 'rep
 
 const props = defineProps({
   chat: Object,
-  userId: Number
+  userId: Number,
 });
 
 const chatMessages = ref(null);
@@ -78,7 +93,7 @@ const observer = new MutationObserver(() => {
 
 onMounted(() => {
   if (chatMessages.value) {
-    observer.observe(chatMessages.value, {childList: true, subtree: true});
+    observer.observe(chatMessages.value, { childList: true, subtree: true });
   }
 });
 

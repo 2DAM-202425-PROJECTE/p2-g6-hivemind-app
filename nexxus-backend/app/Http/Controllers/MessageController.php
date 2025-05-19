@@ -25,6 +25,12 @@ class MessageController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
+        // Mark messages as read
+        Message::where('chat_id', $chat->id)
+            ->where('user_id', '!=', Auth::id())
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
         $messages->load('user');
 
         return response()->json(['messages' => $messages->map(function ($message) {
@@ -39,6 +45,7 @@ class MessageController extends Controller
                 ],
                 'created_at' => $message->created_at->toDateTimeString(),
                 'is_edited' => $message->is_edited,
+                'is_read' => $message->is_read,
             ];
         })]);
     }
@@ -52,71 +59,117 @@ class MessageController extends Controller
         $userId = Auth::id();
         $content = trim($request->input('content'));
 
-        // Buscar el chat por nombre
         $chat = Chat::where('name', $chatName)->first();
 
         if (!$chat) {
             return response()->json(['error' => 'El chat no existe'], 404);
         }
 
-        // Comprobar que el usuario forma parte del chat
         if (!$chat->users()->where('user_id', $userId)->exists()) {
             return response()->json(['error' => 'No tienes permiso para enviar mensajes en este chat'], 403);
         }
 
-        // Crear el mensaje
         $message = Message::create([
             'chat_id' => $chat->id,
             'user_id' => $userId,
             'content' => $content,
+            'is_read' => false,
         ]);
 
-        // Cargar la relación del usuario
         $message->load('user');
 
         // Enviar evento para WebSockets
         broadcast(new MessageSentEvent($message))->toOthers();
 
         return response()->json([
-            'message' => $message,
+            'message' => [
+                'id' => $message->id,
+                'content' => $message->content,
+                'user_id' => $message->user_id,
+                'user' => [
+                    'id' => $message->user->id,
+                    'name' => $message->user->name,
+                    'profile_photo_url' => $message->user->profile_photo_url,
+                ],
+                'created_at' => $message->created_at->toDateTimeString(),
+                'is_edited' => $message->is_edited,
+                'is_read' => $message->is_read,
+            ],
             'messages' => Message::where('chat_id', $chat->id)->orderBy('created_at', 'asc')->get()
         ], 201);
     }
 
     public function updateMessages(Request $request, Message $message)
     {
-        $request->validate([
-            'content' => 'required|string|min:1',
-        ]);
+        try {
+            // Check if the user is authenticated
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Unauthenticated'], 401);
+            }
 
-        // Guardar en historial antes de modificar
-        MessageHistory::create([
-            'message_id' => $message->id,
-            'user_id' => Auth::id(),
-            'old_content' => $message->content,
-            'action' => 'edited',
-            'changed_at' => now(),
-        ]);
+            // Validate the request
+            $request->validate([
+                'content' => 'required|string|min:1|max:1000',
+            ]);
 
-        // Actualizar mensaje
-        $message->update([
-            'content' => $request->input('content'),
-            'is_edited' => true,
-        ]);
+            // Check if the user has permission to edit the message
+            if ($message->user_id !== Auth::id()) {
+                return response()->json(['error' => 'No tienes permiso para editar este mensaje'], 403);
+            }
 
-        // Enviar evento para WebSockets
-        broadcast(new MessageEditedEvent($message))->toOthers();
+            // Check if the chat exists
+            $chat = $message->chat;
+            if (!$chat) {
+                return response()->json(['error' => 'El chat asociado al mensaje no existe'], 404);
+            }
 
-        return response()->json([
-            'message' => $message,
-            'edited' => true,
-        ]);
+            // Create a history record for the edit
+            MessageHistory::create([
+                'message_id' => $message->id,
+                'user_id' => Auth::id(),
+                'old_content' => $message->content,
+                'action' => 'edited',
+                'changed_at' => now(),
+            ]);
+
+            // Update the message
+            $message->update([
+                'content' => $request->input('content'),
+                'is_edited' => true,
+            ]);
+
+            // Broadcast the edit event to all users in the chat
+            foreach ($chat->users as $chatUser) {
+                event(new MessageEditedEvent($message, $chat));
+            }
+
+            // Return a simplified response to avoid serialization issues
+            return response()->json([
+                'message' => [
+                    'id' => $message->id,
+                    'content' => $message->content,
+                    'user_id' => $message->user_id,
+                    'is_edited' => $message->is_edited,
+                    'created_at' => $message->created_at->toDateTimeString(),
+                ],
+                'edited' => true,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['error' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            Log::error('Error editing message: ' . $e->getMessage(), [
+                'message_id' => $message->id,
+                'user_id' => Auth::id(),
+                'request_content' => $request->input('content'),
+                'exception' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['error' => 'Error interno al editar el mensaje'], 500);
+        }
     }
-
 
     public function destroy(Message $message)
     {
-        // Guardar en historial antes de eliminar
         MessageHistory::create([
             'message_id' => $message->id,
             'user_id' => Auth::id(),
@@ -125,11 +178,34 @@ class MessageController extends Controller
             'changed_at' => now(),
         ]);
 
+        $chat = $message->chat;
         $message->delete();
 
-        // Emitir evento de eliminación de mensaje
-        broadcast(new MessageDeletedEvent($message->id, $message->chat->name))->toOthers();
+        foreach ($chat->users as $chatUser) {
+            event(new MessageDeletedEvent($message->id, $chat));
+        }
 
         return response()->json(['message' => 'Mensaje eliminado']);
+    }
+
+    public function markMessageAsRead(Request $request, $chatName, $messageId)
+    {
+        $chat = Chat::where('name', $chatName)->first();
+        if (!$chat) {
+            return response()->json(['error' => 'El chat no existe'], 404);
+        }
+
+        $message = Message::where('id', $messageId)
+            ->where('chat_id', $chat->id)
+            ->where('user_id', '!=', Auth::id())
+            ->first();
+
+        if (!$message) {
+            return response()->json(['error' => 'Mensaje no encontrado o no tienes permiso'], 404);
+        }
+
+        $message->update(['is_read' => true]);
+
+        return response()->json(['message' => 'Mensaje marcado como leído']);
     }
 }

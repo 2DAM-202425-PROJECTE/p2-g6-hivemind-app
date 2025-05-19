@@ -14,10 +14,13 @@ class MessageEditedEvent implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $message;
+    public $chat;
 
-    public function __construct(Message $message)
+    public function __construct(Message $message, $chat)
     {
         $this->message = $message;
+        $this->chat = $chat;
+        $this->message->load('user'); // Preload user to avoid lazy loading
     }
 
     public function broadcastOn()
@@ -28,15 +31,18 @@ class MessageEditedEvent implements ShouldBroadcast
     public function broadcastWith()
     {
         return [
-            'id' => $this->message->id,
-            'content' => $this->message->content,
-            'user_id' => $this->message->user_id,
-            'user' => [
-                'id' => $this->message->user->id,
-                'name' => $this->message->user->name,
-                'profile_photo_url' => $this->message->user->profile_photo_url,
-            ],
-            'created_at' => $this->message->created_at->toDateTimeString(),
+            'message' => [
+                'id' => $this->message->id,
+                'content' => $this->message->content,
+                'user_id' => $this->message->user_id,
+                'user' => [
+                    'id' => $this->message->user->id,
+                    'name' => $this->message->user->name,
+                    'profile_photo_url' => $this->message->user->profile_photo_url,
+                ],
+                'created_at' => $this->message->created_at->toDateTimeString(),
+                'is_edited' => $this->message->is_edited, // Añadir este campo
+            ]
         ];
     }
 }
