@@ -21,7 +21,6 @@ import ServerPage from "./pages/ServerPage.vue";
 import ShopPage from "./pages/ShopPage.vue";
 import PurchasePage from "./pages/PurchasePage.vue";
 import AppSettingsPage from "./pages/AppSettingsPage.vue";
-import AccountSettingsPage from "./pages/AccountSettingsPage.vue";
 import CompleteProfilePage from "./components/Profile/CompleteProfilePage.vue";
 import UserMediaPage from "./components/Profile/UserMediaPage.vue";
 import VideosPage from "./pages/VideosPage.vue";
@@ -65,7 +64,6 @@ export const routes = [
   { path: "/shop", name: "Shop", component: ShopPage },
   { path: "/purchase/:id", name: "Purchase", component: PurchasePage, props: true },
   { path: "/settings", name: "Settings", component: AppSettingsPage },
-  { path: "/account-settings", name: "AccountSettings", component: AccountSettingsPage },
   { path: "/complete-profile", name: "CompleteProfile", component: CompleteProfilePage },
   { path: '/profile/:username/followers', name: 'Followers', component: FollowersPage, props: true },
   { path: '/profile/:username/following', name: 'Following', component: FollowingPage, props: true },
