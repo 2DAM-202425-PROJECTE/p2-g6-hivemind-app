@@ -388,7 +388,6 @@ export function useChat() {
   };
 
   const reportMessage = (index) => {
-    alert(`Reporting message at index ${index}`);
     messageMenuVisible.value = false;
   };
 

@@ -22,7 +22,7 @@
         :user-id="userId"
         @edit="(msg) => $emit('edit-message', msg)"
         @delete="(msg) => displayDeleteModal(msg)"
-        @report="(msg) => $emit('report-message', msg)"
+        @report="(msg) => displayReportModal(msg)"
       />
     </div>
     <ChatInput @send="sendMessage" />
@@ -32,12 +32,25 @@
       @confirm="confirmDeleteMessage"
       @cancel="cancelDeleteMessage"
     />
+    <!-- Report Popup -->
+    <v-dialog v-model="reportPopup" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Message Reported</v-card-title>
+        <v-card-text>
+          <p>{{ reportMessage }}</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn class="btn-white" @click="closeReportPopup">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue';
-import { RouterLink } from 'vue-router'; // Import RouterLink
+import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue';
+import { RouterLink } from 'vue-router';
 import ChatMessage from './ChatMessage.vue';
 import ChatInput from './ChatInput.vue';
 import DeleteMessageModal from './DeleteMessageModal.vue';
@@ -53,6 +66,16 @@ const chatMessages = ref(null);
 const isNearBottom = ref(true);
 const showDeleteModal = ref(false);
 const messageToDelete = ref(null);
+const reportPopup = ref(false);
+const reportedMessage = ref(null);
+
+const reportMessage = computed(() => {
+  if (!reportedMessage.value || !props.chat) return '';
+  const username = props.chat.username || 'unknown_user';
+  // Capitalize the first letter of the username
+  const capitalizedUsername = username.charAt(0).toUpperCase() + username.slice(1);
+  return `${capitalizedUsername}'s message has been reported to HiveMind's admins.`;
+});
 
 const sendMessage = async (messageContent) => {
   emit('send-message', messageContent);
@@ -70,6 +93,17 @@ const confirmDeleteMessage = () => {
 
 const cancelDeleteMessage = () => {
   showDeleteModal.value = false;
+};
+
+const displayReportModal = (msg) => {
+  reportedMessage.value = msg;
+  reportPopup.value = true;
+  emit('report-message', msg);
+};
+
+const closeReportPopup = () => {
+  reportPopup.value = false;
+  reportedMessage.value = null;
 };
 
 const scrollToBottom = () => {
@@ -101,3 +135,22 @@ onBeforeUnmount(() => {
   observer.disconnect();
 });
 </script>
+
+<style scoped>
+.btn-white {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #555555;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-white:hover:not(:disabled) {
+  background: #f5f5f5;
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+</style>
