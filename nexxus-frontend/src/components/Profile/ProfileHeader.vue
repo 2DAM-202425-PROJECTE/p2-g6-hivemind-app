@@ -124,35 +124,43 @@
             {{ isLoadingChat ? 'Starting...' : 'Start Chat' }}
           </button>
           <button
+            v-if="!isCurrentUser"
+            @click="reportProfile"
+            :class="[
+              'px-4 py-2 rounded-lg text-sm font-medium transition duration-200 transform hover:scale-105',
+              'bg-amber-500 text-black hover:bg-amber-600'
+            ]"
+          >
+            Report
+          </button>
+          <button
             v-if="isCurrentUser"
             @click="editProfile"
-            class="p-2 text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition duration-200 transform hover:scale-110"
-            title="Edit Profile"
+            :class="[
+              'px-4 py-2 rounded-lg text-sm font-medium transition duration-200 transform hover:scale-105',
+              'bg-amber-500 text-black hover:bg-amber-600'
+            ]"
           >
-            <i class="fas fa-edit"></i>
+            Edit Profile
           </button>
           <button
             v-if="isCurrentUser"
             @click="showInventory = true"
-            class="p-2 text-gray-600 dark:text-gray-300 hover:text-purple-500 dark:hover:text-purple-400 transition duration-200 transform hover:scale-110"
-            title="Inventory"
+            :class="[
+              'px-4 py-2 rounded-lg text-sm font-medium transition duration-200 transform hover:scale-105',
+              'bg-amber-500 text-black hover:bg-amber-600'
+            ]"
           >
-            <i class="fas fa-box"></i>
-          </button>
-          <button
-            v-if="isCurrentUser"
-            @click="connectSocial"
-            class="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-500 dark:hover:text-gray-400 transition duration-200 transform hover:scale-110"
-            title="Connect Social Accounts"
-          >
-            <i class="fas fa-link"></i>
+            Inventory
           </button>
           <button
             @click="shareProfile"
-            class="p-2 text-gray-600 dark:text-gray-300 hover:text-green-500 dark:hover:text-green-400 transition duration-200 transform hover:scale-110"
-            title="Share Profile"
+            :class="[
+              'px-4 py-2 rounded-lg text-sm font-medium transition duration-200 transform hover:scale-105',
+              'bg-amber-500 text-black hover:bg-amber-600'
+            ]"
           >
-            <i class="fas fa-share-alt"></i>
+            Share Profile
           </button>
         </div>
       </div>
@@ -165,6 +173,20 @@
     @close="showInventory = false"
     @update-user="updateUserAndRefresh"
   />
+
+  <!-- Report Popup -->
+  <v-dialog v-model="reportPopup" max-width="400">
+    <v-card>
+      <v-card-title class="headline">Profile Reported</v-card-title>
+      <v-card-text>
+        <p>{{ reportMessage }}</p>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn class="btn-white" @click="closeReportPopup">Close</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup>
@@ -180,7 +202,7 @@ const props = defineProps({
   isFollowing: { type: Boolean, required: true },
   isLoadingFollow: { type: Boolean, required: true },
   editProfile: { type: Function, required: true },
-  connectSocial: { type: Function, default: () => console.log('Connect Social clicked') },
+  connectSocial: { type: Function, default: () => {} },
   shareProfile: { type: Function, required: true },
   toggleFollow: { type: Function, required: true },
   openFollowModal: { type: Function, required: true },
@@ -188,7 +210,15 @@ const props = defineProps({
 
 const showInventory = ref(false);
 const isLoadingChat = ref(false);
+const reportPopup = ref(false);
 const router = useRouter();
+
+const reportMessage = computed(() => {
+  const username = props.user.username || 'Unknown';
+  // Capitalize the first letter of the username
+  const capitalizedUsername = username.charAt(0).toUpperCase() + username.slice(1);
+  return `${capitalizedUsername}'s profile has been reported to HiveMind's admins.`;
+});
 
 const fallbackUrls = {
   'Cosmic Vortex': 'https://media.tenor.com/5o2qbr5P5mUAAAAC/space-vortex.gif',
@@ -317,6 +347,14 @@ const startChat = async () => {
   }
 };
 
+const reportProfile = () => {
+  reportPopup.value = true;
+};
+
+const closeReportPopup = () => {
+  reportPopup.value = false;
+};
+
 const loadEquippedState = async () => {
   if (!props.user?.id) return;
   try {
@@ -422,5 +460,22 @@ h3:hover {
   0% { transform: scale(1); }
   50% { transform: scale(1.02); }
   100% { transform: scale(1); }
+}
+
+.btn-white {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #555555;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-white:hover:not(:disabled) {
+  background: #f5f5f5;
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
 </style>

@@ -1,16 +1,29 @@
 <template>
   <div
-    class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    class="fixed inset-0 bg-amber-900/30 flex items-center justify-center z-50 animate-fade-in"
     @click="closeInventoryOnBackdrop"
   >
     <div
-      class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto"
+      class="bg-white rounded-xl p-8 w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-lg border border-amber-200"
       @click.stop
     >
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Inventory</h3>
-        <button @click="emit('close')" class="text-gray-600 dark:text-gray-300 hover:text-red-500">
-          <i class="fas fa-times"></i>
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-3xl font-bold text-amber-900">Inventory</h3>
+        <button @click="emit('close')" class="text-amber-700 hover:text-amber-900">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
         </button>
       </div>
       <div v-if="inventoryCategories.length > 0" class="cosmetics-grid">
@@ -19,15 +32,28 @@
             class="category-header"
             @click="toggleCategory(category.title)"
           >
-            <h3 class="category-title">{{ category.title }}</h3>
-            <p class="category-count">
-              (You own {{ category.items.length }}/{{ getTotalItems(category.title) }})
-            </p>
-            <i
-              :class="['fas', category.isOpen ? 'fa-chevron-up' : 'fa-chevron-down', 'toggle-icon']"
-            ></i>
+            <div class="flex items-center gap-2">
+              <h3 class="category-title text-2xl font-bold text-amber-900">{{ category.title }}</h3>
+              <p class="category-count text-sm text-amber-700">
+                (You own {{ category.items.length }}/{{ getTotalItems(category.title) }})
+              </p>
+            </div>
+            <svg
+              :class="['h-5 w-5 text-amber-700', category.isOpen ? 'rotate-180' : '']"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
           </div>
-          <p class="category-description">{{ category.description }}</p>
+          <p class="category-description text-amber-800 mb-4">{{ category.description }}</p>
           <div v-if="category.isOpen" class="items-grid">
             <div
               v-for="item in category.items"
@@ -45,14 +71,26 @@
                 class="cosmetic-icon"
                 @error="handleImageError($event, item)"
               />
-              <h4 class="item-name">{{ item.name }}</h4>
-              <p class="item-price">{{ formatPrice(item.price) }}</p>
-              <p v-if="item.type === 'subscription'" class="item-status">
+              <h4
+                :class="[
+                  'item-name font-medium text-amber-900 truncate',
+                  item.type === 'name_effect' ? getNameEffectClass(item.name) : '',
+                  item.type === 'profile_font' ? getProfileFontClass(item.name) : '',
+                  item.type === 'name_effect' ? 'effect-active' : ''
+                ]"
+              >
+                {{ item.name }}
+              </h4>
+              <p class="item-price text-amber-700 text-sm font-medium">{{ formatPrice(item.price) }}</p>
+              <p v-if="item.type === 'subscription'" class="item-status text-sm font-medium">
                 {{ item.isActive ? 'Active' : 'Inactive' }}
               </p>
               <button
                 v-if="item.type !== 'subscription'"
-                :class="['buy-button', item.isEquipped ? 'unequip-button' : '']"
+                :class="[
+                  'w-full text-sm py-2 rounded-lg font-medium transition-all duration-300',
+                  item.isEquipped ? 'btn-owned' : 'btn-primary'
+                ]"
                 @click="item.isEquipped ? unequipItem(item) : equipItem(item)"
               >
                 {{ item.isEquipped ? 'Unequip' : 'Equip' }}
@@ -61,24 +99,23 @@
           </div>
         </div>
       </div>
-      <div v-else class="text-center text-gray-500">
+      <div v-else class="text-center text-amber-800">
         No items in inventory
       </div>
-    </div>
-
-    <div
-      v-if="showEquipPopup"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      @click="closeEquipPopupOnBackdrop"
-    >
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-4" @click.stop>
-        <p class="text-gray-900 dark:text-white">{{ equippedItemMessage }}</p>
-        <button
-          @click="showEquipPopup = false"
-          class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          OK
-        </button>
+      <div
+        v-if="showEquipPopup"
+        class="fixed inset-0 bg-amber-900/30 flex items-center justify-center z-50"
+        @click="closeEquipPopupOnBackdrop"
+      >
+        <div class="bg-white rounded-lg p-6 max-w-sm" @click.stop>
+          <p class="text-amber-900 mb-4">{{ equippedItemMessage }}</p>
+          <button
+            @click="showEquipPopup = false"
+            class="btn-primary w-full"
+          >
+            OK
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -98,8 +135,6 @@ const showEquipPopup = ref(false);
 const equippedItemMessage = ref('');
 const inventory = ref([]);
 const inventoryCategories = ref([]);
-
-// Track open/closed state of categories
 const categoryStates = ref({});
 
 const fallbackImage = 'https://api.iconify.design/lucide/image-off.svg';
@@ -146,6 +181,51 @@ const handleImageError = (event, item) => {
   event.target.src = fallbackIcons[item.name] || fallbackImage;
 };
 
+const getNameEffectClass = (name) => {
+  if (!name) return '';
+  const effectMap = {
+    'Gradient Fade': 'gradient-fade',
+    'Golden Outline': 'golden-outline',
+    'Dark Pulse': 'dark-pulse',
+    'Cosmic Shine': 'cosmic-shine',
+    'Neon Edge': 'neon-edge',
+    'Frost Glow': 'frost-glow',
+    'Fire Flicker': 'fire-flicker',
+    'Emerald Sheen': 'emerald-sheen',
+    'Phantom Haze': 'phantom-haze',
+    'Electric Glow': 'electric-glow',
+    'Solar Flare': 'solar-flare',
+    'Wave Shimmer': 'wave-shimmer',
+    'Crystal Pulse': 'crystal-pulse',
+    'Mystic Aura': 'mystic-aura',
+    'Shadow Veil': 'shadow-veil',
+    'Digital Pulse': 'digital-pulse',
+  };
+  return effectMap[name] || '';
+};
+
+const getProfileFontClass = (name) => {
+  switch (name) {
+    case 'Pixel Art': return 'font-pixel-art';
+    case 'Comic Sans': return 'font-comic-sans';
+    case 'Gothic': return 'font-gothic';
+    case 'Cursive': return 'font-cursive';
+    case 'Typewriter': return 'font-typewriter';
+    case 'Bubble': return 'font-bubble';
+    case 'Neon': return 'font-neon';
+    case 'Graffiti': return 'font-graffiti';
+    case 'Retro': return 'font-retro';
+    case 'Cyberpunk': return 'font-cyberpunk';
+    case 'Western': return 'font-western';
+    case 'Chalkboard': return 'font-chalkboard';
+    case 'Horror': return 'font-horror';
+    case 'Futuristic': return 'font-futuristic';
+    case 'Handwritten': return 'font-handwritten';
+    case 'Bold Script': return 'font-bold-script';
+    default: return '';
+  }
+};
+
 const updateEquipped = async (item, type, isUnequip = false) => {
   try {
     const token = localStorage.getItem('token');
@@ -178,13 +258,10 @@ const updateEquipped = async (item, type, isUnequip = false) => {
         : { userId: props.user.id, [`equipped_${type}_path`]: item.icon_url };
     }
 
-    console.log(`Sending payload to ${endpoint}:`, payload);
-
     const response = await apiClient.post(endpoint, payload, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    console.log(`${isUnequip ? 'Unequipped' : 'Equipped'} ${type} response:`, response.data);
     return response.data;
   } catch (error) {
     console.error(`Failed to ${isUnequip ? 'unequip' : 'equip'} ${type}:`, error.response?.data || error.message);
@@ -194,18 +271,13 @@ const updateEquipped = async (item, type, isUnequip = false) => {
 
 const equipItem = async (item) => {
   try {
-    console.log('Attempting to equip item:', item);
     const response = await updateEquipped(item, item.type);
-    console.log('Equip response:', response);
-
-    // Update local inventory state
     inventory.value.forEach(i => {
       if (i.type === item.type) i.isEquipped = (i.id === item.id);
     });
     inventory.value = [...inventory.value];
     inventoryCategories.value = categorizeInventory(inventory.value);
 
-    // Determine the field to update based on item type
     const fieldMap = {
       custom_banner: 'equipped_banner_photo_path',
       name_effect: 'equipped_name_effect_path',
@@ -217,31 +289,23 @@ const equipItem = async (item) => {
     const field = fieldMap[item.type] || `equipped_${item.type}_path`;
     const value = ['name_effect', 'profile_font'].includes(item.type) ? item.name : item.icon_url;
 
-    console.log(`Emitting update for ${field}: ${value}`);
     emit('update-user', { [field]: value });
 
     equippedItemMessage.value = `${item.name} has been equipped`;
     showEquipPopup.value = true;
-    console.log('Equipped item:', item);
   } catch (error) {
     equippedItemMessage.value = `Failed to equip ${item.name}. Please try again.`;
     showEquipPopup.value = true;
-    console.error('Equip failed:', error.response?.data || error.message);
   }
 };
 
 const unequipItem = async (item) => {
   try {
-    console.log('Attempting to unequip item:', item);
     const response = await updateEquipped(item, item.type, true);
-    console.log('Unequip response:', response);
-
-    // Update local inventory state
     item.isEquipped = false;
     inventory.value = [...inventory.value];
     inventoryCategories.value = categorizeInventory(inventory.value);
 
-    // Determine the field to update based on item type
     const fieldMap = {
       custom_banner: 'equipped_banner_photo_path',
       name_effect: 'equipped_name_effect_path',
@@ -252,16 +316,13 @@ const unequipItem = async (item) => {
     };
     const field = fieldMap[item.type] || `equipped_${item.type}_path`;
 
-    console.log(`Emitting update for ${field}: null`);
     emit('update-user', { [field]: null });
 
     equippedItemMessage.value = `${item.name} has been unequipped`;
     showEquipPopup.value = true;
-    console.log('Unequipped item:', item);
   } catch (error) {
     equippedItemMessage.value = `Failed to unequip ${item.name}. Please try again.`;
     showEquipPopup.value = true;
-    console.error('Unequip failed:', error.response?.data || error.message);
   }
 };
 
@@ -286,21 +347,19 @@ const categorizeInventory = (items) => {
     { title: 'Other Items', description: 'Miscellaneous items', items: items.filter(item => !['subscription', 'profile_icon', 'background', 'name_effect', 'custom_banner', 'badge', 'profile_font'].includes(item.type)) },
   ].filter(category => category.items.length > 0).map(category => ({
     ...category,
-    isOpen: categoryStates.value[category.title] ?? false, // Default to collapsed
+    isOpen: categoryStates.value[category.title] ?? false,
   }));
   return categorized;
 };
 
-// Toggle category open/close state
 const toggleCategory = (title) => {
   categoryStates.value[title] = !categoryStates.value[title];
   inventoryCategories.value = categorizeInventory(inventory.value);
 };
 
-// Total items per category
 const getTotalItems = (categoryTitle) => {
   const totalItemsMap = {
-    'Subscriptions': 3, // Assuming Basic, Premium, Elite
+    'Subscriptions': 3,
     'Profile Icons': 16,
     'Backgrounds': 16,
     'Name Effects': 16,
@@ -318,7 +377,6 @@ const loadInventory = async () => {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token found.');
     const response = await apiClient.get(`/api/user/${props.user.id}/inventory`);
-    console.log('Raw inventory API response:', response.data);
     const mappedInventory = response.data.map(item => {
       const itemData = item.item || item;
       const isSubscription = [1, 2, 3].includes(item.item_id) || itemData.type === 'subscription';
@@ -335,7 +393,6 @@ const loadInventory = async () => {
     });
     inventory.value = mappedInventory;
     inventoryCategories.value = categorizeInventory(mappedInventory);
-    console.log('Loaded inventory:', mappedInventory);
   } catch (error) {
     console.error('Failed to load inventory:', error.response?.data || error.message);
     equippedItemMessage.value = 'Failed to load inventory. Please try again.';
@@ -377,6 +434,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@import '@/styles/nameEffects.css';
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@700&family=Black+Ops+One&family=Dancing+Script:wght@700&family=Courier+Prime&family=Bungee&family=Orbitron:wght@700&family=Wallpoet&family=VT323&family=Monoton&family=Special+Elite&family=Creepster&family=Audiowide&family=Caveat:wght@700&family=Permanent+Marker&display=swap');
+
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+/* Modal container */
 .cosmetics-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -384,10 +455,10 @@ onMounted(() => {
 }
 
 .category-card {
-  background: #fff;
-  border-radius: 8px;
+  background: #ffffff;
+  border-radius: 0.75rem;
   padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .category-header {
@@ -401,23 +472,16 @@ onMounted(() => {
 .category-title {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #000;
-  margin-right: 0.5rem;
+  color: #7c2d12; /* amber-900 */
 }
 
 .category-count {
-  font-size: 1.2rem;
-  color: #666;
-  margin-right: auto;
-}
-
-.toggle-icon {
-  color: #666;
-  transition: transform 0.3s;
+  font-size: 0.875rem;
+  color: #b45309; /* amber-700 */
 }
 
 .category-description {
-  color: #666;
+  color: #92400e; /* amber-800 */
   margin-bottom: 1rem;
   font-size: 0.95rem;
 }
@@ -430,62 +494,67 @@ onMounted(() => {
 
 .cosmetic-item {
   padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: #fefce8; /* amber-50 */
+  border-radius: 0.5rem;
   text-align: center;
   transition: background-color 0.3s;
 }
 
 .cosmetic-item:hover {
-  background: #e9ecef;
+  background: #fefcbf; /* amber-100 */
 }
 
 .cosmetic-item.background-item .cosmetic-icon,
 .cosmetic-item.banner-item .cosmetic-icon {
   width: 100%;
-  height: 120px;
+  height: 96px;
   object-fit: cover;
   border-radius: 4px;
   margin-bottom: 0.5rem;
-  background-color: #e0e0e0;
+  background-color: #f3e8d3;
 }
 
 .cosmetic-item.subscription-item .cosmetic-icon {
-  width: 3rem;
-  height: 3rem;
+  width: 64px;
+  height: 64px;
   margin-bottom: 0.5rem;
   display: block;
   margin-left: auto;
   margin-right: auto;
+  background-color: #f3e8d3;
+  padding: 8px;
+  object-fit: contain;
 }
 
 .cosmetic-item:not(.background-item):not(.banner-item):not(.subscription-item) .cosmetic-icon {
-  width: 2rem;
-  height: 2rem;
+  width: 64px;
+  height: 64px;
   margin-bottom: 0.5rem;
   display: block;
   margin-left: auto;
   margin-right: auto;
+  background-color: #f3e8d3;
+  padding: 8px;
+  object-fit: contain;
 }
 
 .item-name {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #000;
+  color: #7c2d12; /* amber-900 */
   margin-bottom: 0.25rem;
 }
 
 .item-price {
   font-size: 0.8rem;
-  color: #000;
+  color: #b45309; /* amber-700 */
   margin-bottom: 0.5rem;
 }
 
 .item-status {
   font-size: 0.8rem;
-  color: #000;
   margin-bottom: 0.5rem;
-  font-weight: bold;
+  font-weight: medium;
 }
 
 .item-status.active {
@@ -493,30 +562,77 @@ onMounted(() => {
 }
 
 .item-status.inactive {
-  color: #666;
+  color: #92400e; /* amber-800 */
 }
 
-.buy-button {
-  background-color: grey;
+.btn-primary {
+  background: linear-gradient(to right, #f59e0b, #d97706);
+  color: #000000;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(to right, #f59e0b, #b45309);
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);
+}
+
+.btn-owned {
+  background: #4caf50;
   color: white;
   border: none;
   padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: 0.5rem;
   cursor: pointer;
-  margin-top: 0.5rem;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.buy-button:hover {
-  background-color: darkgrey;
+.btn-owned:hover {
+  background: #45a049;
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(76, 175, 80, 0.3);
 }
 
-.unequip-button {
-  background-color: #dc3545;
+.effect-active {
+  display: inline-block;
+  padding: 0 0.25rem;
 }
 
-.unequip-button:hover {
-  background-color: #c82333;
+/* Fallback Profile Font Styles */
+.font-pixel-art { font-family: 'Press Start 2P', cursive; font-size: 0.75rem; }
+.font-comic-sans { font-family: 'Comic Neue', cursive; font-size: 0.85rem; }
+.font-gothic { font-family: 'Black Ops One', cursive; font-size: 0.85rem; }
+.font-cursive { font-family: 'Dancing Script', cursive; font-size: 0.85rem; }
+.font-typewriter { font-family: 'Courier Prime', monospace; font-size: 0.85rem; }
+.font-bubble { font-family: 'Bungee', cursive; font-size: 0.85rem; }
+.font-neon { font-family: 'Orbitron', sans-serif; font-size: 0.85rem; }
+.font-graffiti { font-family: 'Wallpoet', cursive; font-size: 0.85rem; }
+.font-retro { font-family: 'VT323', monospace; font-size: 0.85rem; }
+.font-cyberpunk { font-family: 'Monoton', cursive; font-size: 0.85rem; }
+.font-western { font-family: 'Special Elite', cursive; font-size: 0.85rem; }
+.font-chalkboard { font-family: 'Creepster', cursive; font-size: 0.85rem; }
+.font-horror { font-family: 'Creepster', cursive; font-size: 0.85rem; }
+.font-futuristic { font-family: 'Audiowide', cursive; font-size: 0.85rem; }
+.font-handwritten { font-family: 'Caveat', cursive; font-size: 0.85rem; }
+.font-bold-script { font-family: 'Permanent Marker', cursive; font-size: 0.85rem; }
+
+/* Fallback Name Effect Styles */
+.gradient-fade { background: linear-gradient(to right, #f59e0b, #d97706); -webkit-background-clip: text; color: transparent; }
+.golden-outline { color: #f59e0b; text-shadow: 0 0 2px #d97706; }
+.dark-pulse { color: #92400e; animation: pulse 2s infinite; }
+.cosmic-shine { color: #f59e0b; text-shadow: 0 0 5px #fefcbf; }
+.neon-edge { color: #d97706; text-shadow: 0 0 3px #f59e0b; }
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
 }
 
 @media (max-width: 768px) {
@@ -525,17 +641,21 @@ onMounted(() => {
   }
   .cosmetic-item.background-item .cosmetic-icon,
   .cosmetic-item.banner-item .cosmetic-icon {
-    height: 100px;
+    height: 64px;
   }
   .cosmetic-item.subscription-item .cosmetic-icon {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 48px;
+    height: 48px;
+  }
+  .cosmetic-item:not(.background-item):not(.banner-item):not(.subscription-item) .cosmetic-icon {
+    width: 48px;
+    height: 48px;
   }
   .category-title {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
   }
   .category-count {
-    font-size: 1rem;
+    font-size: 0.75rem;
   }
 }
 </style>
