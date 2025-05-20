@@ -137,7 +137,6 @@ const menuItems = ref([
   { text: 'Video Content', to: '/videos', icon: 'mdi-play-circle' },
   { text: 'Store', to: '/shop', icon: 'mdi-store' },
   { text: 'My Profile', to: '/profile', icon: 'mdi-account-circle' },
-  { text: 'Account Settings', to: '/account-settings', icon: 'mdi-account-cog' },
   { text: 'App Settings', to: '/settings', icon: 'mdi-cog' },
 ]);
 
