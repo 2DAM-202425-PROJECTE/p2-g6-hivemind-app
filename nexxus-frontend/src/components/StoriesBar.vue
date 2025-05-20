@@ -87,6 +87,28 @@
           >
             Delete
           </v-btn>
+          <v-btn
+            color="red"
+            text
+            @click="reportStory(selectedStory)"
+            v-if="!isStoryFromUser(selectedStory)"
+          >
+            Report
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Report Popup -->
+    <v-dialog v-model="reportPopup" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Story Reported</v-card-title>
+        <v-card-text>
+          <p>{{ reportMessage }}</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn class="btn-white" @click="closeReportPopup">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -112,6 +134,8 @@ const currentUser = ref({
   name: 'Current User',
   profile_photo_path: null,
 });
+const reportPopup = ref(false);
+const reportedStory = ref(null);
 
 const props = defineProps({
   stories: {
@@ -166,6 +190,14 @@ const isLastUser = computed(() => {
   if (!selectedStory.value) return true;
   const userIds = groupedStories.value.map(([userId]) => userId);
   return userIds.indexOf(String(selectedStory.value.id_user)) === userIds.length - 1;
+});
+
+const reportMessage = computed(() => {
+  if (!reportedStory.value) return '';
+  const username = getUsernameById(reportedStory.value.id_user) || 'unknown_user';
+  // Capitalize the first letter of the username
+  const capitalizedUsername = username.charAt(0).toUpperCase() + username.slice(1);
+  return `${capitalizedUsername}'s story has been reported to HiveMind's admins.`;
 });
 
 const isImage = (filePath) => /\.(jpeg|jpg|png)$/i.test(filePath);
@@ -313,6 +345,16 @@ const deleteStory = async (id) => {
   }
 };
 
+const reportStory = (story) => {
+  reportedStory.value = story;
+  reportPopup.value = true;
+};
+
+const closeReportPopup = () => {
+  reportPopup.value = false;
+  reportedStory.value = null;
+};
+
 onMounted(async () => {
   try {
     const usersResult = await apiClient.get('/api/users');
@@ -452,5 +494,22 @@ onMounted(async () => {
 
 .clickable-name:hover {
   text-decoration: underline;
+}
+
+.btn-white {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #555555;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-white:hover:not(:disabled) {
+  background: #f5f5f5;
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
 </style>

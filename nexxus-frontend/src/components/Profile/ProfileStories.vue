@@ -31,7 +31,7 @@
     <!-- Story View Modal -->
     <v-dialog v-model="showStoryModal" max-width="500">
       <v-card>
-        <v-card-title>Your Story</v-card-title>
+        <v-card-title>Stories</v-card-title>
         <v-card-text>
           <template v-if="isImage(selectedStory?.file_path)">
             <img
@@ -78,6 +78,28 @@
           >
             Delete
           </v-btn>
+          <v-btn
+            color="red"
+            text
+            @click="reportStory(selectedStory)"
+            v-if="!isCurrentUser"
+          >
+            Report
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Report Popup -->
+    <v-dialog v-model="reportPopup" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Story Reported</v-card-title>
+        <v-card-text>
+          <p>This story has been reported to HiveMind's admins.</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn class="btn-white" @click="closeReportPopup">Close</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -85,7 +107,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import apiClient from '@/axios.js';
 import CreateStoryImage from '@/components/CreateStoryImage.vue';
 
@@ -114,6 +136,8 @@ const showCreateStoryModal = ref(false);
 const showStoryModal = ref(false);
 const selectedStory = ref(null);
 const currentStoryIndex = ref(0);
+const reportPopup = ref(false);
+const reportedStory = ref(null);
 const API_BASE_URL = 'http://localhost:8000';
 
 const userStories = computed(() => {
@@ -182,6 +206,16 @@ const deleteStory = async (id) => {
   } catch (error) {
     console.error('Error deleting story:', error.response?.data || error.message);
   }
+};
+
+const reportStory = (story) => {
+  reportedStory.value = story;
+  reportPopup.value = true;
+};
+
+const closeReportPopup = () => {
+  reportPopup.value = false;
+  reportedStory.value = null;
 };
 </script>
 
@@ -273,5 +307,22 @@ const deleteStory = async (id) => {
 .nav-btn {
   background-color: rgba(0, 0, 0, 0.5);
   color: white;
+}
+
+.btn-white {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #555555;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-white:hover:not(:disabled) {
+  background: #f5f5f5;
+  transform: translateY(-0.125rem);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
 </style>
